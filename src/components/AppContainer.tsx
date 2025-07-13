@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -42,6 +43,11 @@ export function AppContainer() {
   };
 
   const handleTransactionSent = (sentTransaction: Transaction) => {
+    if (wallet) {
+      // Update wallet balance after transaction
+      const newBalance = wallet.balance - sentTransaction.amount;
+      setWallet({ ...wallet, balance: newBalance });
+    }
     setTransaction(sentTransaction);
     setView('receipt');
   };

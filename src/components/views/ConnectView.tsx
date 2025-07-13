@@ -127,14 +127,28 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   };
 
   const handleWordChange = (index: number, value: string) => {
-    const newWords = [...seedWords];
-    newWords[index] = value.trim();
-    setSeedWords(newWords);
+    // Allow only letters
+    if (/^[a-zA-Z]*$/.test(value)) {
+      const newWords = [...seedWords];
+      newWords[index] = value.trim();
+      setSeedWords(newWords);
+    }
   };
   
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text');
+    
+    // Validate pasted text contains only letters and spaces
+    if (!/^[a-zA-Z\s]*$/.test(pastedText)) {
+      toast({
+        title: "Invalid Input",
+        description: "Seed phrase can only contain letters and spaces.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const words = pastedText.trim().split(/\s+/);
     
     if (words.length === 12 || words.length === 15 || words.length === 18 || words.length === 24) {
