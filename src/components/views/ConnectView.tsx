@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -19,11 +20,12 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { createWallet } from '@/lib/wallet';
+import { createWallet, importWalletFromSeed } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,8 +35,10 @@ interface ConnectViewProps {
 
 export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
   const [hasSavedSeed, setHasSavedSeed] = useState(false);
+  const [importSeedPhrase, setImportSeedPhrase] = useState('');
   const { toast } = useToast();
 
   const handleCreateWallet = () => {
@@ -51,13 +55,33 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setNewWallet(null);
     }
   };
-  
-  const handleConnectWallet = () => {
-    toast({
-      title: "Feature not available",
-      description: "Connecting to existing wallets will be supported soon.",
-      variant: "default",
-    });
+
+  const handleImportWallet = () => {
+    if (!importSeedPhrase.trim()) {
+      toast({
+        title: "Frase semilla requerida",
+        description: "Por favor, introduce tu frase semilla de 12 palabras.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const wallet = importWalletFromSeed(importSeedPhrase);
+      onWalletConnected(wallet);
+      setImportDialogOpen(false);
+      setImportSeedPhrase('');
+      toast({
+        title: "Wallet Importada",
+        description: "Tu wallet ha sido importada exitosamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error de Importación",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -91,9 +115,9 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
             <PlusCircle />
             Create New Wallet
           </Button>
-          <Button size="lg" variant="secondary" onClick={handleConnectWallet}>
+          <Button size="lg" variant="secondary" onClick={() => setImportDialogOpen(true)}>
             <KeyRound />
-            Connect Wallet
+            Import Wallet
           </Button>
         </CardContent>
         <CardFooter>
@@ -128,6 +152,42 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
             </DialogClose>
             <Button onClick={handleFinalizeCreation} disabled={!hasSavedSeed}>
               Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Import Wallet</DialogTitle>
+            <DialogDescription>
+              Enter your 12-word secret phrase to restore your wallet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+             <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-bold">Security Warning</p>
+                <p>Never share your secret phrase. Anyone with it can take control of your assets.</p>
+              </div>
+            </div>
+            <Label htmlFor="seed-phrase">Secret Phrase</Label>
+            <Textarea
+              id="seed-phrase"
+              placeholder="word1 word2 word3..."
+              value={importSeedPhrase}
+              onChange={(e) => setImportSeedPhrase(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleImportWallet}>
+              Import
             </Button>
           </DialogFooter>
         </DialogContent>

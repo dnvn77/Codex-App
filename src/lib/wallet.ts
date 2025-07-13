@@ -1,8 +1,10 @@
+
 import type { Wallet, Transaction } from './types';
 
 // WARNING: This is a mock implementation for demonstration purposes.
 // Do not use this in a production environment.
-// A real implementation would use a proper HD wallet library like ethers.js or viem.
+// A real implementation would use a proper HD wallet library like ethers.js or viem,
+// and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
 
 const MOCK_WORDS = [
   'apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew',
@@ -18,21 +20,74 @@ function generateRandomString(length: number, chars: string): string {
   return result;
 }
 
+// Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
+function mockHash(input: string): string {
+  // This is NOT a real hash function and is NOT secure. For demonstration only.
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return '0x' + Math.abs(hash).toString(16).padStart(64, '0');
+}
+
+
+function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase'> {
+    // In a real app, the seed phrase would be used with BIP39 to generate a master seed,
+    // then SLIP-10 or BIP32/44 to derive keys.
+    const masterKey = mockHash(seedPhrase);
+    
+    // Derive App Key and Nullifier Key from the Master Key.
+    // In Aztec, these derivations are specific cryptographic operations.
+    const appKey = mockHash(masterKey + "_app_key");
+    const nullifierKey = mockHash(masterKey + "_nullifier_key");
+
+    // The address is derived from the app key.
+    const address = '0x' + mockHash(appKey).substring(2, 42);
+
+    return {
+        address,
+        masterKey,
+        appKey,
+        nullifierKey,
+    };
+}
+
+
 /**
- * Creates a mock wallet with a random seed phrase and address.
+ * Creates a mock wallet with a random seed phrase and derived keys based on Aztec concepts.
  * @returns A mock Wallet object.
  */
 export function createWallet(): Wallet {
   const seedPhrase = [...Array(12)].map(() => MOCK_WORDS[Math.floor(Math.random() * MOCK_WORDS.length)]).join(' ');
-  const privateKey = '0x' + generateRandomString(64, '0123456789abcdef');
-  const address = '0x' + generateRandomString(40, '0123456789abcdef');
+  const derivedKeys = deriveKeysFromSeed(seedPhrase);
 
   return {
     seedPhrase,
-    privateKey,
-    address,
+    ...derivedKeys,
   };
 }
+
+
+/**
+ * Imports a wallet from a seed phrase.
+ * @param seedPhrase The 12-word secret phrase.
+ * @returns A Wallet object.
+ */
+export function importWalletFromSeed(seedPhrase: string): Wallet {
+    const words = seedPhrase.trim().split(/\s+/);
+    if (words.length !== 12) {
+        throw new Error('Invalid seed phrase. Please provide 12 words.');
+    }
+    const derivedKeys = deriveKeysFromSeed(seedPhrase);
+
+    return {
+        seedPhrase: words.join(' '),
+        ...derivedKeys,
+    };
+}
+
 
 /**
  * Simulates sending a private transaction.
@@ -46,8 +101,11 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number):
     throw new Error('Amount must be positive.');
   }
 
+  // In a real Aztec transaction, the nullifierKey would be used to generate nullifiers for the notes being spent.
+  // The appKey would be used to sign the transaction.
+
   const txHash = '0x' + generateRandomString(64, '0123456789abcdef');
-  const proposedOnL1 = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120); // Mock block number from recent past
+  const proposedOnL1 = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120);
 
   return {
     txHash,
