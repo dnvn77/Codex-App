@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -8,8 +9,19 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, Zap } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -48,6 +60,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
+  const [isConfirmingTx, setIsConfirmingTx] = useState(false);
 
   const [gasCost, setGasCost] = useState(0.00042);
   const [averageGas, setAverageGas] = useState(0.00045);
@@ -96,7 +109,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     }
   };
 
-  const handleSend = async () => {
+  const executeSend = async () => {
+    setIsConfirmingTx(false);
     // Redundant check, as button should be disabled, but good for safety.
     if (!toAddress || !amount || amountError) {
       toast({ title: 'Invalid Information', description: 'Please correct the errors before sending.', variant: 'destructive' });
@@ -120,12 +134,20 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       setIsSending(false);
     }
   };
+
+  const handleSendClick = () => {
+    if (gasCost > averageGas) {
+      setIsConfirmingTx(true);
+    } else {
+      executeSend();
+    }
+  };
   
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
   const isSendDisabled = useMemo(() => {
-    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0;
-  }, [isSending, toAddress, amount, amountError]);
+    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas;
+  }, [isSending, toAddress, amount, amountError, isCalculatingGas]);
 
   return (
     <Card className="w-full shadow-lg">
@@ -183,13 +205,38 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" onClick={handleSend} disabled={isSendDisabled}>
-          {isSending ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
-          ) : (
-            <><Send className="mr-2 h-4 w-4" /> Send Privately</>
-          )}
-        </Button>
+        <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
+          <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
+            {isSending ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+            ) : (
+              <><Send className="mr-2 h-4 w-4" /> Send Privately</>
+            )}
+          </Button>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive" />
+                High Gas Fee Warning
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
+                <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
+                    <span className="font-semibold">Average Fee:</span>
+                    <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                    <span className="font-semibold text-destructive">Current Fee:</span>
+                    <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
+                Send Anyway
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );
