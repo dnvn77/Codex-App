@@ -42,9 +42,9 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
   
   const [creationStep, setCreationStep] = useState<CreationStep>('showSeed');
-  const [confirmationWord, setConfirmationWord] = useState('');
-  const [confirmationError, setConfirmationError] = useState('');
-  const [randomWordIndex, setRandomWordIndex] = useState(0);
+  const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
+  const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
+  const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
 
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
@@ -55,25 +55,42 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     const wallet = createWallet();
     setNewWallet(wallet);
     setCreationStep('showSeed');
-    setConfirmationWord('');
-    setConfirmationError('');
+    setConfirmationWords(['', '', '']);
+    setConfirmationErrors(['', '', '']);
     setCreateDialogOpen(true);
   };
   
-  const generateRandomIndex = () => {
-    // Generate a random index from 0 to 11
-    return Math.floor(Math.random() * 12);
+  const generateRandomIndices = () => {
+    const indices = new Set<number>();
+    const seedWordCount = newWallet?.seedPhrase.split(' ').length || 12;
+    while (indices.size < 3) {
+        indices.add(Math.floor(Math.random() * seedWordCount));
+    }
+    // Sort for consistent order in the UI
+    return Array.from(indices).sort((a, b) => a - b);
   }
 
   const handleGoToConfirmation = () => {
-    setRandomWordIndex(generateRandomIndex());
+    setRandomWordIndices(generateRandomIndices());
     setCreationStep('confirmSeed');
   };
   
   const handleFinalizeCreation = () => {
     if (newWallet) {
-      const correctWord = newWallet.seedPhrase.split(' ')[randomWordIndex];
-      if (confirmationWord.trim().toLowerCase() === correctWord.toLowerCase()) {
+      const correctWords = newWallet.seedPhrase.split(' ');
+      const newErrors = ['', '', ''];
+      let allCorrect = true;
+
+      randomWordIndices.forEach((wordIndex, arrayIndex) => {
+        if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
+          newErrors[arrayIndex] = "Incorrect word";
+          allCorrect = false;
+        }
+      });
+      
+      setConfirmationErrors(newErrors);
+
+      if (allCorrect) {
         onWalletConnected(newWallet);
         setCreateDialogOpen(false);
         setNewWallet(null);
@@ -81,17 +98,28 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
           title: "Wallet Created!",
           description: "Your new wallet is ready.",
         });
-      } else {
-        setConfirmationError("The word is incorrect. Please try again.");
       }
     }
   };
 
   const handleBackToShowSeed = () => {
     setCreationStep('showSeed');
-    setConfirmationError('');
-    setConfirmationWord('');
+    setConfirmationErrors(['', '', '']);
+    setConfirmationWords(['', '', '']);
   };
+  
+  const handleConfirmationWordChange = (index: number, value: string) => {
+    const newWords = [...confirmationWords];
+    newWords[index] = value;
+    setConfirmationWords(newWords);
+
+    const newErrors = [...confirmationErrors];
+    if (newErrors[index]) {
+      newErrors[index] = '';
+      setConfirmationErrors(newErrors);
+    }
+  };
+
 
   const handleSeedLengthChange = (value: string) => {
     const length = parseInt(value, 10) as SeedLength;
@@ -163,6 +191,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     }, 300);
   }
 
+  const isConfirmationDisabled = confirmationWords.some(word => word.trim() === '');
+
   return (
     <>
       <Card className="text-center shadow-lg">
@@ -229,33 +259,34 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
               <DialogHeader>
                 <DialogTitle>Confirm Your Phrase</DialogTitle>
                 <DialogDescription>
-                  To ensure you saved it correctly, please enter the following word from your phrase.
+                  To ensure you saved it correctly, please enter the following words from your phrase.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                <Label htmlFor="confirmationWord" className="text-lg font-semibold text-center block mb-4">
-                  Enter word #{randomWordIndex + 1}
-                </Label>
-                <Input
-                  id="confirmationWord"
-                  value={confirmationWord}
-                  onChange={(e) => {
-                    setConfirmationWord(e.target.value);
-                    setConfirmationError('');
-                  }}
-                  className="text-center text-base"
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck="false"
-                />
-                {confirmationError && (
-                  <p className="text-destructive text-sm text-center mt-2">{confirmationError}</p>
-                )}
+              <div className="py-4 space-y-4">
+                {randomWordIndices.map((wordIndex, arrayIndex) => (
+                  <div key={wordIndex}>
+                    <Label htmlFor={`confirmationWord-${arrayIndex}`} className="font-semibold">
+                      Enter word #{wordIndex + 1}
+                    </Label>
+                    <Input
+                      id={`confirmationWord-${arrayIndex}`}
+                      value={confirmationWords[arrayIndex]}
+                      onChange={(e) => handleConfirmationWordChange(arrayIndex, e.target.value)}
+                      className="mt-1 text-base"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck="false"
+                    />
+                    {confirmationErrors[arrayIndex] && (
+                      <p className="text-destructive text-sm mt-1">{confirmationErrors[arrayIndex]}</p>
+                    )}
+                  </div>
+                ))}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={handleBackToShowSeed}>Back</Button>
-                <Button onClick={handleFinalizeCreation} disabled={!confirmationWord}>Confirm & Create</Button>
+                <Button onClick={handleFinalizeCreation} disabled={isConfirmationDisabled}>Confirm & Create</Button>
               </DialogFooter>
             </>
           )}
