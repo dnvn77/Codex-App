@@ -20,9 +20,10 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
 import { KeyRound, PlusCircle, AlertTriangle } from 'lucide-react';
@@ -33,12 +34,17 @@ interface ConnectViewProps {
   onWalletConnected: (wallet: Wallet) => void;
 }
 
+type SeedLength = 12 | 15 | 18 | 24;
+
 export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
   const [hasSavedSeed, setHasSavedSeed] = useState(false);
-  const [importSeedPhrase, setImportSeedPhrase] = useState('');
+  
+  const [seedLength, setSeedLength] = useState<SeedLength>(12);
+  const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
+
   const { toast } = useToast();
 
   const handleCreateWallet = () => {
@@ -56,21 +62,54 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     }
   };
 
-  const handleImportWallet = () => {
-    if (!importSeedPhrase.trim()) {
+  const handleSeedLengthChange = (value: string) => {
+    const length = parseInt(value, 10) as SeedLength;
+    setSeedLength(length);
+    setSeedWords(Array(length).fill(''));
+  };
+
+  const handleWordChange = (index: number, value: string) => {
+    const newWords = [...seedWords];
+    newWords[index] = value.trim();
+    setSeedWords(newWords);
+  };
+  
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const words = pastedText.trim().split(/\s+/);
+    
+    if (words.length === 12 || words.length === 15 || words.length === 18 || words.length === 24) {
+      const newLength = words.length as SeedLength;
+      setSeedLength(newLength);
+      setSeedWords(words);
+    } else {
       toast({
-        title: "Frase semilla requerida",
-        description: "Por favor, introduce tu frase semilla de 12 palabras.",
+        title: "Pegado no válido",
+        description: `La frase semilla debe tener 12, 15, 18, o 24 palabras. Pegaste ${words.length}.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportWallet = () => {
+    const filledWords = seedWords.filter(word => word.length > 0);
+    if (filledWords.length !== seedLength) {
+      toast({
+        title: "Frase semilla incompleta",
+        description: `Por favor, introduce las ${seedLength} palabras de tu frase semilla.`,
         variant: "destructive",
       });
       return;
     }
     
+    const importSeedPhrase = seedWords.join(' ');
     try {
       const wallet = importWalletFromSeed(importSeedPhrase);
       onWalletConnected(wallet);
       setImportDialogOpen(false);
-      setImportSeedPhrase('');
+      setSeedWords(Array(12).fill('')); // Reset state
+      setSeedLength(12);
       toast({
         title: "Wallet Importada",
         description: "Tu wallet ha sido importada exitosamente.",
@@ -128,7 +167,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       </Card>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create Your Wallet</DialogTitle>
             <DialogDescription>
@@ -158,29 +197,58 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       </Dialog>
       
       <Dialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Import Wallet</DialogTitle>
             <DialogDescription>
-              Enter your 12-word secret phrase to restore your wallet.
+              Enter your secret phrase to restore your wallet.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
-             <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
+            <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-bold">Security Warning</p>
                 <p>Never share your secret phrase. Anyone with it can take control of your assets.</p>
               </div>
             </div>
-            <Label htmlFor="seed-phrase">Secret Phrase</Label>
-            <Textarea
-              id="seed-phrase"
-              placeholder="word1 word2 word3..."
-              value={importSeedPhrase}
-              onChange={(e) => setImportSeedPhrase(e.target.value)}
-              rows={3}
-            />
+            
+            <div>
+              <Label className="mb-2 block">Seed Phrase Length</Label>
+              <RadioGroup defaultValue="12" onValueChange={handleSeedLengthChange} value={String(seedLength)} className="flex space-x-4">
+                {[12, 15, 18, 24].map(len => (
+                  <div key={len} className="flex items-center space-x-2">
+                    <RadioGroupItem value={String(len)} id={`r${len}`} />
+                    <Label htmlFor={`r${len}`}>{len}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Secret Phrase Words</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {seedWords.map((word, index) => (
+                  <div key={index} className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
+                    <Input
+                      type="text"
+                      value={word}
+                      onChange={(e) => handleWordChange(index, e.target.value)}
+                      onPaste={handlePaste}
+                      className="pl-6 text-center"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck="false"
+                    />
+                  </div>
+                ))}
+              </div>
+               <p className="text-xs text-muted-foreground mt-2">
+                You can paste your entire seed phrase into any field.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>

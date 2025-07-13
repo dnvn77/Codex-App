@@ -37,7 +37,7 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="relative grid grid-cols-3 gap-2 rounded-lg border bg-secondary/30 p-4 mb-4">
+        <div className="relative grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 rounded-lg border bg-secondary/30 p-4 mb-4">
           <button
             onClick={handleCopy}
             className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-accent"
@@ -47,8 +47,8 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
           </button>
           {words.map((word, index) => (
             <div key={index} className="flex items-center gap-2">
-              <Badge variant="outline" className="text-muted-foreground">{index + 1}</Badge>
-              <span className="font-medium">{word}</span>
+              <Badge variant="outline" className="text-muted-foreground w-6 h-6 flex-shrink-0 justify-center">{index + 1}</Badge>
+              <span className="font-medium truncate">{word}</span>
             </div>
           ))}
         </div>

@@ -72,13 +72,13 @@ export function createWallet(): Wallet {
 
 /**
  * Imports a wallet from a seed phrase.
- * @param seedPhrase The 12-word secret phrase.
+ * @param seedPhrase The secret phrase.
  * @returns A Wallet object.
  */
 export function importWalletFromSeed(seedPhrase: string): Wallet {
     const words = seedPhrase.trim().split(/\s+/);
-    if (words.length !== 12) {
-        throw new Error('Invalid seed phrase. Please provide 12 words.');
+    if (![12, 15, 18, 24].includes(words.length)) {
+        throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
     }
     const derivedKeys = deriveKeysFromSeed(seedPhrase);
 
