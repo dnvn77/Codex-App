@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2 } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -16,12 +17,58 @@ interface DashboardViewProps {
   onDisconnect: () => void;
 }
 
+const GasFeeDisplay = ({ gasCost, averageGas, isLoading }: { gasCost: number; averageGas: number; isLoading: boolean }) => {
+  const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
+
+  if (isLoading) {
+    return (
+      <div className="text-xs text-muted-foreground text-right space-y-1">
+        <p>Calculating gas...</p>
+        <p>Average: ...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="text-xs text-muted-foreground text-right space-y-1">
+      <p>
+        Est. Gas Fee: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} ETH</span>
+      </p>
+      <p>
+        Average Fee: <span>{averageGas.toFixed(5)} ETH</span>
+      </p>
+    </div>
+  );
+};
+
+
 export function DashboardView({ wallet, onTransactionSent, onDisconnect }: DashboardViewProps) {
   const { toast } = useToast();
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
+
+  const [gasCost, setGasCost] = useState(0.00042);
+  const [averageGas, setAverageGas] = useState(0.00045);
+  const [isCalculatingGas, setIsCalculatingGas] = useState(true);
+
+  useEffect(() => {
+    setIsCalculatingGas(true);
+    const timer = setTimeout(() => {
+      if (toAddress && parseFloat(amount) > 0) {
+        // Simulate gas calculation based on inputs
+        const newGas = 0.00030 + Math.random() * 0.00030; // Random gas between 0.00030 and 0.00060
+        const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005; //Slightly vary the average
+        setGasCost(newGas);
+        setAverageGas(newAvg);
+      }
+      setIsCalculatingGas(false);
+    }, 500); // Simulate network/calculation delay
+
+    return () => clearTimeout(timer);
+  }, [toAddress, amount]);
+
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(wallet.address);
@@ -106,7 +153,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
           </div>
 
           <div className="space-y-2 pt-4">
-             <h3 className="text-lg font-medium">Send Transaction</h3>
+             <div className="flex justify-between items-start">
+              <h3 className="text-lg font-medium">Send Transaction</h3>
+              <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} />
+             </div>
             <div className="space-y-1">
               <Label htmlFor="toAddress">Destination Address</Label>
               <Input
