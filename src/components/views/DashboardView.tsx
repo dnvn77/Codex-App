@@ -2,14 +2,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -20,7 +20,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface DashboardViewProps {
@@ -60,7 +59,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
+  
   const [isConfirmingTx, setIsConfirmingTx] = useState(false);
+  const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
+  const [notificationAddress, setNotificationAddress] = useState('');
+  const [notificationAmount, setNotificationAmount] = useState('');
 
   const [gasCost, setGasCost] = useState(0.00042);
   const [averageGas, setAverageGas] = useState(0.00045);
@@ -127,6 +130,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, toAddress, parseFloat(amount));
       onTransactionSent(tx);
+      setToAddress('');
+      setAmount('');
     } catch (error) {
       const err = error as Error;
       toast({ title: 'Transaction Failed', description: err.message, variant: 'destructive' });
@@ -143,6 +148,29 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     }
   };
   
+  const handleHighGasCancel = () => {
+    setIsConfirmingTx(false);
+    // Use a short timeout to prevent dialogs from overlapping awkwardly
+    setTimeout(() => {
+      setNotificationAddress(toAddress);
+      setNotificationAmount(amount);
+      setShowGasNotifyPrompt(true);
+    }, 150);
+  };
+
+  const handleSetupGasNotification = () => {
+    // In a real app, this would subscribe to a push service.
+    // Here, we just show a confirmation toast.
+    toast({
+        title: "Gas Alert Set!",
+        description: `We'll notify you when it's cheaper to send ${notificationAmount} ETH to ${notificationAddress.slice(0, 6)}...`,
+    });
+    setShowGasNotifyPrompt(false);
+    setNotificationAddress('');
+    setNotificationAmount('');
+  };
+
+
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
   const isSendDisabled = useMemo(() => {
@@ -205,39 +233,62 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
         </div>
       </CardContent>
       <CardFooter>
-        <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
-          <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
+        <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
             {isSending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
             ) : (
-              <><Send className="mr-2 h-4 w-4" /> Send Privately</>
+                <><Send className="mr-2 h-4 w-4" /> Send Privately</>
             )}
-          </Button>
-          <AlertDialogContent>
+        </Button>
+      </CardFooter>
+      
+      {/* High Gas Warning Dialog */}
+      <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="text-destructive" />
+              High Gas Fee Warning
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
+              <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
+                  <span className="font-semibold">Average Fee:</span>
+                  <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                  <span className="font-semibold text-destructive">Current Fee:</span>
+                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleHighGasCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
+              Send Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Notify on Gas Drop Dialog */}
+      <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
+        <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="text-destructive" />
-                High Gas Fee Warning
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
-                <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
-                    <span className="font-semibold">Average Fee:</span>
-                    <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
-                    <span className="font-semibold text-destructive">Current Fee:</span>
-                    <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
-                </div>
-              </AlertDialogDescription>
+                <AlertDialogTitle className="flex items-center gap-2">
+                    <BellRing className="text-primary"/>
+                    Get Notified?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                    Would you like to receive a push notification when the gas fee for this transaction is lower?
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
-                Send Anyway
-              </AlertDialogAction>
+                <AlertDialogCancel>No, thanks</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSetupGasNotification}>
+                    Yes, notify me
+                </AlertDialogAction>
             </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
