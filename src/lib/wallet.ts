@@ -23,13 +23,23 @@ function generateRandomString(length: number, chars: string): string {
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
 function mockHash(input: string): string {
   // This is NOT a real hash function and is NOT secure. For demonstration only.
+  // It's a simple algorithm to create a deterministic, pseudo-random-looking hex string.
   let hash = 0;
+  if (input.length === 0) return '0x0000000000000000000000000000000000000000000000000000000000000000';
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash |= 0; // Convert to 32bit integer
   }
-  return '0x' + Math.abs(hash).toString(16).padStart(64, '0');
+  
+  let hex = '';
+  for(let i=0; i<8; i++){
+    // Tweak the hash to get different values for each segment
+    const segment = (hash + i*277) * (i+1);
+    hex += (segment & 0xFFFFFFF).toString(16).padStart(7,'0');
+  }
+
+  return '0x' + hex.substring(0, 64);
 }
 
 

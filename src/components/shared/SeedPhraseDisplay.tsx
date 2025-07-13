@@ -48,7 +48,7 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
           {words.map((word, index) => (
             <div key={index} className="flex items-center gap-2">
               <Badge variant="outline" className="text-muted-foreground w-6 h-6 flex-shrink-0 justify-center">{index + 1}</Badge>
-              <span className="font-medium truncate">{word}</span>
+              <span className="font-medium">{word}</span>
             </div>
           ))}
         </div>
