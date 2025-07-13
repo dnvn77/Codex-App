@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,7 +21,6 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed } from '@/lib/wallet';
@@ -35,13 +34,23 @@ interface ConnectViewProps {
 }
 
 type SeedLength = 12 | 15 | 18 | 24;
+type CreationStep = 'showSeed' | 'confirmSeed';
 
 export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
-  const [hasSavedSeed, setHasSavedSeed] = useState(false);
   
+  const [creationStep, setCreationStep] = useState<CreationStep>('showSeed');
+  const [confirmationWord, setConfirmationWord] = useState('');
+  const [confirmationError, setConfirmationError] = useState('');
+
+  const randomWordIndex = useMemo(() => {
+    if (!newWallet) return 0;
+    // Generate a random index from 0 to 11
+    return Math.floor(Math.random() * 12);
+  }, [newWallet]);
+
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
 
@@ -50,16 +59,37 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const handleCreateWallet = () => {
     const wallet = createWallet();
     setNewWallet(wallet);
-    setHasSavedSeed(false);
+    setCreationStep('showSeed');
+    setConfirmationWord('');
+    setConfirmationError('');
     setCreateDialogOpen(true);
   };
 
+  const handleGoToConfirmation = () => {
+    setCreationStep('confirmSeed');
+  };
+  
   const handleFinalizeCreation = () => {
     if (newWallet) {
-      onWalletConnected(newWallet);
-      setCreateDialogOpen(false);
-      setNewWallet(null);
+      const correctWord = newWallet.seedPhrase.split(' ')[randomWordIndex];
+      if (confirmationWord.trim().toLowerCase() === correctWord.toLowerCase()) {
+        onWalletConnected(newWallet);
+        setCreateDialogOpen(false);
+        setNewWallet(null);
+        toast({
+          title: "Wallet Created!",
+          description: "Your new wallet is ready.",
+        });
+      } else {
+        setConfirmationError("The word is incorrect. Please try again.");
+      }
     }
+  };
+
+  const handleBackToShowSeed = () => {
+    setCreationStep('showSeed');
+    setConfirmationError('');
+    setConfirmationWord('');
   };
 
   const handleSeedLengthChange = (value: string) => {
@@ -85,8 +115,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setSeedWords(words);
     } else {
       toast({
-        title: "Pegado no válido",
-        description: `La frase semilla debe tener 12, 15, 18, o 24 palabras. Pegaste ${words.length}.`,
+        title: "Invalid Paste",
+        description: `Seed phrase must be 12, 15, 18, or 24 words. You pasted ${words.length}.`,
         variant: "destructive",
       });
     }
@@ -96,8 +126,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     const filledWords = seedWords.filter(word => word.length > 0);
     if (filledWords.length !== seedLength) {
       toast({
-        title: "Frase semilla incompleta",
-        description: `Por favor, introduce las ${seedLength} palabras de tu frase semilla.`,
+        title: "Incomplete Seed Phrase",
+        description: `Please enter all ${seedLength} words of your seed phrase.`,
         variant: "destructive",
       });
       return;
@@ -111,17 +141,26 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setSeedWords(Array(12).fill('')); // Reset state
       setSeedLength(12);
       toast({
-        title: "Wallet Importada",
-        description: "Tu wallet ha sido importada exitosamente.",
+        title: "Wallet Imported",
+        description: "Your wallet has been successfully imported.",
       });
     } catch (error) {
       toast({
-        title: "Error de Importación",
+        title: "Import Error",
         description: (error as Error).message,
         variant: "destructive",
       });
     }
   };
+  
+  const handleCloseCreateDialog = () => {
+    setCreateDialogOpen(false);
+    // Add a small delay to allow the dialog to close before resetting state
+    setTimeout(() => {
+        setNewWallet(null);
+        setCreationStep('showSeed');
+    }, 300);
+  }
 
   return (
     <>
@@ -166,33 +205,59 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
         </CardFooter>
       </Card>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={handleCloseCreateDialog}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create Your Wallet</DialogTitle>
-            <DialogDescription>
-              A new wallet will be created. Please save your secret phrase securely.
-            </DialogDescription>
-          </DialogHeader>
-          {newWallet && <SeedPhraseDisplay seedPhrase={newWallet.seedPhrase} />}
-          <div className="flex items-center space-x-2 my-4">
-            <Checkbox
-              id="terms"
-              checked={hasSavedSeed}
-              onCheckedChange={(checked) => setHasSavedSeed(Boolean(checked))}
-            />
-            <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              I have saved my secret phrase securely.
-            </Label>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleFinalizeCreation} disabled={!hasSavedSeed}>
-              Continue
-            </Button>
-          </DialogFooter>
+          {creationStep === 'showSeed' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Create Your Wallet</DialogTitle>
+                <DialogDescription>
+                  Write down your secret phrase and store it securely. You'll be asked to confirm it.
+                </DialogDescription>
+              </DialogHeader>
+              {newWallet && <SeedPhraseDisplay seedPhrase={newWallet.seedPhrase} />}
+              <DialogFooter>
+                 <Button variant="outline" onClick={handleCloseCreateDialog}>Cancel</Button>
+                <Button onClick={handleGoToConfirmation}>Continue</Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {creationStep === 'confirmSeed' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Confirm Your Phrase</DialogTitle>
+                <DialogDescription>
+                  To ensure you saved it correctly, please enter the following word from your phrase.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Label htmlFor="confirmationWord" className="text-lg font-semibold text-center block mb-4">
+                  Enter word #{randomWordIndex + 1}
+                </Label>
+                <Input
+                  id="confirmationWord"
+                  value={confirmationWord}
+                  onChange={(e) => {
+                    setConfirmationWord(e.target.value);
+                    setConfirmationError('');
+                  }}
+                  className="text-center text-base"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                />
+                {confirmationError && (
+                  <p className="text-destructive text-sm text-center mt-2">{confirmationError}</p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={handleBackToShowSeed}>Back</Button>
+                <Button onClick={handleFinalizeCreation} disabled={!confirmationWord}>Confirm & Create</Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
       
@@ -263,3 +328,5 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     </>
   );
 }
+
+    
