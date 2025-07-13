@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -66,7 +66,6 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     while (indices.size < 3) {
         indices.add(Math.floor(Math.random() * seedWordCount));
     }
-    // Sort for consistent order in the UI
     return Array.from(indices).sort((a, b) => a - b);
   }
 
@@ -152,22 +151,12 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   };
 
   const handleImportWallet = () => {
-    const filledWords = seedWords.filter(word => word.length > 0);
-    if (filledWords.length !== seedLength) {
-      toast({
-        title: "Incomplete Seed Phrase",
-        description: `Please enter all ${seedLength} words of your seed phrase.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
     const importSeedPhrase = seedWords.join(' ');
     try {
       const wallet = importWalletFromSeed(importSeedPhrase);
       onWalletConnected(wallet);
       setImportDialogOpen(false);
-      setSeedWords(Array(12).fill('')); // Reset state
+      setSeedWords(Array(12).fill(''));
       setSeedLength(12);
       toast({
         title: "Wallet Imported",
@@ -176,7 +165,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     } catch (error) {
       toast({
         title: "Import Error",
-        description: (error as Error).message,
+        description: (error as Error).message || "Could not import wallet. Please check your seed phrase.",
         variant: "destructive",
       });
     }
@@ -184,7 +173,6 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   
   const handleCloseCreateDialog = () => {
     setCreateDialogOpen(false);
-    // Add a small delay to allow the dialog to close before resetting state
     setTimeout(() => {
         setNewWallet(null);
         setCreationStep('showSeed');
@@ -192,6 +180,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   }
 
   const isConfirmationDisabled = confirmationWords.some(word => word.trim() === '');
+  const isImportDisabled = seedWords.some(word => word.trim() === '');
 
   return (
     <>
@@ -351,7 +340,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleImportWallet}>
+            <Button onClick={handleImportWallet} disabled={isImportDisabled}>
               Import
             </Button>
           </DialogFooter>
