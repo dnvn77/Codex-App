@@ -2,6 +2,7 @@
 export interface Wallet {
   address: string;
   seedPhrase: string;
+  balance: number; // Simulated balance
   // Based on Aztec Protocol concepts.
   // In a real app, these should be handled by a secure vault/signer.
   masterKey: string;     // The root key from which other keys are derived.

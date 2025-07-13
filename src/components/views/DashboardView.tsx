@@ -82,7 +82,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-2xl font-bold mt-2">0.50 ETH <span className="text-sm font-normal text-muted-foreground">(Testnet)</span></p>
+            <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(2)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
           </div>
 
           <div className="space-y-2 pt-4">

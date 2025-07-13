@@ -43,7 +43,7 @@ function mockHash(input: string): string {
 }
 
 
-function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase'> {
+function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
     // In a real app, the seed phrase would be used with BIP39 to generate a master seed,
     // then SLIP-10 or BIP32/44 to derive keys.
     const masterKey = mockHash(seedPhrase);
@@ -75,6 +75,7 @@ export function createWallet(): Wallet {
 
   return {
     seedPhrase,
+    balance: 0.50, // Default balance for new wallets
     ...derivedKeys,
   };
 }
@@ -91,9 +92,13 @@ export function importWalletFromSeed(seedPhrase: string): Wallet {
         throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
     }
     const derivedKeys = deriveKeysFromSeed(seedPhrase);
+    
+    // Simulate a "fetched" balance for an imported wallet
+    const balance = parseFloat((Math.random() * 2 + 0.1).toFixed(4)); 
 
     return {
         seedPhrase: words.join(' '),
+        balance,
         ...derivedKeys,
     };
 }
