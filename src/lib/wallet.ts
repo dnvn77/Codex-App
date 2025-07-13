@@ -25,7 +25,7 @@ function mockHash(input: string): string {
   // This is NOT a real hash function and is NOT secure. For demonstration only.
   // It's a simple algorithm to create a deterministic, pseudo-random-looking hex string.
   let hash = 0;
-  if (input.length === 0) return '0x0000000000000000000000000000000000000000000000000000000000000000';
+  if (input.length === 0) return '0000000000000000000000000000000000000000000000000000000000000000';
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
@@ -36,25 +36,25 @@ function mockHash(input: string): string {
   for(let i=0; i<8; i++){
     // Tweak the hash to get different values for each segment
     const segment = (hash + i*277) * (i+1);
-    hex += (segment & 0xFFFFFFF).toString(16).padStart(7,'0');
+    hex += Math.abs(segment & 0xFFFFFFF).toString(16).padStart(7,'0');
   }
 
-  return '0x' + hex.substring(0, 64);
+  return hex.substring(0, 64);
 }
 
 
 function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
     // In a real app, the seed phrase would be used with BIP39 to generate a master seed,
     // then SLIP-10 or BIP32/44 to derive keys.
-    const masterKey = mockHash(seedPhrase);
+    const masterKey = '0x' + mockHash(seedPhrase);
     
     // Derive App Key and Nullifier Key from the Master Key.
     // In Aztec, these derivations are specific cryptographic operations.
-    const appKey = mockHash(masterKey + "_app_key");
-    const nullifierKey = mockHash(masterKey + "_nullifier_key");
+    const appKey = '0x' + mockHash(masterKey + "_app_key");
+    const nullifierKey = '0x' + mockHash(masterKey + "_nullifier_key");
 
     // The address is derived from the app key.
-    const address = '0x' + mockHash(appKey).substring(2, 42);
+    const address = '0x' + mockHash(appKey).substring(0, 40);
 
     return {
         address,
@@ -91,6 +91,13 @@ export function importWalletFromSeed(seedPhrase: string): Wallet {
     if (![12, 15, 18, 24].includes(words.length)) {
         throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
     }
+
+    // A simple check if all words seem plausible (from our mock list). In reality, this would be a checksum validation.
+    // This is a basic simulation of an invalid phrase.
+    if (Math.random() > 0.9) { // 10% chance of "invalid" seed for simulation
+       throw new Error("Invalid seed phrase. Please check your words and try again.");
+    }
+
     const derivedKeys = deriveKeysFromSeed(seedPhrase);
     
     // Simulate a "fetched" balance for an imported wallet
@@ -112,6 +119,9 @@ export function importWalletFromSeed(seedPhrase: string): Wallet {
  * @returns A mock Transaction object.
  */
 export function sendTransaction(fromWallet: Wallet, to: string, amount: number): Transaction {
+  if (fromWallet.balance < amount) {
+    throw new Error('Insufficient balance for this transaction.');
+  }
   if (amount <= 0) {
     throw new Error('Amount must be positive.');
   }

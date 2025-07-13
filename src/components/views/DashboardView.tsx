@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [amountError, setAmountError] = useState('');
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(wallet.address);
@@ -30,17 +31,32 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     });
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAmount = e.target.value;
+    setAmount(newAmount);
+
+    if (newAmount) {
+      const numericAmount = parseFloat(newAmount);
+      if (numericAmount < 0) {
+        setAmountError('Amount cannot be negative.');
+      } else if (numericAmount > wallet.balance) {
+        setAmountError('Insufficient balance.');
+      } else {
+        setAmountError('');
+      }
+    } else {
+      setAmountError('');
+    }
+  };
+
   const handleSend = async () => {
-    if (!toAddress || !amount) {
-      toast({ title: 'Missing Information', description: 'Please fill in all fields.', variant: 'destructive' });
+    // Redundant check, as button should be disabled, but good for safety.
+    if (!toAddress || !amount || amountError) {
+      toast({ title: 'Invalid Information', description: 'Please correct the errors before sending.', variant: 'destructive' });
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
       toast({ title: 'Invalid Address', description: 'Please enter a valid Ethereum address.', variant: 'destructive' });
-      return;
-    }
-     if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      toast({ title: 'Invalid Amount', description: 'Please enter a valid amount.', variant: 'destructive' });
       return;
     }
 
@@ -59,6 +75,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   };
   
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
+  
+  const isSendDisabled = useMemo(() => {
+    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0;
+  }, [isSending, toAddress, amount, amountError]);
 
   return (
     <Card className="w-full shadow-lg">
@@ -82,7 +102,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(2)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
+            <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(4)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
           </div>
 
           <div className="space-y-2 pt-4">
@@ -104,15 +124,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                 type="number"
                 placeholder="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
                 disabled={isSending}
               />
+              {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
             </div>
           </div>
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" onClick={handleSend} disabled={isSending}>
+        <Button className="w-full" onClick={handleSend} disabled={isSendDisabled}>
           {isSending ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
           ) : (
