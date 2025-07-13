@@ -44,12 +44,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [creationStep, setCreationStep] = useState<CreationStep>('showSeed');
   const [confirmationWord, setConfirmationWord] = useState('');
   const [confirmationError, setConfirmationError] = useState('');
-
-  const randomWordIndex = useMemo(() => {
-    if (!newWallet) return 0;
-    // Generate a random index from 0 to 11
-    return Math.floor(Math.random() * 12);
-  }, [newWallet]);
+  const [randomWordIndex, setRandomWordIndex] = useState(0);
 
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
@@ -64,8 +59,14 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     setConfirmationError('');
     setCreateDialogOpen(true);
   };
+  
+  const generateRandomIndex = () => {
+    // Generate a random index from 0 to 11
+    return Math.floor(Math.random() * 12);
+  }
 
   const handleGoToConfirmation = () => {
+    setRandomWordIndex(generateRandomIndex());
     setCreationStep('confirmSeed');
   };
   
@@ -206,7 +207,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       </Card>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={handleCloseCreateDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           {creationStep === 'showSeed' && (
             <>
               <DialogHeader>
@@ -328,5 +329,3 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     </>
   );
 }
-
-    
