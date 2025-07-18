@@ -1,10 +1,27 @@
 import { AppContainer } from '@/components/AppContainer';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-4">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md mx-auto">
         <AppContainer />
+      </div>
+      <div className="fixed bottom-0 left-0">
+          <div className="p-4" data-tauri-drag-region>
+              <div
+                  id="headlessui-portal-root"
+                  style={{
+                      '--removed-scroll-width': '0px',
+                      'pointer-events': 'none',
+                  }}
+              >
+                  <div></div>
+              </div>
+          </div>
       </div>
     </main>
   );
