@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -69,6 +69,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const [averageGas, setAverageGas] = useState(0.00045);
   const [isCalculatingGas, setIsCalculatingGas] = useState(true);
 
+  const [ensResolution, setEnsResolution] = useState<{status: 'idle' | 'loading' | 'success' | 'error', address: string | null}>({ status: 'idle', address: null });
+
   useEffect(() => {
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
@@ -84,6 +86,28 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
 
     return () => clearTimeout(timer);
   }, [toAddress, amount]);
+  
+  useEffect(() => {
+    const handleEnsLookup = async () => {
+      if (toAddress.endsWith('.eth')) {
+        setEnsResolution({ status: 'loading', address: null });
+        const resolvedAddress = await resolveEnsName(toAddress);
+        if (resolvedAddress) {
+          setEnsResolution({ status: 'success', address: resolvedAddress });
+        } else {
+          setEnsResolution({ status: 'error', address: null });
+        }
+      } else {
+        setEnsResolution({ status: 'idle', address: null });
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      handleEnsLookup();
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [toAddress]);
 
 
   const handleCopyAddress = () => {
@@ -114,13 +138,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
 
   const executeSend = async () => {
     setIsConfirmingTx(false);
-    // Redundant check, as button should be disabled, but good for safety.
-    if (!toAddress || !amount || amountError) {
+
+    const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
+
+    if (!finalAddress || !amount || amountError) {
       toast({ title: 'Invalid Information', description: 'Please correct the errors before sending.', variant: 'destructive' });
       return;
     }
-    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
-      toast({ title: 'Invalid Address', description: 'Please enter a valid Ethereum address.', variant: 'destructive' });
+    if (!/^0x[a-fA-F0-9]{40}$/.test(finalAddress)) {
+      toast({ title: 'Invalid Address', description: 'Please enter a valid Ethereum address or a valid ENS name.', variant: 'destructive' });
       return;
     }
 
@@ -128,7 +154,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     try {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const tx = sendTransaction(wallet, toAddress, parseFloat(amount));
+      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount));
       onTransactionSent(tx);
       setToAddress('');
       setAmount('');
@@ -174,8 +200,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
   const isSendDisabled = useMemo(() => {
-    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas;
-  }, [isSending, toAddress, amount, amountError, isCalculatingGas]);
+    const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress));
+    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid;
+  }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
   return (
     <Card className="w-full shadow-lg">
@@ -208,14 +235,21 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
               <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} />
              </div>
             <div className="space-y-1">
-              <Label htmlFor="toAddress">Destination Address</Label>
+              <Label htmlFor="toAddress">Destination Address or ENS Name</Label>
               <Input
                 id="toAddress"
-                placeholder="0x..."
+                placeholder="0x... or vitalik.eth"
                 value={toAddress}
                 onChange={(e) => setToAddress(e.target.value)}
                 disabled={isSending}
               />
+               {ensResolution.status !== 'idle' && (
+                <div className="text-xs pt-1 flex items-center gap-2">
+                  {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>Resolving ENS name...</>}
+                  {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
+                  {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">Could not resolve ENS name.</span></>}
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="amount">Amount (ETH)</Label>

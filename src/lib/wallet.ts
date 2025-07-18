@@ -94,7 +94,7 @@ export function importWalletFromSeed(seedPhrase: string): Wallet {
 
     // A simple check if all words seem plausible (from our mock list). In reality, this would be a checksum validation.
     // This is a basic simulation of an invalid phrase.
-    if (Math.random() > 0.9) { // 10% chance of "invalid" seed for simulation
+    if (words.some(word => !MOCK_WORDS.includes(word.toLowerCase()))) {
        throw new Error("Invalid seed phrase. Please check your words and try again.");
     }
 
@@ -139,4 +139,27 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number):
     amount,
     proposedOnL1,
   };
+}
+
+
+/**
+ * Simulates resolving an ENS name to an Ethereum address.
+ * @param ensName The ENS name to resolve (e.g., 'vitalik.eth').
+ * @returns A Promise that resolves to the address string or null if not found.
+ */
+export async function resolveEnsName(ensName: string): Promise<string | null> {
+  const mockEnsRegistry: { [key: string]: string } = {
+    'vitalik.eth': '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+    'ens.eth': '0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72',
+    'firefly.eth': '0x8A4b2162248231575C4b125AD31F7539a8528d29',
+    'wallet.eth': '0x577433D224934B26f97b1161d0b57134377F928F'
+  };
+
+  return new Promise(resolve => {
+    // Simulate network delay
+    setTimeout(() => {
+      const address = mockEnsRegistry[ensName.toLowerCase()];
+      resolve(address || null);
+    }, 1000);
+  });
 }
