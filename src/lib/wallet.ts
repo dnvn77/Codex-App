@@ -94,11 +94,11 @@ export function importWalletFromSeed(seedPhrase: string): Wallet {
 
     // A simple check if all words seem plausible (from our mock list). In reality, this would be a checksum validation.
     // This is a basic simulation of an invalid phrase.
-    if (words.some(word => !MOCK_WORDS.includes(word))) {
+    if (words.some(word => !MOCK_WORDS.includes(word.toLowerCase()))) {
        throw new Error("Invalid seed phrase. Please check your words and try again.");
     }
 
-    const derivedKeys = deriveKeysFromSeed(seedPhrase);
+    const derivedKeys = deriveKeysFromSeed(words.join(' '));
     
     // Simulate a "fetched" balance for an imported wallet
     const balance = parseFloat((Math.random() * 2 + 0.1).toFixed(4)); 
