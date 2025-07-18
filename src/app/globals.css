@@ -73,6 +73,36 @@ body {
     --input: 282 15% 25%;
     --ring: 275 59% 67%;
   }
+
+  .dim {
+    --background: 212 65% 11%;
+    --foreground: 210 22% 82%;
+
+    --card: 212 60% 15%;
+    --card-foreground: 210 22% 82%;
+
+    --popover: 212 65% 11%;
+    --popover-foreground: 210 22% 82%;
+
+    --primary: 207 68% 53%;
+    --primary-foreground: 212 65% 95%;
+
+    --secondary: 212 50% 25%;
+    --secondary-foreground: 210 22% 82%;
+
+    --muted: 212 50% 25%;
+    --muted-foreground: 210 22% 70%;
+    
+    --accent: 210 45% 35%;
+    --accent-foreground: 210 22% 90%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 212 50% 30%;
+    --input: 212 50% 30%;
+    --ring: 207 68% 53%;
+  }
 }
 
 @layer base {
