@@ -72,6 +72,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
 
   const [ensResolution, setEnsResolution] = useState<{status: 'idle' | 'loading' | 'success' | 'error', address: string | null}>({ status: 'idle', address: null });
 
+  const maxSendableAmount = useMemo(() => {
+    const max = wallet.balance - gasCost;
+    return max > 0 ? max : 0;
+  }, [wallet.balance, gasCost]);
+
   useEffect(() => {
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
@@ -81,6 +86,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
         const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005; //Slightly vary the average
         setGasCost(newGas);
         setAverageGas(newAvg);
+      } else {
+        // Set a default gas cost if inputs are empty for max calculation
+        setGasCost(0.00042);
+        setAverageGas(0.00045);
       }
       setIsCalculatingGas(false);
     }, 500); // Simulate network/calculation delay
@@ -125,10 +134,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
 
     if (newAmount) {
       const numericAmount = parseFloat(newAmount);
-      if (numericAmount < 0) {
+      if (isNaN(numericAmount)) {
+        setAmountError('Invalid number.');
+      } else if (numericAmount < 0) {
         setAmountError('Amount cannot be negative.');
-      } else if (numericAmount > wallet.balance) {
-        setAmountError('Insufficient balance.');
+      } else if (numericAmount + gasCost > wallet.balance) {
+        setAmountError('Insufficient balance for amount + gas.');
       } else {
         setAmountError('');
       }
@@ -136,6 +147,19 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       setAmountError('');
     }
   };
+
+  const handleSetMaxAmount = () => {
+    const maxAmountStr = maxSendableAmount.toFixed(18).replace(/\.?0+$/, ''); // Use high precision then trim
+    setAmount(maxAmountStr);
+    // Trigger validation with the new amount
+    const numericAmount = parseFloat(maxAmountStr);
+    if (numericAmount + gasCost > wallet.balance) {
+      setAmountError('Insufficient balance for amount + gas.');
+    } else {
+      setAmountError('');
+    }
+  };
+
 
   const executeSend = async () => {
     setIsConfirmingTx(false);
@@ -168,6 +192,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   };
 
   const handleSendClick = () => {
+    // Final check before proceeding
+    const numericAmount = parseFloat(amount);
+    if (numericAmount + gasCost > wallet.balance) {
+        setAmountError('Insufficient balance for amount + gas.');
+        toast({ title: 'Error', description: 'Cannot send, insufficient balance for amount + gas fee.', variant: 'destructive' });
+        return;
+    }
+
     if (gasCost > averageGas) {
       setIsConfirmingTx(true);
     } else {
@@ -254,7 +286,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                 )}
               </div>
               <div className="space-y-1">
-                <Label htmlFor="amount">Amount (ETH)</Label>
+                <div className="flex justify-between items-end">
+                  <Label htmlFor="amount">Amount (ETH)</Label>
+                  <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>
+                    Max: {maxSendableAmount.toFixed(5)}
+                  </button>
+                </div>
                 <Input
                   id="amount"
                   type="number"
