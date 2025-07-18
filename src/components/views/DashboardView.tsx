@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Chatbot } from '@/components/shared/Chatbot';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -205,124 +206,127 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
   return (
-    <Card className="w-full shadow-lg">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Wallet Dashboard</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onDisconnect}>
-            <LogOut className="mr-2 h-4 w-4"/>
-            Disconnect
-          </Button>
-        </div>
-        <CardDescription>Send private transactions on the Sepolia testnet.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-secondary/50">
-            <Label>Your Wallet Address</Label>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-mono text-primary">{truncatedAddress}</p>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(4)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
+    <>
+      <Card className="w-full shadow-lg">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Wallet Dashboard</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onDisconnect}>
+              <LogOut className="mr-2 h-4 w-4"/>
+              Disconnect
+            </Button>
           </div>
-
-          <div className="space-y-2 pt-4">
-             <div className="flex justify-between items-start">
-              <h3 className="text-lg font-medium">Send Transaction</h3>
-              <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} />
-             </div>
-            <div className="space-y-1">
-              <Label htmlFor="toAddress">Destination Address or ENS Name</Label>
-              <Input
-                id="toAddress"
-                placeholder="0x... or vitalik.eth"
-                value={toAddress}
-                onChange={(e) => setToAddress(e.target.value)}
-                disabled={isSending}
-              />
-               {ensResolution.status !== 'idle' && (
-                <div className="text-xs pt-1 flex items-center gap-2">
-                  {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>Resolving ENS name...</>}
-                  {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
-                  {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">Could not resolve ENS name.</span></>}
-                </div>
-              )}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="amount">Amount (ETH)</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0.01"
-                value={amount}
-                onChange={handleAmountChange}
-                disabled={isSending}
-              />
-              {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
-            {isSending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
-            ) : (
-                <><Send className="mr-2 h-4 w-4" /> Send Privately</>
-            )}
-        </Button>
-      </CardFooter>
-      
-      {/* High Gas Warning Dialog */}
-      <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="text-destructive" />
-              High Gas Fee Warning
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
-              <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
-                  <span className="font-semibold">Average Fee:</span>
-                  <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
-                  <span className="font-semibold text-destructive">Current Fee:</span>
-                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+          <CardDescription>Send private transactions on the Sepolia testnet.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-secondary/50">
+              <Label>Your Wallet Address</Label>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-mono text-primary">{truncatedAddress}</p>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleHighGasCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
-              Send Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      {/* Notify on Gas Drop Dialog */}
-      <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
-        <AlertDialogContent>
+              <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(4)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
+            </div>
+
+            <div className="space-y-2 pt-4">
+               <div className="flex justify-between items-start">
+                <h3 className="text-lg font-medium">Send Transaction</h3>
+                <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} />
+               </div>
+              <div className="space-y-1">
+                <Label htmlFor="toAddress">Destination Address or ENS Name</Label>
+                <Input
+                  id="toAddress"
+                  placeholder="0x... or vitalik.eth"
+                  value={toAddress}
+                  onChange={(e) => setToAddress(e.target.value)}
+                  disabled={isSending}
+                />
+                 {ensResolution.status !== 'idle' && (
+                  <div className="text-xs pt-1 flex items-center gap-2">
+                    {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>Resolving ENS name...</>}
+                    {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
+                    {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">Could not resolve ENS name.</span></>}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="amount">Amount (ETH)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.01"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  disabled={isSending}
+                />
+                {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
+              {isSending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+              ) : (
+                  <><Send className="mr-2 h-4 w-4" /> Send Privately</>
+              )}
+          </Button>
+        </CardFooter>
+        
+        {/* High Gas Warning Dialog */}
+        <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
+          <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                    <BellRing className="text-primary"/>
-                    Get Notified?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                    Would you like to receive a push notification when the gas fee for this transaction is lower?
-                </AlertDialogDescription>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive" />
+                High Gas Fee Warning
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
+                <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
+                    <span className="font-semibold">Average Fee:</span>
+                    <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                    <span className="font-semibold text-destructive">Current Fee:</span>
+                    <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+                </div>
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>No, thanks</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSetupGasNotification}>
-                    Yes, notify me
-                </AlertDialogAction>
+              <AlertDialogCancel onClick={handleHighGasCancel}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
+                Send Anyway
+              </AlertDialogAction>
             </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Card>
+          </AlertDialogContent>
+        </AlertDialog>
+        
+        {/* Notify on Gas Drop Dialog */}
+        <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                      <BellRing className="text-primary"/>
+                      Get Notified?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Would you like to receive a push notification when the gas fee for this transaction is lower?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>No, thanks</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSetupGasNotification}>
+                      Yes, notify me
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Card>
+      <Chatbot />
+    </>
   );
 }
