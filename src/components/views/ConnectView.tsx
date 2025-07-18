@@ -137,10 +137,10 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
+    const pastedText = e.clipboardData.getData('text').toLowerCase();
     
     // Validate pasted text contains only letters and spaces
-    if (!/^[a-zA-Z\s]*$/.test(pastedText)) {
+    if (!/^[a-z\s]*$/.test(pastedText)) {
       toast({
         title: "Invalid Input",
         description: "Seed phrase can only contain letters and spaces.",

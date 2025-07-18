@@ -87,14 +87,14 @@ export function createWallet(): Wallet {
  * @returns A Wallet object.
  */
 export function importWalletFromSeed(seedPhrase: string): Wallet {
-    const words = seedPhrase.trim().split(/\s+/);
+    const words = seedPhrase.trim().toLowerCase().split(/\s+/);
     if (![12, 15, 18, 24].includes(words.length)) {
         throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
     }
 
     // A simple check if all words seem plausible (from our mock list). In reality, this would be a checksum validation.
     // This is a basic simulation of an invalid phrase.
-    if (words.some(word => !MOCK_WORDS.includes(word.toLowerCase()))) {
+    if (words.some(word => !MOCK_WORDS.includes(word))) {
        throw new Error("Invalid seed phrase. Please check your words and try again.");
     }
 
@@ -152,7 +152,8 @@ export async function resolveEnsName(ensName: string): Promise<string | null> {
     'vitalik.eth': '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     'ens.eth': '0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72',
     'firefly.eth': '0x8A4b2162248231575C4b125AD31F7539a8528d29',
-    'wallet.eth': '0x577433D224934B26f97b1161d0b57134377F928F'
+    'wallet.eth': '0x577433D224934B26f97b1161d0b57134377F928F',
+    'lesmo.eth': '0x4349F4Cf93a6282928A4a8352652E5C3138b725a'
   };
 
   return new Promise(resolve => {
