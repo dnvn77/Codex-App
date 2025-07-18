@@ -10,19 +10,6 @@ export default function Home() {
       <div className="w-full max-w-md mx-auto">
         <AppContainer />
       </div>
-      <div className="fixed bottom-0 left-0">
-          <div className="p-4" data-tauri-drag-region>
-              <div
-                  id="headlessui-portal-root"
-                  style={{
-                      '--removed-scroll-width': '0px',
-                      'pointer-events': 'none',
-                  }}
-              >
-                  <div></div>
-              </div>
-          </div>
-      </div>
     </main>
   );
 }
