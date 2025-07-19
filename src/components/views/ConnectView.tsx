@@ -23,9 +23,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { createWallet, importWalletFromSeed } from '@/lib/wallet';
+import { createWallet, importWalletFromSeed, storeWallet } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -35,7 +35,7 @@ interface ConnectViewProps {
 }
 
 type SeedLength = 12 | 15 | 18 | 24;
-type CreationStep = 'showSeed' | 'confirmSeed';
+type CreationStep = 'showSeed' | 'confirmSeed' | 'setPassword';
 
 export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
@@ -46,6 +46,11 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
   const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
   const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
+
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
@@ -76,7 +81,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     setCreationStep('confirmSeed');
   };
   
-  const handleFinalizeCreation = () => {
+  const handleGoToSetPassword = () => {
     if (newWallet) {
       const correctWords = newWallet.seedPhrase.split(' ');
       const newErrors = ['', '', ''];
@@ -92,16 +97,32 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setConfirmationErrors(newErrors);
 
       if (allCorrect) {
-        onWalletConnected(newWallet);
-        setCreateDialogOpen(false);
-        setNewWallet(null);
-        toast({
-          title: t.walletCreatedTitle,
-          description: t.walletCreatedDesc,
-        });
+        setCreationStep('setPassword');
       }
     }
   };
+
+  const handleFinalizeCreation = async () => {
+    if (password.length < 8) {
+      setPasswordError(t.passwordTooShort);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPasswordError(t.passwordsDoNotMatch);
+      return;
+    }
+    if (newWallet) {
+      await storeWallet(newWallet, password);
+      onWalletConnected(newWallet);
+      setCreateDialogOpen(false);
+      setNewWallet(null);
+      toast({
+        title: t.walletCreatedTitle,
+        description: t.walletCreatedDesc,
+      });
+    }
+  };
+
 
   const handleBackToShowSeed = () => {
     setCreationStep('showSeed');
@@ -170,14 +191,9 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     const importSeedPhrase = seedWords.join(' ');
     try {
       const wallet = importWalletFromSeed(importSeedPhrase);
-      onWalletConnected(wallet);
+      setNewWallet(wallet); // Use newWallet state to pass to password step
+      setCreationStep('setPassword'); // Re-use the set password step
       setImportDialogOpen(false);
-      setSeedWords(Array(12).fill(''));
-      setSeedLength(12);
-      toast({
-        title: t.walletImportedTitle,
-        description: t.walletImportedDesc,
-      });
     } catch (error) {
       toast({
         title: t.importErrorTitle,
@@ -192,11 +208,15 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     setTimeout(() => {
         setNewWallet(null);
         setCreationStep('showSeed');
+        setPassword('');
+        setConfirmPassword('');
+        setPasswordError('');
     }, 300);
   }
 
   const isConfirmationDisabled = confirmationWords.some(word => word.trim() === '');
   const isImportDisabled = seedWords.some(word => word.trim() === '');
+  const isSetPasswordDisabled = !password || !confirmPassword || !!passwordError;
 
   return (
     <>
@@ -287,10 +307,53 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={handleBackToShowSeed}>{t.backButton}</Button>
-                <Button onClick={handleFinalizeCreation} disabled={isConfirmationDisabled}>{t.confirmAndCreateButton}</Button>
+                <Button onClick={handleGoToSetPassword} disabled={isConfirmationDisabled}>{t.continueButton}</Button>
               </DialogFooter>
             </>
           )}
+
+          {creationStep === 'setPassword' && (
+             <>
+               <DialogHeader>
+                 <DialogTitle>{t.setPasswordTitle}</DialogTitle>
+                 <DialogDescription>{t.setPasswordDesc}</DialogDescription>
+               </DialogHeader>
+               <div className="py-4 space-y-4">
+                 <div>
+                   <Label htmlFor="password">{t.passwordLabel}</Label>
+                   <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setPasswordError(''); }}
+                        className="pr-10"
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                   </div>
+                 </div>
+                 <div>
+                   <Label htmlFor="confirmPassword">{t.confirmPasswordLabel}</Label>
+                   <Input
+                     id="confirmPassword"
+                     type={showPassword ? "text" : "password"}
+                     value={confirmPassword}
+                     onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+                   />
+                 </div>
+                 {passwordError && (
+                   <p className="text-destructive text-sm">{passwordError}</p>
+                 )}
+               </div>
+               <DialogFooter>
+                 <Button variant="outline" onClick={handleCloseCreateDialog}>{t.cancelButton}</Button>
+                 <Button onClick={handleFinalizeCreation} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
+               </DialogFooter>
+             </>
+          )}
+
         </DialogContent>
       </Dialog>
       
@@ -351,7 +414,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
               <Button variant="outline">{t.cancelButton}</Button>
             </DialogClose>
             <Button onClick={handleImportWallet} disabled={isImportDisabled}>
-              {t.importButton}
+              {t.continueButton}
             </Button>
           </DialogFooter>
         </DialogContent>

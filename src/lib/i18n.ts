@@ -88,6 +88,22 @@ export const translations = {
     backToWalletButton: 'Back to Wallet',
     copied: 'Copied!',
     copiedDesc: (label: string) => `${label} has been copied to clipboard.`,
+
+    // Password fields
+    setPasswordTitle: 'Set a Password',
+    setPasswordDesc: 'This password will be used to unlock your wallet on this device.',
+    passwordLabel: 'Password',
+    confirmPasswordLabel: 'Confirm Password',
+    finishSetupButton: 'Finish Setup',
+    passwordTooShort: 'Password must be at least 8 characters long.',
+    passwordsDoNotMatch: 'Passwords do not match.',
+    
+    // Lock screen fields
+    unlockWalletTitle: 'Unlock Your Wallet',
+    unlockWalletDesc: 'Enter your password to access your Violet Vault.',
+    unlockButton: 'Unlock',
+    unlockingButton: 'Unlocking...',
+    wrongPasswordError: 'Wrong password. Please try again.',
   },
   es: {
     mainTitle: 'Violet Vault',
@@ -173,6 +189,22 @@ export const translations = {
     backToWalletButton: 'Volver a la Billetera',
     copied: '¡Copiado!',
     copiedDesc: (label: string) => `${label} ha sido copiado al portapapeles.`,
+    
+    // Password fields
+    setPasswordTitle: 'Establecer una Contraseña',
+    setPasswordDesc: 'Esta contraseña se usará para desbloquear tu billetera en este dispositivo.',
+    passwordLabel: 'Contraseña',
+    confirmPasswordLabel: 'Confirmar Contraseña',
+    finishSetupButton: 'Finalizar Configuración',
+    passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
+    passwordsDoNotMatch: 'Las contraseñas no coinciden.',
+
+    // Lock screen fields
+    unlockWalletTitle: 'Desbloquear tu Billetera',
+    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Violet Vault.',
+    unlockButton: 'Desbloquear',
+    unlockingButton: 'Desbloqueando...',
+    wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
   },
   zh: {
     mainTitle: '紫罗兰金库',
@@ -258,6 +290,22 @@ export const translations = {
     backToWalletButton: '返回钱包',
     copied: '已复制！',
     copiedDesc: (label: string) => `${label} 已被复制到剪贴板。`,
+
+    // Password fields
+    setPasswordTitle: '设置密码',
+    setPasswordDesc: '此密码将用于在此设备上解锁您的钱包。',
+    passwordLabel: '密码',
+    confirmPasswordLabel: '确认密码',
+    finishSetupButton: '完成设置',
+    passwordTooShort: '密码必须至少为8个字符。',
+    passwordsDoNotMatch: '密码不匹配。',
+    
+    // Lock screen fields
+    unlockWalletTitle: '解锁您的钱包',
+    unlockWalletDesc: '输入您的密码以访问您的紫罗兰金库。',
+    unlockButton: '解锁',
+    unlockingButton: '解锁中...',
+    wrongPasswordError: '密码错误。请重试。',
   },
   hi: {
     mainTitle: 'वायलेट वॉल्ट',
@@ -343,6 +391,22 @@ export const translations = {
     backToWalletButton: 'वॉलेट पर वापस',
     copied: 'कॉपी किया गया!',
     copiedDesc: (label: string) => `${label} क्लिपबोर्ड पर कॉपी किया गया है।`,
+
+    // Password fields
+    setPasswordTitle: 'एक पासवर्ड सेट करें',
+    setPasswordDesc: 'यह पासवर्ड इस डिवाइस पर आपके वॉलेट को अनलॉक करने के लिए उपयोग किया जाएगा।',
+    passwordLabel: 'पासवर्ड',
+    confirmPasswordLabel: 'पासवर्ड की पुष्टि कीजिये',
+    finishSetupButton: 'सेटअप समाप्त करें',
+    passwordTooShort: 'पासवर्ड कम से कम 8 वर्णों का होना चाहिए।',
+    passwordsDoNotMatch: 'पासवर्ड मेल नहीं खाते।',
+
+    // Lock screen fields
+    unlockWalletTitle: 'अपना वॉलेट अनलॉक करें',
+    unlockWalletDesc: 'अपने वायलेट वॉल्ट तक पहुंचने के लिए अपना पासवर्ड दर्ज करें।',
+    unlockButton: 'अनलॉक करें',
+    unlockingButton: 'अनलॉक हो रहा है...',
+    wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
   },
   fr: {
     mainTitle: 'Violet Vault',
@@ -428,6 +492,22 @@ export const translations = {
     backToWalletButton: 'Retour au portefeuille',
     copied: 'Copié !',
     copiedDesc: (label: string) => `${label} a été copié dans le presse-papiers.`,
+
+    // Password fields
+    setPasswordTitle: 'Définir un mot de passe',
+    setPasswordDesc: 'Ce mot de passe sera utilisé pour déverrouiller votre portefeuille sur cet appareil.',
+    passwordLabel: 'Mot de passe',
+    confirmPasswordLabel: 'Confirmez le mot de passe',
+    finishSetupButton: 'Terminer la configuration',
+    passwordTooShort: 'Le mot de passe doit comporter au moins 8 caractères.',
+    passwordsDoNotMatch: 'Les mots de passe ne correspondent pas.',
+
+    // Lock screen fields
+    unlockWalletTitle: 'Déverrouiller votre portefeuille',
+    unlockWalletDesc: 'Entrez votre mot de passe pour accéder à votre Violet Vault.',
+    unlockButton: 'Déverrouiller',
+    unlockingButton: 'Déverrouillage...',
+    wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
   },
   ar: {
     mainTitle: 'خزنة البنفسج',
@@ -513,6 +593,22 @@ export const translations = {
     backToWalletButton: 'العودة إلى المحفظة',
     copied: 'تم النسخ!',
     copiedDesc: (label: string) => `تم نسخ ${label} إلى الحافظة.`,
+
+    // Password fields
+    setPasswordTitle: 'تعيين كلمة مرور',
+    setPasswordDesc: 'سيتم استخدام كلمة المرور هذه لفتح محفظتك على هذا الجهاز.',
+    passwordLabel: 'كلمة المرور',
+    confirmPasswordLabel: 'تأكيد كلمة المرور',
+    finishSetupButton: 'إنهاء الإعداد',
+    passwordTooShort: 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.',
+    passwordsDoNotMatch: 'كلمتا المرور غير متطابقتين.',
+    
+    // Lock screen fields
+    unlockWalletTitle: 'افتح محفظتك',
+    unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى خزنة البنفسج الخاصة بك.',
+    unlockButton: 'فتح',
+    unlockingButton: 'جارٍ الفتح...',
+    wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
   },
   bn: {
     mainTitle: 'ভায়োলেট ভল্ট',
@@ -598,6 +694,22 @@ export const translations = {
     backToWalletButton: 'ওয়ালেটে ফিরে যান',
     copied: 'অনুলিপি করা হয়েছে!',
     copiedDesc: (label: string) => `${label} ক্লিপবোর্ডে অনুলিপি করা হয়েছে।`,
+    
+    // Password fields
+    setPasswordTitle: 'একটি পাসওয়ার্ড সেট করুন',
+    setPasswordDesc: 'এই পাসওয়ার্ডটি এই ডিভাইসে আপনার ওয়ালেট আনলক করতে ব্যবহৃত হবে।',
+    passwordLabel: 'পাসওয়ার্ড',
+    confirmPasswordLabel: 'পাসওয়ার্ড নিশ্চিত করুন',
+    finishSetupButton: 'সেটআপ শেষ করুন',
+    passwordTooShort: 'পাসওয়ার্ড কমপক্ষে 8 অক্ষরের হতে হবে।',
+    passwordsDoNotMatch: 'পাসওয়ার্ড মেলে না।',
+
+    // Lock screen fields
+    unlockWalletTitle: 'আপনার ওয়ালেট আনলক করুন',
+    unlockWalletDesc: 'আপনার ভায়োলেট ভল্ট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
+    unlockButton: 'আনলক করুন',
+    unlockingButton: 'আনলক করা হচ্ছে...',
+    wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন.',
   },
   ru: {
     mainTitle: 'Violet Vault',
@@ -683,6 +795,22 @@ export const translations = {
     backToWalletButton: 'Вернуться в кошелек',
     copied: 'Скопировано!',
     copiedDesc: (label: string) => `${label} скопировано в буфер обмена.`,
+
+    // Password fields
+    setPasswordTitle: 'Установить пароль',
+    setPasswordDesc: 'Этот пароль будет использоваться для разблокировки вашего кошелька на этом устройстве.',
+    passwordLabel: 'Пароль',
+    confirmPasswordLabel: 'Подтвердите пароль',
+    finishSetupButton: 'Завершить настройку',
+    passwordTooShort: 'Пароль должен содержать не менее 8 символов.',
+    passwordsDoNotMatch: 'Пароли не совпадают.',
+    
+    // Lock screen fields
+    unlockWalletTitle: 'Разблокировать ваш кошелек',
+    unlockWalletDesc: 'Введите пароль для доступа к вашему Violet Vault.',
+    unlockButton: 'Разблокировать',
+    unlockingButton: 'Разблокировка...',
+    wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
   },
   pt: {
     mainTitle: 'Violet Vault',
@@ -768,6 +896,22 @@ export const translations = {
     backToWalletButton: 'Voltar para a Carteira',
     copied: 'Copiado!',
     copiedDesc: (label: string) => `${label} foi copiado para a área de transferência.`,
+
+    // Password fields
+    setPasswordTitle: 'Definir uma Senha',
+    setPasswordDesc: 'Esta senha será usada para desbloquear sua carteira neste dispositivo.',
+    passwordLabel: 'Senha',
+    confirmPasswordLabel: 'Confirmar Senha',
+    finishSetupButton: 'Concluir Configuração',
+    passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
+    passwordsDoNotMatch: 'As senhas não coincidem.',
+
+    // Lock screen fields
+    unlockWalletTitle: 'Desbloquear sua Carteira',
+    unlockWalletDesc: 'Insira sua senha para acessar sua Violet Vault.',
+    unlockButton: 'Desbloquear',
+    unlockingButton: 'Desbloqueando...',
+    wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
   },
   id: {
     mainTitle: 'Violet Vault',
@@ -853,5 +997,21 @@ export const translations = {
     backToWalletButton: 'Kembali ke Dompet',
     copied: 'Disalin!',
     copiedDesc: (label: string) => `${label} telah disalin ke papan klip.`,
+
+    // Password fields
+    setPasswordTitle: 'Atur Kata Sandi',
+    setPasswordDesc: 'Kata sandi ini akan digunakan untuk membuka kunci dompet Anda di perangkat ini.',
+    passwordLabel: 'Kata Sandi',
+    confirmPasswordLabel: 'Konfirmasi Kata Sandi',
+    finishSetupButton: 'Selesaikan Pengaturan',
+    passwordTooShort: 'Kata sandi harus minimal 8 karakter.',
+    passwordsDoNotMatch: 'Kata sandi tidak cocok.',
+
+    // Lock screen fields
+    unlockWalletTitle: 'Buka Kunci Dompet Anda',
+    unlockWalletDesc: 'Masukkan kata sandi Anda untuk mengakses Violet Vault Anda.',
+    unlockButton: 'Buka kunci',
+    unlockingButton: 'Membuka kunci...',
+    wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
   },
 };

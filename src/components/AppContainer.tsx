@@ -5,11 +5,13 @@ import React, { useState, useEffect } from 'react';
 import { ConnectView } from '@/components/views/ConnectView';
 import { DashboardView } from '@/components/views/DashboardView';
 import { ReceiptView } from '@/components/views/ReceiptView';
+import { LockView } from '@/components/views/LockView';
 import { Loader2 } from 'lucide-react';
-import type { Wallet, Transaction } from '@/lib/types';
+import type { Wallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
+import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
 
-type View = 'connect' | 'dashboard' | 'receipt';
+type View = 'connect' | 'dashboard' | 'receipt' | 'lock';
 type Status = 'validating' | 'ready' | 'error';
 
 export function AppContainer() {
@@ -32,6 +34,13 @@ export function AppContainer() {
         } else {
           console.warn('Running outside of Telegram or initData is not available.');
         }
+
+        if (getStoredWallet()) {
+          setView('lock');
+        } else {
+          setView('connect');
+        }
+
         setStatus('ready');
       }, 1000);
     }
@@ -41,6 +50,11 @@ export function AppContainer() {
     setWallet(newWallet);
     setView('dashboard');
   };
+
+  const handleWalletUnlocked = (unlockedWallet: Wallet) => {
+    setWallet(unlockedWallet);
+    setView('dashboard');
+  }
 
   const handleTransactionSent = (sentTransaction: Transaction) => {
     if (wallet) {
@@ -59,6 +73,7 @@ export function AppContainer() {
 
   const handleDisconnect = () => {
     setWallet(null);
+    clearStoredWallet();
     setView('connect');
   };
 
@@ -82,6 +97,7 @@ export function AppContainer() {
   return (
     <div className="w-full">
       {view === 'connect' && <ConnectView onWalletConnected={handleWalletConnected} />}
+      {view === 'lock' && <LockView onWalletUnlocked={handleWalletUnlocked} />}
       {view === 'dashboard' && wallet && (
         <DashboardView
           wallet={wallet}

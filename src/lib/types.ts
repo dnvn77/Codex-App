@@ -1,4 +1,5 @@
 
+
 export interface Wallet {
   address: string;
   seedPhrase: string;
@@ -8,6 +9,12 @@ export interface Wallet {
   masterKey: string;     // The root key from which other keys are derived.
   appKey: string;        // Used for signing transactions for a specific app.
   nullifierKey: string;  // Used to derive nullifiers for spending private notes.
+}
+
+export interface StoredWallet {
+  encryptedSeed: string;
+  address: string;
+  balance: number;
 }
 
 export interface Transaction {
