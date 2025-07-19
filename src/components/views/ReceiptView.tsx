@@ -55,7 +55,6 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
     
     try {
         const cardElement = receiptRef.current;
-        // Get the computed background color of the card to match the theme
         const backgroundColor = window.getComputedStyle(cardElement).backgroundColor;
 
         const dataUrl = await htmlToImage.toPng(cardElement, { 
@@ -70,20 +69,18 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             title: t.shareTxTitle,
             text: t.shareTxText(transaction.txHash),
             files: [file],
-            url: etherscanUrl, // url is a fallback
+            url: etherscanUrl,
         };
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share(shareData);
         } else if (navigator.share) {
-            // Fallback for browsers that support share but not files
             await navigator.share({
                 title: t.shareTxTitle,
                 text: t.shareTxText(transaction.txHash),
                 url: etherscanUrl,
             });
         } else {
-             // Fallback for desktop browsers
             navigator.clipboard.writeText(etherscanUrl);
             toast({
                 title: t.linkCopied,
