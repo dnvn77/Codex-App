@@ -87,7 +87,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
             while (indices.size < 3) {
               indices.add(Math.floor(Math.random() * wallet.seedPhrase.split(' ').length));
             }
-            setRandomWordIndices(Array.from(indices).sort((a,b) => a - b));
+            setRandomWordIndices(Array.from(indices));
             setRecoveryStep('confirmSeed');
             setRecoveryOpen(true);
         } else {

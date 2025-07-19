@@ -99,7 +99,7 @@ export function ConnectView({
     while (indices.size < 3) {
         indices.add(Math.floor(Math.random() * seedWordCount));
     }
-    return Array.from(indices).sort((a, b) => a - b);
+    return Array.from(indices);
   }
 
   const handleGoToConfirmation = () => {
