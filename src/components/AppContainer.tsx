@@ -9,7 +9,7 @@ import { LockView } from '@/components/views/LockView';
 import { Loader2 } from 'lucide-react';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
-import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
+import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock';
@@ -67,6 +67,8 @@ export function AppContainer() {
       // Update wallet balance after transaction
       const newBalance = wallet.balance - sentTransaction.amount;
       setWallet({ ...wallet, balance: newBalance });
+      // Persist the new balance to localStorage
+      updateStoredWalletBalance(newBalance);
     }
     setTransaction(sentTransaction);
     setView('receipt');
@@ -124,7 +126,7 @@ export function AppContainer() {
           <ReceiptView transaction={transaction} onBack={handleBackToDashboard} />
         )}
       </div>
-      {status === 'ready' && <Chatbot />}
+       {status === 'ready' && <Chatbot />}
     </>
   );
 }

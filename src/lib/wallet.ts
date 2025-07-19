@@ -262,6 +262,17 @@ export function getStoredWallet(): StoredWallet | null {
     return data ? JSON.parse(data) : null;
 }
 
+export function updateStoredWalletBalance(newBalance: number): void {
+  const stored = getStoredWallet();
+  if (!stored) return;
+
+  const updatedWallet: StoredWallet = {
+    ...stored,
+    balance: newBalance
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWallet));
+}
+
 export async function unlockWallet(password: string): Promise<Wallet | null> {
     const stored = getStoredWallet();
     if (!stored) return null;
