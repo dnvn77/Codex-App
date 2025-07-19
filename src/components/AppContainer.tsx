@@ -6,12 +6,14 @@ import { ConnectView } from '@/components/views/ConnectView';
 import { DashboardView } from '@/components/views/DashboardView';
 import { ReceiptView } from '@/components/views/ReceiptView';
 import { LockView } from '@/components/views/LockView';
+import { CreditsView } from '@/components/views/CreditsView';
 import { Loader2 } from 'lucide-react';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
+import { Chatbot } from '@/components/shared/Chatbot';
 
-type View = 'connect' | 'dashboard' | 'receipt' | 'lock';
+type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
 type Status = 'validating' | 'ready' | 'error';
 
 export function AppContainer() {
@@ -64,8 +66,9 @@ export function AppContainer() {
   const handleTransactionSent = (sentTransaction: any) => {
     if (wallet) {
       // Update wallet balance after transaction
-      const newBalance = wallet.balance - sentTransaction.amount;
-      setWallet({ ...wallet, balance: newBalance });
+      const newBalance = wallet.balance - sentTransaction.amount - 0.00042; // Subtracting mock gas fee
+      const updatedWallet = { ...wallet, balance: newBalance };
+      setWallet(updatedWallet);
       // Persist the new balance to localStorage
       updateStoredWalletBalance(newBalance);
     }
@@ -77,6 +80,10 @@ export function AppContainer() {
     setTransaction(null);
     setView('dashboard');
   };
+  
+  const handleShowCredits = () => {
+    setView('credits');
+  }
 
   const handleDisconnect = () => {
     setWallet(null);
@@ -119,12 +126,17 @@ export function AppContainer() {
             wallet={wallet}
             onTransactionSent={handleTransactionSent}
             onDisconnect={handleDisconnect}
+            onShowCredits={handleShowCredits}
           />
         )}
         {view === 'receipt' && transaction && (
           <ReceiptView transaction={transaction} onBack={handleBackToDashboard} />
         )}
+        {view === 'credits' && (
+          <CreditsView onBack={handleBackToDashboard} />
+        )}
       </div>
+       {status === 'ready' && (view === 'dashboard' || view === 'receipt' || view === 'credits') && <Chatbot />}
     </>
   );
 }

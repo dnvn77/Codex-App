@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -36,6 +36,7 @@ interface DashboardViewProps {
   wallet: Wallet;
   onTransactionSent: (transaction: Transaction) => void;
   onDisconnect: () => void;
+  onShowCredits: () => void;
 }
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
@@ -63,7 +64,7 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
 };
 
 
-export function DashboardView({ wallet, onTransactionSent, onDisconnect }: DashboardViewProps) {
+export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
   const [toAddress, setToAddress] = useState('');
@@ -278,10 +279,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>{t.dashboardTitle}</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onDisconnect}>
-              <LogOut className="mr-2 h-4 w-4"/>
-              {t.disconnectButton}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={onShowCredits}>
+                <Star className="mr-2 h-4 w-4"/>
+                Créditos
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onDisconnect}>
+                <LogOut className="mr-2 h-4 w-4"/>
+                {t.disconnectButton}
+              </Button>
+            </div>
           </div>
           <CardDescription>{t.dashboardDesc}</CardDescription>
         </CardHeader>
