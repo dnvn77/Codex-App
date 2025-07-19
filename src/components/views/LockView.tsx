@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock, Eye, EyeOff, LogOut, Check } from 'lucide-react';
-import { unlockWallet, importWalletFromSeed } from '@/lib/wallet';
+import { Loader2, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
+import { unlockWallet } from '@/lib/wallet';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTranslations } from '@/hooks/useTranslations';
 import { ConnectView } from './ConnectView';
@@ -54,11 +54,14 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     // Simulate delay for effect
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const unlockedWallet = await unlockWallet(password);
-    
-    if (unlockedWallet) {
-      onWalletUnlocked(unlockedWallet);
-    } else {
+    try {
+        const unlockedWallet = await unlockWallet(password);
+        if (unlockedWallet) {
+          onWalletUnlocked(unlockedWallet);
+        } else {
+          throw new Error("Unlock failed");
+        }
+    } catch {
       setError(t.wrongPasswordError);
       setIsLoading(false);
     }
@@ -67,29 +70,37 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
   const handleForgotPassword = async () => {
     setIsLoading(true);
     setError('');
-    // We need to get the full seed phrase to be able to do the confirmation
-    // This requires a temporary correct password. In a real app, this would be handled differently.
-    // For this demo, we'll prompt for it.
+    // This is a temporary measure for the demo. 
+    // In a real app, you would not expose the seed phrase like this.
     const tempPassword = prompt("DEBUG: To start recovery, please enter your current password to get the seed phrase for the confirmation step.");
-    if (tempPassword) {
-      const wallet = await unlockWallet(tempPassword);
-      if (wallet) {
-        setRecoverySeedPhrase(wallet.seedPhrase);
-        const indices = new Set<number>();
-        while (indices.size < 3) {
-          indices.add(Math.floor(Math.random() * wallet.seedPhrase.split(' ').length));
-        }
-        setRandomWordIndices(Array.from(indices).sort((a,b) => a - b));
-        setRecoveryStep('confirmSeed');
-        setRecoveryOpen(true);
-      } else {
-        alert("Wrong password. Cannot initiate recovery flow for this demo.");
-      }
+    if (!tempPassword) {
+        setIsLoading(false);
+        return;
     }
-    setIsLoading(false);
+    
+    try {
+        const wallet = await unlockWallet(tempPassword);
+        if (wallet && wallet.seedPhrase) {
+            setRecoverySeedPhrase(wallet.seedPhrase);
+            const indices = new Set<number>();
+            while (indices.size < 3) {
+              indices.add(Math.floor(Math.random() * wallet.seedPhrase.split(' ').length));
+            }
+            setRandomWordIndices(Array.from(indices).sort((a,b) => a - b));
+            setRecoveryStep('confirmSeed');
+            setRecoveryOpen(true);
+        } else {
+            alert("Wrong password. Cannot initiate recovery flow for this demo.");
+        }
+    } catch (e) {
+        alert("Wrong password. Cannot initiate recovery flow for this demo.");
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleConfirmRecoverySeed = () => {
+    if (!recoverySeedPhrase) return;
     const correctWords = recoverySeedPhrase.split(' ');
     const newErrors = ['', '', ''];
     let allCorrect = true;
@@ -122,7 +133,24 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
 
   const handlePasswordReset = (wallet: Wallet) => {
     setRecoveryOpen(false);
-    onWalletConnected(wallet);
+    // Reset state after closing
+    setTimeout(() => {
+        setRecoveryStep('start');
+        setRecoverySeedPhrase('');
+        setConfirmationWords(['','','']);
+        setConfirmationErrors(['','','']);
+    }, 300);
+    onWalletUnlocked(wallet);
+  }
+
+  const handleCloseRecovery = () => {
+    setRecoveryOpen(false);
+     setTimeout(() => {
+        setRecoveryStep('start');
+        setRecoverySeedPhrase('');
+        setConfirmationWords(['','','']);
+        setConfirmationErrors(['','','']);
+    }, 300);
   }
 
   const truncatedAddress = `${storedWallet.address.slice(0, 6)}...${storedWallet.address.slice(-4)}`;
@@ -158,7 +186,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+              {error && <p className="text-sm font-medium text-destructive mt-1">{error}</p>}
             </div>
              <button type="button" onClick={handleForgotPassword} className="text-sm text-primary hover:underline" disabled={isLoading}>
                 {t.forgotPasswordLink}
@@ -186,7 +214,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
         </form>
       </Card>
       
-      <Dialog open={isRecoveryOpen} onOpenChange={setRecoveryOpen}>
+      <Dialog open={isRecoveryOpen} onOpenChange={handleCloseRecovery}>
         <DialogContent>
             {recoveryStep === 'confirmSeed' && (
               <>
@@ -214,7 +242,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
                   ))}
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setRecoveryOpen(false)}>{t.cancelButton}</Button>
+                  <Button variant="outline" onClick={handleCloseRecovery}>{t.cancelButton}</Button>
                   <Button onClick={handleConfirmRecoverySeed} disabled={confirmationWords.some(w => !w)}>{t.continueButton}</Button>
                 </DialogFooter>
               </>

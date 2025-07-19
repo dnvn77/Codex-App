@@ -277,12 +277,12 @@ export function ConnectView({
 
   if (isRecoveryMode) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.setPasswordTitle}</CardTitle>
-          <CardDescription>{t.setNewPasswordDesc}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="w-full">
+        <DialogHeader>
+          <DialogTitle>{t.setPasswordTitle}</DialogTitle>
+          <DialogDescription>{t.setNewPasswordDesc}</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
           <div>
             <Label htmlFor="password">{t.newPasswordLabel}</Label>
             <div className="relative">
@@ -318,11 +318,11 @@ export function ConnectView({
           {passwordError && (
             <p className="text-destructive text-sm">{passwordError}</p>
           )}
-        </CardContent>
-        <CardFooter>
+        </div>
+        <DialogFooter>
             <Button onClick={handleFinalizeCreation} disabled={isSetPasswordDisabled} className="w-full">{t.resetPasswordButton}</Button>
-        </CardFooter>
-      </Card>
+        </DialogFooter>
+      </div>
     );
   }
 
@@ -330,23 +330,16 @@ export function ConnectView({
     <>
       <Card className="text-center shadow-lg">
         <CardHeader>
-          <div className="mx-auto bg-primary/10 p-3 rounded-full mb-2">
+          <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
             <svg
-              xmlns="http://www.w3.org/2000/svg"
+              role="img"
               viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
+              xmlns="http://www.w3.org/2000/svg"
               className="h-10 w-10 text-primary"
+              fill="currentColor"
             >
-              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Z" />
-              <path d="M16 8.5c-1-.5-2.5-1-4-1-1.5 0-3 .5-4 1" />
-              <path d="M12 14v4" />
-              <path d="M12 12c-1.5 0-3 .5-4 1" />
-              <path d="M16 12.5c-1 .5-2.5 1-4 1s-3-.5-4-1" />
-              <path d="M8 8.5c1 .5 2.5 1 4 1 1.5 0 3-.5 4-1" />
+              <title>Violet Vault</title>
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2.16c5.42 0 9.84 4.42 9.84 9.84S17.42 21.84 12 21.84 2.16 17.42 2.16 12 6.58 2.16 12 2.16zM8.83 8.01l-3.23 4.87c.3.96.79 1.85 1.43 2.62l3.41-5.13a4.34 4.34 0 00-1.61-2.36zm8.05 4.87l-3.24-4.87a4.34 4.34 0 00-1.61 2.36l3.42 5.13c.64-.77 1.13-1.66 1.43-2.62zM12 13.56l-1.6-2.4c.1-.07.2-.12.3-.18.84-.6 1.96-.6 2.8 0 .1.06.2.11.3.18l-1.8 2.4z"/>
             </svg>
           </div>
           <CardTitle className="font-headline text-3xl">{t.mainTitle}</CardTitle>
@@ -369,7 +362,7 @@ export function ConnectView({
         </CardFooter>
       </Card>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={handleCloseCreateDialog}>
         <DialogContent className="sm:max-w-lg">
           {creationStep === 'showSeed' && (
             <>
