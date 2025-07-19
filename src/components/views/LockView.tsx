@@ -72,7 +72,8 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     setError('');
     // This is a temporary measure for the demo. 
     // In a real app, you would not expose the seed phrase like this.
-    const tempPassword = prompt("DEBUG: To start recovery, please enter your current password to get the seed phrase for the confirmation step.");
+    // A more secure flow would involve email or another factor.
+    const tempPassword = prompt(t.debugRecoveryPrompt);
     if (!tempPassword) {
         setIsLoading(false);
         return;
@@ -90,10 +91,10 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
             setRecoveryStep('confirmSeed');
             setRecoveryOpen(true);
         } else {
-            alert("Wrong password. Cannot initiate recovery flow for this demo.");
+            alert(t.debugRecoveryError);
         }
     } catch (e) {
-        alert("Wrong password. Cannot initiate recovery flow for this demo.");
+        alert(t.debugRecoveryError);
     } finally {
         setIsLoading(false);
     }

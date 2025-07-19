@@ -172,41 +172,23 @@ export async function resolveEnsName(ensName: string): Promise<string | null> {
 
 
 // --- Wallet Storage and Encryption ---
-// In a real app, use a robust library like Web Crypto API for this.
+// Using Web Crypto API for strong encryption.
 
-async function encrypt(data: string, secret: string): Promise<string> {
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(secret, iv.slice(0, 8)); // Use part of IV as salt
-    const encodedData = new TextEncoder().encode(data);
-    
-    const encrypted = await window.crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        encodedData
-    );
-
-    const encryptedData = new Uint8Array(iv.length + encrypted.byteLength);
-    encryptedData.set(iv, 0);
-    encryptedData.set(new Uint8Array(encrypted), iv.length);
-
-    return btoa(String.fromCharCode.apply(null, Array.from(encryptedData)));
+// Helper to convert ArrayBuffer to Base64 string
+function bufferToBase64(buffer: ArrayBuffer): string {
+    return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(buffer))));
 }
 
-async function decrypt(encryptedDataB64: string, secret: string): Promise<string> {
-    const encryptedData = new Uint8Array(atob(encryptedDataB64).split('').map(c => c.charCodeAt(0)));
-    const iv = encryptedData.slice(0, 12);
-    const data = encryptedData.slice(12);
-    const key = await deriveKey(secret, iv.slice(0, 8)); // Use part of IV as salt
-
-    const decrypted = await window.crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        data
-    );
-
-    return new TextDecoder().decode(decrypted);
+// Helper to convert Base64 string to Uint8Array
+function base64ToUint8Array(base64: string): Uint8Array {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
 }
-
 
 async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   const encoder = new TextEncoder();
@@ -218,8 +200,11 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
     ['deriveKey']
   );
 
+  // Using a higher iteration count for increased security against brute-force attacks.
+  const iterations = 300000;
+
   return window.crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     true,
@@ -227,11 +212,45 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   );
 }
 
+async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance'>> {
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(secret, salt);
+    const encodedData = new TextEncoder().encode(data);
+    
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encodedData
+    );
+
+    return {
+        encryptedSeed: bufferToBase64(encrypted),
+        salt: bufferToBase64(salt),
+        iv: bufferToBase64(iv),
+    };
+}
+
+async function decrypt(stored: StoredWallet, secret: string): Promise<string> {
+    const salt = base64ToUint8Array(stored.salt);
+    const iv = base64ToUint8Array(stored.iv);
+    const encryptedData = base64ToUint8Array(stored.encryptedSeed);
+    
+    const key = await deriveKey(secret, salt);
+
+    const decrypted = await window.crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encryptedData
+    );
+
+    return new TextDecoder().decode(decrypted);
+}
 
 export async function storeWallet(wallet: Wallet, password: string): Promise<void> {
-    const encryptedSeed = await encrypt(wallet.seedPhrase, password);
+    const encryptedData = await encrypt(wallet.seedPhrase, password);
     const storedWallet: StoredWallet = {
-        encryptedSeed,
+        ...encryptedData,
         address: wallet.address,
         balance: wallet.balance
     };
@@ -248,12 +267,12 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
     if (!stored) return null;
 
     try {
-        const seedPhrase = await decrypt(stored.encryptedSeed, password);
+        const seedPhrase = await decrypt(stored, password);
         const derivedKeys = deriveKeysFromSeed(seedPhrase);
         
-        // Ensure the derived address matches the stored one
+        // Ensure the derived address matches the stored one as a sanity check.
         if(derivedKeys.address !== stored.address) {
-            throw new Error("Address mismatch after decryption");
+            throw new Error("Address mismatch after decryption. This indicates a serious issue.");
         }
 
         return {
@@ -262,8 +281,8 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
             balance: stored.balance,
         };
     } catch (e) {
-        console.error("Decryption failed:", e);
-        return null; // Indicates wrong password
+        console.error("Decryption failed (likely wrong password):", e);
+        return null;
     }
 }
 

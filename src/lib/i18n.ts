@@ -114,6 +114,9 @@ export const translations = {
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
     forgotPasswordLink: 'Forgot password?',
+    debugRecoveryPrompt: 'DEBUG: To start recovery, please enter your current password to get the seed phrase for the confirmation step.',
+    debugRecoveryError: 'Wrong password. Cannot initiate recovery flow for this demo.',
+
 
     // Password Recovery
     confirmPhraseToResetDesc: 'To reset your password, please confirm you own this wallet by entering the correct words from your secret phrase.',
@@ -245,6 +248,9 @@ export const translations = {
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
     forgotPasswordLink: '¿Olvidaste tu contraseña?',
+    debugRecoveryPrompt: 'DEBUG: Para iniciar la recuperación, por favor ingresa tu contraseña actual para obtener la frase secreta para el paso de confirmación.',
+    debugRecoveryError: 'Contraseña incorrecta. No se puede iniciar el flujo de recuperación para esta demostración.',
+
 
     // Password Recovery
     confirmPhraseToResetDesc: 'Para restablecer tu contraseña, confirma que eres el dueño de esta billetera ingresando las palabras correctas de tu frase secreta.',
@@ -376,6 +382,8 @@ export const translations = {
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
     forgotPasswordLink: '忘记密码？',
+    debugRecoveryPrompt: '调试：要开始恢复，请输入您当前的密码以获取确认步骤的助记词。',
+    debugRecoveryError: '密码错误。无法为此演示启动恢复流程。',
 
     // Password Recovery
     confirmPhraseToResetDesc: '要重置您的密码，请通过输入您的秘密短语中的正确单词来确认您拥有此钱包。',
@@ -507,6 +515,8 @@ export const translations = {
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
     forgotPasswordLink: 'पासवर्ड भूल गए?',
+    debugRecoveryPrompt: 'डीबग: रिकवरी शुरू करने के लिए, कृपया पुष्टिकरण चरण के लिए बीज वाक्यांश प्राप्त करने के लिए अपना वर्तमान पासवर्ड दर्ज करें।',
+    debugRecoveryError: 'गलत पासवर्ड। इस डेमो के लिए रिकवरी प्रवाह शुरू नहीं किया जा सकता है।',
 
     // Password Recovery
     confirmPhraseToResetDesc: 'अपना पासवर्ड रीसेट करने के लिए, कृपया पुष्टि करें कि आप अपने गुप्त वाक्यांश से सही शब्द दर्ज करके इस वॉलेट के मालिक हैं।',
@@ -638,6 +648,8 @@ export const translations = {
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
     forgotPasswordLink: 'Mot de passe oublié ?',
+    debugRecoveryPrompt: 'DÉBOGAGE : Pour commencer la récupération, veuillez entrer votre mot de passe actuel pour obtenir la phrase de départ pour l\'étape de confirmation.',
+    debugRecoveryError: 'Mauvais mot de passe. Impossible de lancer le flux de récupération pour cette démo.',
 
     // Password Recovery
     confirmPhraseToResetDesc: 'Pour réinitialiser votre mot de passe, veuillez confirmer que vous possédez ce portefeuille en entrant les mots corrects de votre phrase secrète.',
@@ -769,6 +781,9 @@ export const translations = {
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
     forgotPasswordLink: 'هل نسيت كلمة المرور؟',
+    debugRecoveryPrompt: 'تصحيح الأخطاء: لبدء الاسترداد، يرجى إدخال كلمة المرور الحالية للحصول على العبارة الأولية لخطوة التأكيد.',
+    debugRecoveryError: 'كلمة مرور خاطئة. لا يمكن بدء تدفق الاسترداد لهذا العرض التوضيحي.',
+
 
     // Password Recovery
     confirmPhraseToResetDesc: 'لإعادة تعيين كلمة المرور الخاصة بك، يرجى تأكيد أنك تملك هذه المحفظة عن طريق إدخال الكلمات الصحيحة من عبارتك السرية.',
@@ -900,6 +915,9 @@ export const translations = {
     unlockingButton: 'আনলক করা হচ্ছে...',
     wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
     forgotPasswordLink: 'পাসওয়ার্ড ভুলে গেছেন?',
+    debugRecoveryPrompt: 'ডিবাগ: পুনরুদ্ধার শুরু করতে, নিশ্চিতকরণ পদক্ষেপের জন্য বীজ বাক্যাংশ পেতে আপনার বর্তমান পাসওয়ার্ড লিখুন।',
+    debugRecoveryError: 'ভুল পাসওয়ার্ড। এই ডেমোর জন্য পুনরুদ্ধার প্রবাহ শুরু করা যাবে না।',
+
 
     // Password Recovery
     confirmPhraseToResetDesc: 'আপনার পাসওয়ার্ড পুনরায় সেট করতে, আপনার গোপন বাক্যাংশ থেকে সঠিক শব্দ প্রবেশ করে এই ওয়ালেটের মালিকানা নিশ্চিত করুন।',
@@ -1031,6 +1049,8 @@ export const translations = {
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
     forgotPasswordLink: 'Забыли пароль?',
+    debugRecoveryPrompt: 'ОТЛАДКА: Чтобы начать восстановление, введите текущий пароль, чтобы получить сид-фразу для шага подтверждения.',
+    debugRecoveryError: 'Неверный пароль. Не удается запустить процесс восстановления для этой демонстрации.',
 
     // Password Recovery
     confirmPhraseToResetDesc: 'Чтобы сбросить пароль, подтвердите, что вы являетесь владельцем этого кошелька, введя правильные слова из вашей секретной фразы.',
@@ -1162,6 +1182,8 @@ export const translations = {
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
     forgotPasswordLink: 'Esqueceu a senha?',
+    debugRecoveryPrompt: 'DEBUG: Para iniciar a recuperação, insira sua senha atual para obter a frase semente para a etapa de confirmação.',
+    debugRecoveryError: 'Senha incorreta. Não é possível iniciar o fluxo de recuperação para esta demonstração.',
 
     // Password Recovery
     confirmPhraseToResetDesc: 'Para redefinir sua senha, confirme que você possui esta carteira inserindo as palavras corretas de sua frase secreta.',
@@ -1293,6 +1315,9 @@ export const translations = {
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
     forgotPasswordLink: 'Lupa kata sandi?',
+    debugRecoveryPrompt: 'DEBUG: Untuk memulai pemulihan, masukkan kata sandi Anda saat ini untuk mendapatkan frasa benih untuk langkah konfirmasi.',
+    debugRecoveryError: 'Kata sandi salah. Tidak dapat memulai alur pemulihan untuk demo ini.',
+
     
     // Password Recovery
     confirmPhraseToResetDesc: 'Untuk mengatur ulang kata sandi Anda, harap konfirmasikan bahwa Anda memiliki dompet ini dengan memasukkan kata-kata yang benar dari frasa rahasia Anda.',

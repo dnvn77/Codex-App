@@ -12,7 +12,12 @@ export interface Wallet {
 }
 
 export interface StoredWallet {
+  // Base64 encoded encrypted seed phrase
   encryptedSeed: string;
+  // Base64 encoded salt used for key derivation
+  salt: string;
+  // Base64 encoded initialization vector
+  iv: string;
   address: string;
   balance: number;
 }
