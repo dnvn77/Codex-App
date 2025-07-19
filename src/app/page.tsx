@@ -1,5 +1,4 @@
 import { AppContainer } from '@/components/AppContainer';
-import { Chatbot } from '@/components/shared/Chatbot';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
@@ -13,7 +12,6 @@ export default function Home() {
           <AppContainer />
         </div>
       </main>
-      <Chatbot />
     </>
   );
 }

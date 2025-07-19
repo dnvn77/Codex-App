@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
+import { Chatbot } from '@/components/shared/Chatbot';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock';
 type Status = 'validating' | 'ready' | 'error';
@@ -101,26 +102,29 @@ export function AppContainer() {
   }
 
   return (
-    <div className="w-full">
-      {view === 'connect' && <ConnectView onWalletConnected={handleWalletConnected} />}
-      {view === 'lock' && storedWalletInfo && (
-        <LockView 
-          storedWallet={storedWalletInfo}
-          onWalletUnlocked={handleWalletUnlocked}
-          onDisconnect={handleDisconnect}
-          onWalletConnected={handleWalletConnected} // for password reset
-        />
-      )}
-      {view === 'dashboard' && wallet && (
-        <DashboardView
-          wallet={wallet}
-          onTransactionSent={handleTransactionSent}
-          onDisconnect={handleDisconnect}
-        />
-      )}
-      {view === 'receipt' && transaction && (
-        <ReceiptView transaction={transaction} onBack={handleBackToDashboard} />
-      )}
-    </div>
+    <>
+      <div className="w-full">
+        {view === 'connect' && <ConnectView onWalletConnected={handleWalletConnected} />}
+        {view === 'lock' && storedWalletInfo && (
+          <LockView 
+            storedWallet={storedWalletInfo}
+            onWalletUnlocked={handleWalletUnlocked}
+            onDisconnect={handleDisconnect}
+            onWalletConnected={handleWalletConnected} // for password reset
+          />
+        )}
+        {view === 'dashboard' && wallet && (
+          <DashboardView
+            wallet={wallet}
+            onTransactionSent={handleTransactionSent}
+            onDisconnect={handleDisconnect}
+          />
+        )}
+        {view === 'receipt' && transaction && (
+          <ReceiptView transaction={transaction} onBack={handleBackToDashboard} />
+        )}
+      </div>
+      {status === 'ready' && <Chatbot />}
+    </>
   );
 }

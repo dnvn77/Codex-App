@@ -204,7 +204,7 @@ export function ConnectView({
   const handleWordChange = (index: number, value: string) => {
     if (/^[a-zA-Z]*$/.test(value)) {
       const newWords = [...seedWords];
-      newWords[index] = value.trim();
+      newWords[index] = value.trim().toLowerCase();
       setSeedWords(newWords);
     }
   };
@@ -535,5 +535,3 @@ export function ConnectView({
     </>
   );
 }
-
-    
