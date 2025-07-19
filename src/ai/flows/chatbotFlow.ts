@@ -9,6 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { translations, supportedLanguages, type Language } from '@/lib/i18n';
 
 const ChatbotMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -61,15 +62,25 @@ const chatbotFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ history, languageCode }) => {
-    // If the history is empty, it's the first message. Send a greeting.
+    const lang: Language = supportedLanguages.includes(languageCode as Language) ? (languageCode as Language) : 'en';
+
     if (history.length === 0) {
-      if (languageCode === 'es') {
-        return "¡Hola! Soy Elisa, tu asistente para Violet Vault. ¿Cómo puedo ayudarte hoy?";
-      }
-      return "Hello! I'm Elisa, your assistant for Violet Vault. How can I help you today?";
+      const greetings: Record<Language, string> = {
+        en: "Hello! I'm Elisa, your assistant for Violet Vault. How can I help you today?",
+        es: "¡Hola! Soy Elisa, tu asistente para Violet Vault. ¿Cómo puedo ayudarte hoy?",
+        zh: "你好！我是Elisa，Violet Vault的助手。今天我能为你做些什么？",
+        hi: "नमस्ते! मैं एलिसा हूँ, वायलेट वॉल्ट के लिए आपकी सहायक। मैं आज आपकी कैसे मदद कर सकती हूँ?",
+        fr: "Bonjour ! Je suis Elisa, votre assistante pour Violet Vault. Comment puis-je vous aider aujourd'hui ?",
+        ar: "مرحباً! أنا إليسا، مساعِدتك في Violet Vault. كيف يمكنني مساعدتك اليوم؟",
+        bn: "হ্যালো! আমি এলিসা, ভায়োলেট ভল্টের জন্য আপনার সহকারী। আমি আজ আপনাকে কিভাবে সাহায্য করতে পারি?",
+        ru: "Здравствуйте! Я Элиза, ваш помощник в Violet Vault. Чем я могу вам сегодня помочь?",
+        pt: "Olá! Eu sou Elisa, sua assistente para o Violet Vault. Como posso ajudar hoje?",
+        id: "Halo! Saya Elisa, asisten Anda untuk Violet Vault. Bagaimana saya bisa membantu Anda hari ini?",
+      };
+      return greetings[lang];
     }
 
-    const { output } = await chatbotPrompt({ history, languageCode });
+    const { output } = await chatbotPrompt({ history, languageCode: lang });
     return output!;
   }
 );
