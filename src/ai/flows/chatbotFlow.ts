@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { translations, supportedLanguages, type Language } from '@/lib/i18n';
 
 const ChatbotMessageSchema = z.object({

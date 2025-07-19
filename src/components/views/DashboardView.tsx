@@ -135,6 +135,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     toast({
       title: t.addressCopiedTitle,
       description: t.addressCopiedDesc,
+      duration: 2000,
     });
   };
 
@@ -177,11 +178,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
 
     if (!finalAddress || !amount || amountError) {
-      toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
+      toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive', duration: 5000 });
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(finalAddress)) {
-      toast({ title: t.invalidAddressTitle, description: t.invalidAddressDesc, variant: 'destructive' });
+      toast({ title: t.invalidAddressTitle, description: t.invalidAddressDesc, variant: 'destructive', duration: 5000 });
       return;
     }
 
@@ -195,7 +196,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       setAmount('');
     } catch (error) {
       const err = error as Error;
-      toast({ title: t.txFailedTitle, description: err.message, variant: 'destructive' });
+      toast({ title: t.txFailedTitle, description: err.message, variant: 'destructive', duration: 5000 });
     } finally {
       setIsSending(false);
     }
@@ -206,7 +207,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     const numericAmount = parseFloat(amount);
     if (numericAmount + gasCost > wallet.balance) {
         setAmountError(t.insufficientBalanceError);
-        toast({ title: t.error, description: t.insufficientBalanceError, variant: 'destructive' });
+        toast({ title: t.error, description: t.insufficientBalanceError, variant: 'destructive', duration: 5000 });
         return;
     }
 
@@ -233,6 +234,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     toast({
         title: t.gasAlertSetTitle,
         description: t.gasAlertSetDesc(notificationAmount, notificationAddress),
+        duration: 2000,
     });
     setShowGasNotifyPrompt(false);
     setNotificationAddress('');
@@ -252,12 +254,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
             toast({
                 title: t.addressScannedTitle,
                 description: t.addressScannedDesc,
+                duration: 2000,
             });
         } else {
             toast({
                 title: t.invalidQrTitle,
                 description: t.invalidQrDesc,
                 variant: 'destructive',
+                duration: 5000,
             });
         }
     }

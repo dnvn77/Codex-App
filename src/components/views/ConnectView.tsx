@@ -24,12 +24,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword } from '@/lib/wallet';
-import type { Wallet, StoredWallet } from '@/lib/types';
+import type { Wallet } from '@/lib/types';
 import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
-import { commonPasswords } from '@/lib/commonPasswords';
+import Image from 'next/image';
 
 
 interface ConnectViewProps {
@@ -147,9 +147,9 @@ export function ConnectView({
     // Handle password reset flow
     if (isRecoveryMode && recoverySeedPhrase) {
       try {
-        walletToSave = importWalletFromSeed(recoverySeedPhrase);
+        walletToSave = await importWalletFromSeed(recoverySeedPhrase);
       } catch (error) {
-        toast({ title: t.error, description: (error as Error).message, variant: "destructive" });
+        toast({ title: t.error, description: (error as Error).message, variant: "destructive", duration: 5000 });
         return;
       }
     }
@@ -168,6 +168,7 @@ export function ConnectView({
       toast({
         title: isRecoveryMode ? t.passwordResetSuccessTitle : t.walletCreatedTitle,
         description: isRecoveryMode ? t.passwordResetSuccessDesc : t.walletCreatedDesc,
+        duration: 2000,
       });
     }
   };
@@ -217,6 +218,7 @@ export function ConnectView({
         title: t.invalidInputTitle,
         description: t.invalidInputDesc,
         variant: "destructive",
+        duration: 5000,
       });
       return;
     }
@@ -232,14 +234,15 @@ export function ConnectView({
         title: t.invalidPasteTitle,
         description: t.invalidPasteDesc(words.length),
         variant: "destructive",
+        duration: 5000,
       });
     }
   };
 
-  const handleImportWallet = () => {
+  const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
     try {
-      const wallet = importWalletFromSeed(importSeedPhrase);
+      const wallet = await importWalletFromSeed(importSeedPhrase);
       setNewWallet(wallet); // Use newWallet state to pass to password step
       setCreationStep('setPassword'); // Re-use the set password step
       setImportDialogOpen(false); // Close this dialog
@@ -249,6 +252,7 @@ export function ConnectView({
         title: t.importErrorTitle,
         description: (error as Error).message || t.importErrorDesc,
         variant: "destructive",
+        duration: 5000,
       });
     }
   };
@@ -331,15 +335,7 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-             <svg
-                role="img"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-10 w-10 text-primary"
-                fill="currentColor"
-              >
-              <path d="M18.333 3.61a3.02 3.02 0 0 0-2.133.88l-7.51 7.51a3.018 3.018 0 0 0-.88 2.133v3.257a1.667 1.667 0 0 0 1.666 1.667h3.258a3.02 3.02 0 0 0 2.132-.88l7.51-7.51a3.018 3.018 0 0 0 .88-2.133V4.277a.667.667 0 0 0-.667-.667h-4.257Zm-1.127 1.126a1.008 1.008 0 0 1 .707.293l.94.94a1 1 0 1 1-1.414 1.414l-.94-.94a1.008 1.008 0 0 1-.293-.707v-.426a.667.667 0 0 1 .14-.426.667.667 0 0 1 .453-.193h.406Zm-1.886 1.886a1 1 0 1 1 1.414 1.414l-.94.94a1.008 1.008 0 0 1-.707.293h-.426a.667.667 0 0 1-.426-.14.667.667 0 0 1-.193-.453v-.406a1.008 1.008 0 0 1 .293-.707l.94-.94Z M12.5 2.01a3.02 3.02 0 0 0-2.133.88L2.857 10.4a3.018 3.018 0 0 0-.88 2.133v6.794a.667.667 0 0 0 .667.667h6.794a3.02 3.02 0 0 0 2.132-.88l7.51-7.51a3.018 3.018 0 0 0 .88-2.133V5.944a1.667 1.667 0 0 0-1.666-1.667h-6.794Z"/>
-              </svg>
+            <Image src="/strawberry-logo.svg" alt="Strawberry Wallet Logo" width={40} height={40} className="h-10 w-10 text-primary" />
           </div>
           <CardTitle className="font-headline text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>

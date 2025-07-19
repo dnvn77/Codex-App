@@ -55,6 +55,7 @@ export function Chatbot() {
       title: "Chatbot Error",
       description: "Sorry, I couldn't get a response. Please try again.",
       variant: "destructive",
+      duration: 5000,
     });
   };
 
@@ -81,7 +82,7 @@ export function Chatbot() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed bottom-4 right-16 z-40">
         <Button onClick={() => setIsOpen(true)} size="icon" className="rounded-full h-14 w-14 shadow-lg">
           <MessageSquare />
         </Button>
@@ -104,7 +105,7 @@ export function Chatbot() {
                 >
                   {message.role === 'model' && (
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="strawberry cartoon" />
+                      <AvatarImage src="/strawberry-logo.svg" data-ai-hint="strawberry cartoon" />
                       <AvatarFallback>S</AvatarFallback>
                     </Avatar>
                   )}
@@ -128,7 +129,7 @@ export function Chatbot() {
               {isLoading && (
                 <div className="flex items-start gap-3 justify-start">
                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="strawberry cartoon" />
+                      <AvatarImage src="/strawberry-logo.svg" data-ai-hint="strawberry cartoon" />
                       <AvatarFallback>S</AvatarFallback>
                     </Avatar>
                   <div className="bg-muted rounded-lg px-4 py-3 flex items-center">
