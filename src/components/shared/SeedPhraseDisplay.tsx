@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Check, Clipboard, AlertTriangle } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
 import { useState } from 'react';
+import { useTranslations } from '@/hooks/useTranslations';
 
 interface SeedPhraseDisplayProps {
   seedPhrase: string;
@@ -12,6 +14,7 @@ interface SeedPhraseDisplayProps {
 
 export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
   const { toast } = useToast();
+  const t = useTranslations();
   const [copied, setCopied] = useState(false);
   const words = seedPhrase.split(' ');
 
@@ -19,8 +22,8 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
     navigator.clipboard.writeText(seedPhrase);
     setCopied(true);
     toast({
-      title: "Copied to clipboard!",
-      description: "Your seed phrase has been copied.",
+      title: t.copiedToClipboardTitle,
+      description: t.copiedToClipboardDesc,
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -30,10 +33,10 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="text-destructive" />
-          Your Secret Phrase
+          {t.secretPhraseTitle}
         </CardTitle>
         <CardDescription>
-          Write this down and store it somewhere safe. This is the only time you will see it.
+          {t.secretPhraseDesc}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,7 +56,7 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
           ))}
         </div>
         <div className="text-xs text-destructive p-3 bg-destructive/10 rounded-lg">
-          <strong>NEVER</strong> share this phrase with anyone. Anyone with this phrase can take your assets forever.
+          <strong>{t.neverShareWarning.split(' ')[0]}</strong> {t.neverShareWarning.substring(t.neverShareWarning.indexOf(' ') + 1)}
         </div>
       </CardContent>
     </Card>

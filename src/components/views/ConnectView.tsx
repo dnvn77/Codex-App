@@ -28,6 +28,7 @@ import type { Wallet } from '@/lib/types';
 import { KeyRound, PlusCircle, AlertTriangle } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from '@/hooks/useTranslations';
 
 interface ConnectViewProps {
   onWalletConnected: (wallet: Wallet) => void;
@@ -50,6 +51,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
 
   const { toast } = useToast();
+  const t = useTranslations();
 
   const handleCreateWallet = () => {
     const wallet = createWallet();
@@ -82,7 +84,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
 
       randomWordIndices.forEach((wordIndex, arrayIndex) => {
         if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
-          newErrors[arrayIndex] = "Incorrect word";
+          newErrors[arrayIndex] = t.incorrectWordError;
           allCorrect = false;
         }
       });
@@ -94,8 +96,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
         setCreateDialogOpen(false);
         setNewWallet(null);
         toast({
-          title: "Wallet Created!",
-          description: "Your new wallet is ready.",
+          title: t.walletCreatedTitle,
+          description: t.walletCreatedDesc,
         });
       }
     }
@@ -142,8 +144,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
     // Validate pasted text contains only letters and spaces
     if (!/^[a-z\s]*$/.test(pastedText)) {
       toast({
-        title: "Invalid Input",
-        description: "Seed phrase can only contain letters and spaces.",
+        title: t.invalidInputTitle,
+        description: t.invalidInputDesc,
         variant: "destructive",
       });
       return;
@@ -157,8 +159,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setSeedWords(words);
     } else {
       toast({
-        title: "Invalid Paste",
-        description: `Seed phrase must be 12, 15, 18, or 24 words. You pasted ${words.length}.`,
+        title: t.invalidPasteTitle,
+        description: t.invalidPasteDesc(words.length),
         variant: "destructive",
       });
     }
@@ -173,13 +175,13 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       setSeedWords(Array(12).fill(''));
       setSeedLength(12);
       toast({
-        title: "Wallet Imported",
-        description: "Your wallet has been successfully imported.",
+        title: t.walletImportedTitle,
+        description: t.walletImportedDesc,
       });
     } catch (error) {
       toast({
-        title: "Import Error",
-        description: (error as Error).message || "Could not import wallet. Please check your seed phrase.",
+        title: t.importErrorTitle,
+        description: (error as Error).message || t.importErrorDesc,
         variant: "destructive",
       });
     }
@@ -219,22 +221,22 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
               <path d="M8 8.5c1 .5 2.5 1 4 1 1.5 0 3-.5 4-1" />
             </svg>
           </div>
-          <CardTitle className="font-headline text-3xl">Violet Vault</CardTitle>
-          <CardDescription>Your private, self-custody wallet for the Aztec Network on Telegram.</CardDescription>
+          <CardTitle className="font-headline text-3xl">{t.mainTitle}</CardTitle>
+          <CardDescription>{t.mainDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-4">
           <Button size="lg" onClick={handleCreateWallet}>
             <PlusCircle />
-            Create New Wallet
+            {t.createWalletButton}
           </Button>
           <Button size="lg" variant="secondary" onClick={() => setImportDialogOpen(true)}>
             <KeyRound />
-            Import Wallet
+            {t.importWalletButton}
           </Button>
         </CardContent>
         <CardFooter>
           <p className="text-xs text-muted-foreground text-center w-full">
-            Transactions are on the Sepolia Testnet.
+            {t.testnetDisclaimer}
           </p>
         </CardFooter>
       </Card>
@@ -244,15 +246,13 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
           {creationStep === 'showSeed' && (
             <>
               <DialogHeader>
-                <DialogTitle>Create Your Wallet</DialogTitle>
-                <DialogDescription>
-                  Write down your secret phrase and store it securely. You'll be asked to confirm it.
-                </DialogDescription>
+                <DialogTitle>{t.createWalletTitle}</DialogTitle>
+                <DialogDescription>{t.createWalletDesc}</DialogDescription>
               </DialogHeader>
               {newWallet && <SeedPhraseDisplay seedPhrase={newWallet.seedPhrase} />}
               <DialogFooter>
-                 <Button variant="outline" onClick={handleCloseCreateDialog}>Cancel</Button>
-                <Button onClick={handleGoToConfirmation}>Continue</Button>
+                 <Button variant="outline" onClick={handleCloseCreateDialog}>{t.cancelButton}</Button>
+                <Button onClick={handleGoToConfirmation}>{t.continueButton}</Button>
               </DialogFooter>
             </>
           )}
@@ -260,16 +260,14 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
           {creationStep === 'confirmSeed' && (
             <>
               <DialogHeader>
-                <DialogTitle>Confirm Your Phrase</DialogTitle>
-                <DialogDescription>
-                  To ensure you saved it correctly, please enter the following words from your phrase.
-                </DialogDescription>
+                <DialogTitle>{t.confirmPhraseTitle}</DialogTitle>
+                <DialogDescription>{t.confirmPhraseDesc}</DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-4">
                 {randomWordIndices.map((wordIndex, arrayIndex) => (
                   <div key={wordIndex}>
                     <Label htmlFor={`confirmationWord-${arrayIndex}`} className="font-semibold">
-                      Enter word #{wordIndex + 1}
+                      {t.enterWordLabel(wordIndex + 1)}
                     </Label>
                     <Input
                       id={`confirmationWord-${arrayIndex}`}
@@ -288,8 +286,8 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
                 ))}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={handleBackToShowSeed}>Back</Button>
-                <Button onClick={handleFinalizeCreation} disabled={isConfirmationDisabled}>Confirm & Create</Button>
+                <Button variant="outline" onClick={handleBackToShowSeed}>{t.backButton}</Button>
+                <Button onClick={handleFinalizeCreation} disabled={isConfirmationDisabled}>{t.confirmAndCreateButton}</Button>
               </DialogFooter>
             </>
           )}
@@ -299,22 +297,20 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
       <Dialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Import Wallet</DialogTitle>
-            <DialogDescription>
-              Enter your secret phrase to restore your wallet.
-            </DialogDescription>
+            <DialogTitle>{t.importWalletTitle}</DialogTitle>
+            <DialogDescription>{t.importWalletDesc}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-bold">Security Warning</p>
-                <p>Never share your secret phrase. Anyone with it can take control of your assets.</p>
+                <p className="font-bold">{t.securityWarningTitle}</p>
+                <p>{t.securityWarningDesc}</p>
               </div>
             </div>
             
             <div>
-              <Label className="mb-2 block">Seed Phrase Length</Label>
+              <Label className="mb-2 block">{t.seedPhraseLengthLabel}</Label>
               <RadioGroup defaultValue="12" onValueChange={handleSeedLengthChange} value={String(seedLength)} className="flex space-x-4">
                 {[12, 15, 18, 24].map(len => (
                   <div key={len} className="flex items-center space-x-2">
@@ -326,7 +322,7 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
             </div>
 
             <div>
-              <Label className="mb-2 block">Secret Phrase Words</Label>
+              <Label className="mb-2 block">{t.secretPhraseWordsLabel}</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {seedWords.map((word, index) => (
                   <div key={index} className="relative">
@@ -346,16 +342,16 @@ export function ConnectView({ onWalletConnected }: ConnectViewProps) {
                 ))}
               </div>
                <p className="text-xs text-muted-foreground mt-2">
-                You can paste your entire seed phrase into any field.
+                {t.pasteDisclaimer}
               </p>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t.cancelButton}</Button>
             </DialogClose>
             <Button onClick={handleImportWallet} disabled={isImportDisabled}>
-              Import
+              {t.importButton}
             </Button>
           </DialogFooter>
         </DialogContent>

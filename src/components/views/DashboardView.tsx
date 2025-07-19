@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Chatbot } from '@/components/shared/Chatbot';
+import { useTranslations } from '@/hooks/useTranslations';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -29,14 +30,14 @@ interface DashboardViewProps {
   onDisconnect: () => void;
 }
 
-const GasFeeDisplay = ({ gasCost, averageGas, isLoading }: { gasCost: number; averageGas: number; isLoading: boolean }) => {
+const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
   const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
 
   if (isLoading) {
     return (
       <div className="text-xs text-muted-foreground text-right space-y-1">
-        <p>Calculating gas...</p>
-        <p>Average: ...</p>
+        <p>{t.calculatingGas}</p>
+        <p>{t.averageFee}: ...</p>
       </div>
     )
   }
@@ -44,10 +45,10 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading }: { gasCost: number; av
   return (
     <div className="text-xs text-muted-foreground text-right space-y-1">
       <p>
-        Est. Gas Fee: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} ETH</span>
+        {t.estGasFee}: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} ETH</span>
       </p>
       <p>
-        Average Fee: <span>{averageGas.toFixed(5)} ETH</span>
+        {t.averageFee}: <span>{averageGas.toFixed(5)} ETH</span>
       </p>
     </div>
   );
@@ -56,6 +57,7 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading }: { gasCost: number; av
 
 export function DashboardView({ wallet, onTransactionSent, onDisconnect }: DashboardViewProps) {
   const { toast } = useToast();
+  const t = useTranslations();
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -123,8 +125,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(wallet.address);
     toast({
-      title: 'Address Copied!',
-      description: 'Your wallet address is in the clipboard.',
+      title: t.addressCopiedTitle,
+      description: t.addressCopiedDesc,
     });
   };
 
@@ -135,11 +137,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     if (newAmount) {
       const numericAmount = parseFloat(newAmount);
       if (isNaN(numericAmount)) {
-        setAmountError('Invalid number.');
+        setAmountError(t.invalidNumberError);
       } else if (numericAmount < 0) {
-        setAmountError('Amount cannot be negative.');
+        setAmountError(t.negativeAmountError);
       } else if (numericAmount + gasCost > wallet.balance) {
-        setAmountError('Insufficient balance for amount + gas.');
+        setAmountError(t.insufficientBalanceError);
       } else {
         setAmountError('');
       }
@@ -154,7 +156,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     // Trigger validation with the new amount
     const numericAmount = parseFloat(maxAmountStr);
     if (numericAmount + gasCost > wallet.balance) {
-      setAmountError('Insufficient balance for amount + gas.');
+      setAmountError(t.insufficientBalanceError);
     } else {
       setAmountError('');
     }
@@ -167,11 +169,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
 
     if (!finalAddress || !amount || amountError) {
-      toast({ title: 'Invalid Information', description: 'Please correct the errors before sending.', variant: 'destructive' });
+      toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(finalAddress)) {
-      toast({ title: 'Invalid Address', description: 'Please enter a valid Ethereum address or a valid ENS name.', variant: 'destructive' });
+      toast({ title: t.invalidAddressTitle, description: t.invalidAddressDesc, variant: 'destructive' });
       return;
     }
 
@@ -185,7 +187,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       setAmount('');
     } catch (error) {
       const err = error as Error;
-      toast({ title: 'Transaction Failed', description: err.message, variant: 'destructive' });
+      toast({ title: t.txFailedTitle, description: err.message, variant: 'destructive' });
     } finally {
       setIsSending(false);
     }
@@ -195,8 +197,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     // Final check before proceeding
     const numericAmount = parseFloat(amount);
     if (numericAmount + gasCost > wallet.balance) {
-        setAmountError('Insufficient balance for amount + gas.');
-        toast({ title: 'Error', description: 'Cannot send, insufficient balance for amount + gas fee.', variant: 'destructive' });
+        setAmountError(t.insufficientBalanceError);
+        toast({ title: t.error, description: t.insufficientBalanceError, variant: 'destructive' });
         return;
     }
 
@@ -221,8 +223,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     // In a real app, this would subscribe to a push service.
     // Here, we just show a confirmation toast.
     toast({
-        title: "Gas Alert Set!",
-        description: `We'll notify you when it's cheaper to send ${notificationAmount} ETH to ${notificationAddress.slice(0, 6)}...`,
+        title: t.gasAlertSetTitle,
+        description: t.gasAlertSetDesc(notificationAmount, notificationAddress),
     });
     setShowGasNotifyPrompt(false);
     setNotificationAddress('');
@@ -242,18 +244,18 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
       <Card className="w-full shadow-lg">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Wallet Dashboard</CardTitle>
+            <CardTitle>{t.dashboardTitle}</CardTitle>
             <Button variant="ghost" size="sm" onClick={onDisconnect}>
               <LogOut className="mr-2 h-4 w-4"/>
-              Disconnect
+              {t.disconnectButton}
             </Button>
           </div>
-          <CardDescription>Send private transactions on the Sepolia testnet.</CardDescription>
+          <CardDescription>{t.dashboardDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-secondary/50">
-              <Label>Your Wallet Address</Label>
+              <Label>{t.yourWalletAddressLabel}</Label>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-mono text-primary">{truncatedAddress}</p>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
@@ -265,11 +267,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
 
             <div className="space-y-2 pt-4">
                <div className="flex justify-between items-start">
-                <h3 className="text-lg font-medium">Send Transaction</h3>
-                <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} />
+                <h3 className="text-lg font-medium">{t.sendTxTitle}</h3>
+                <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} t={t} />
                </div>
               <div className="space-y-1">
-                <Label htmlFor="toAddress">Destination Address or ENS Name</Label>
+                <Label htmlFor="toAddress">{t.destinationAddressLabel}</Label>
                 <Input
                   id="toAddress"
                   placeholder="0x... or vitalik.eth"
@@ -279,17 +281,17 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                 />
                  {ensResolution.status !== 'idle' && (
                   <div className="text-xs pt-1 flex items-center gap-2">
-                    {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>Resolving ENS name...</>}
+                    {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>{t.resolvingEns}</>}
                     {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
-                    {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">Could not resolve ENS name.</span></>}
+                    {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">{t.ensResolutionError}</span></>}
                   </div>
                 )}
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between items-end">
-                  <Label htmlFor="amount">Amount (ETH)</Label>
+                  <Label htmlFor="amount">{t.amountLabel}</Label>
                   <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>
-                    Max: {maxSendableAmount.toFixed(5)}
+                    {t.maxAmountLabel}: {maxSendableAmount.toFixed(5)}
                   </button>
                 </div>
                 <Input
@@ -308,9 +310,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
         <CardFooter>
           <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
               {isSending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t.sendingButton}</>
               ) : (
-                  <><Send className="mr-2 h-4 w-4" /> Send Privately</>
+                  <><Send className="mr-2 h-4 w-4" /> {t.sendPrivatelyButton}</>
               )}
           </Button>
         </CardFooter>
@@ -321,22 +323,22 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="text-destructive" />
-                High Gas Fee Warning
+                {t.highGasWarningTitle}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                The estimated gas fee for this transaction is higher than average right now. Are you sure you want to proceed?
+                {t.highGasWarningDesc}
                 <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
-                    <span className="font-semibold">Average Fee:</span>
+                    <span className="font-semibold">{t.averageFee}:</span>
                     <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
-                    <span className="font-semibold text-destructive">Current Fee:</span>
+                    <span className="font-semibold text-destructive">{t.currentFee}:</span>
                     <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleHighGasCancel}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={handleHighGasCancel}>{t.cancelButton}</AlertDialogCancel>
               <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
-                Send Anyway
+                {t.sendAnywayButton}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -348,16 +350,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
               <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
                       <BellRing className="text-primary"/>
-                      Get Notified?
+                      {t.getNotifiedTitle}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                      Would you like to receive a push notification when the gas fee for this transaction is lower?
+                      {t.getNotifiedDesc}
                   </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                  <AlertDialogCancel>No, thanks</AlertDialogCancel>
+                  <AlertDialogCancel>{t.noThanksButton}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleSetupGasNotification}>
-                      Yes, notify me
+                      {t.yesNotifyMeButton}
                   </AlertDialogAction>
               </AlertDialogFooter>
           </AlertDialogContent>
