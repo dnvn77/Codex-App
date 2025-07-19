@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
@@ -34,7 +35,6 @@ import Image from 'next/image';
 
 interface ConnectViewProps {
   onWalletConnected: (wallet: Wallet) => void;
-  // Props for password recovery flow
   isRecoveryMode?: boolean;
   onPasswordReset?: (wallet: Wallet) => void;
   recoverySeedPhrase?: string;
@@ -54,6 +54,7 @@ export function ConnectView({
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
   
   const [creationStep, setCreationStep] = useState<CreationStep>('showSeed');
+  const [seedBackupConfirmed, setSeedBackupConfirmed] = useState(false);
   const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
   const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
   const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
@@ -88,6 +89,7 @@ export function ConnectView({
     const wallet = createWallet();
     setNewWallet(wallet);
     setCreationStep('showSeed');
+    setSeedBackupConfirmed(false);
     setConfirmationWords(['', '', '']);
     setConfirmationErrors(['', '', '']);
     setCreateDialogOpen(true);
@@ -99,7 +101,8 @@ export function ConnectView({
     while (indices.size < 3) {
         indices.add(Math.floor(Math.random() * seedWordCount));
     }
-    return Array.from(indices);
+    const sortedIndices = Array.from(indices).sort((a, b) => a - b);
+    return sortedIndices;
   }
 
   const handleGoToConfirmation = () => {
@@ -144,7 +147,6 @@ export function ConnectView({
     
     let walletToSave = newWallet;
 
-    // Handle password reset flow
     if (isRecoveryMode && recoverySeedPhrase) {
       try {
         walletToSave = await importWalletFromSeed(recoverySeedPhrase);
@@ -200,7 +202,6 @@ export function ConnectView({
   };
 
   const handleWordChange = (index: number, value: string) => {
-    // Allow only letters
     if (/^[a-zA-Z]*$/.test(value)) {
       const newWords = [...seedWords];
       newWords[index] = value.trim();
@@ -212,7 +213,6 @@ export function ConnectView({
     e.preventDefault();
     const pastedText = e.clipboardData.getData('text').toLowerCase();
     
-    // Validate pasted text contains only letters and spaces
     if (!/^[a-z\s]*$/.test(pastedText)) {
       toast({
         title: t.invalidInputTitle,
@@ -243,10 +243,10 @@ export function ConnectView({
     const importSeedPhrase = seedWords.join(' ');
     try {
       const wallet = await importWalletFromSeed(importSeedPhrase);
-      setNewWallet(wallet); // Use newWallet state to pass to password step
-      setCreationStep('setPassword'); // Re-use the set password step
-      setImportDialogOpen(false); // Close this dialog
-      setCreateDialogOpen(true); // Open the other dialog in setPassword step
+      setNewWallet(wallet); 
+      setCreationStep('setPassword'); 
+      setImportDialogOpen(false); 
+      setCreateDialogOpen(true); 
     } catch (error) {
       toast({
         title: t.importErrorTitle,
@@ -335,7 +335,7 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-            <Image src="/strawberry-logo.svg" alt="Strawberry Wallet Logo" width={40} height={40} className="h-10 w-10 text-primary" />
+            <Image src="/strawberry-logo.svg" alt="Strawberry Wallet Logo" width={40} height={40} className="h-10 w-10 text-primary" data-ai-hint="strawberry cartoon"/>
           </div>
           <CardTitle className="font-headline text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>
@@ -366,9 +366,18 @@ export function ConnectView({
                 <DialogDescription>{t.createWalletDesc}</DialogDescription>
               </DialogHeader>
               {newWallet && <SeedPhraseDisplay seedPhrase={newWallet.seedPhrase} />}
+               <div className="flex items-center space-x-2 my-4">
+                <Checkbox id="terms" checked={seedBackupConfirmed} onCheckedChange={(checked) => setSeedBackupConfirmed(checked as boolean)} />
+                <label
+                  htmlFor="terms"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t.seedBackupConfirmation}
+                </label>
+              </div>
               <DialogFooter>
                  <Button variant="outline" onClick={handleCloseCreateDialog}>{t.cancelButton}</Button>
-                <Button onClick={handleGoToConfirmation}>{t.continueButton}</Button>
+                <Button onClick={handleGoToConfirmation} disabled={!seedBackupConfirmed}>{t.continueButton}</Button>
               </DialogFooter>
             </>
           )}
@@ -526,3 +535,5 @@ export function ConnectView({
     </>
   );
 }
+
+    
