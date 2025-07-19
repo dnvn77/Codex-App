@@ -359,12 +359,14 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
 
     const derivedKeys = deriveKeysFromSeed(words.join(' '));
     
-    // Simulate a "fetched" balance for an imported wallet
-    const balance = parseFloat((Math.random() * 2 + 0.1).toFixed(4)); 
+    // Simulate a "fetched" or deterministic balance for an imported wallet.
+    // This hash gives a pseudo-random but deterministic number from the seed.
+    const balanceHash = mockHash(seedPhrase + "_balance");
+    const balance = (parseInt(balanceHash.substring(0, 8), 16) % 20000) / 10000 + 0.1; // Range 0.1 to 2.1
 
     return {
         seedPhrase: words.join(' '),
-        balance,
+        balance: parseFloat(balance.toFixed(4)),
         ...derivedKeys,
     };
 }
