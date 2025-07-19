@@ -104,6 +104,17 @@ export const translations = {
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
+    
+    // QR Scanner
+    scanQrTitle: 'Scan QR Code',
+    scanQrDesc: 'Point your camera at a QR code to scan an address.',
+    cameraPermissionTitle: 'Camera Access Required',
+    cameraPermissionDesc: 'Please allow camera access in your browser to use the QR scanner.',
+    addressScannedTitle: 'Address Scanned',
+    addressScannedDesc: 'The destination address has been filled in.',
+    invalidQrTitle: 'Invalid QR Code',
+    invalidQrDesc: 'The scanned QR code does not contain a valid Ethereum address.',
+    scanning: 'Scanning...',
   },
   es: {
     mainTitle: 'Violet Vault',
@@ -205,6 +216,17 @@ export const translations = {
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
+    
+    // QR Scanner
+    scanQrTitle: 'Escanear código QR',
+    scanQrDesc: 'Apunta tu cámara a un código QR para escanear una dirección.',
+    cameraPermissionTitle: 'Se requiere acceso a la cámara',
+    cameraPermissionDesc: 'Por favor, permite el acceso a la cámara en tu navegador para usar el escáner de QR.',
+    addressScannedTitle: 'Dirección Escaneada',
+    addressScannedDesc: 'La dirección de destino ha sido rellenada.',
+    invalidQrTitle: 'Código QR inválido',
+    invalidQrDesc: 'El código QR escaneado no contiene una dirección de Ethereum válida.',
+    scanning: 'Escaneando...',
   },
   zh: {
     mainTitle: '紫罗兰金库',
@@ -306,6 +328,17 @@ export const translations = {
     unlockButton: '解锁',
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
+
+    // QR Scanner
+    scanQrTitle: '扫描二维码',
+    scanQrDesc: '将您的相机对准二维码以扫描地址。',
+    cameraPermissionTitle: '需要相机访问权限',
+    cameraPermissionDesc: '请在浏览器中允许相机访问以使用二维码扫描器。',
+    addressScannedTitle: '地址已扫描',
+    addressScannedDesc: '目标地址已填写。',
+    invalidQrTitle: '无效的二维码',
+    invalidQrDesc: '扫描的二维码不包含有效的以太坊地址。',
+    scanning: '扫描中...',
   },
   hi: {
     mainTitle: 'वायलेट वॉल्ट',
@@ -407,6 +440,17 @@ export const translations = {
     unlockButton: 'अनलॉक करें',
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
+
+    // QR Scanner
+    scanQrTitle: 'क्यूआर कोड स्कैन करें',
+    scanQrDesc: 'एक पता स्कैन करने के लिए अपने कैमरे को क्यूआर कोड पर इंगित करें।',
+    cameraPermissionTitle: 'कैमरा एक्सेस आवश्यक है',
+    cameraPermissionDesc: 'क्यूआर स्कैनर का उपयोग करने के लिए कृपया अपने ब्राउज़र में कैमरा एक्सेस की अनुमति दें।',
+    addressScannedTitle: 'पता स्कैन किया गया',
+    addressScannedDesc: 'गंतव्य पता भर दिया गया है।',
+    invalidQrTitle: 'अमान्य क्यूआर कोड',
+    invalidQrDesc: 'स्कैन किए गए क्यूआर कोड में एक वैध एथेरियम पता नहीं है।',
+    scanning: 'स्कैन कर रहा है...',
   },
   fr: {
     mainTitle: 'Violet Vault',
@@ -508,6 +552,17 @@ export const translations = {
     unlockButton: 'Déverrouiller',
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
+
+    // QR Scanner
+    scanQrTitle: 'Scanner le code QR',
+    scanQrDesc: 'Pointez votre appareil photo sur un code QR pour scanner une adresse.',
+    cameraPermissionTitle: 'Accès à la caméra requis',
+    cameraPermissionDesc: 'Veuillez autoriser l\'accès à la caméra dans votre navigateur pour utiliser le scanner QR.',
+    addressScannedTitle: 'Adresse scannée',
+    addressScannedDesc: 'L\'adresse de destination a été remplie.',
+    invalidQrTitle: 'Code QR invalide',
+    invalidQrDesc: 'Le code QR scanné ne contient pas d\'adresse Ethereum valide.',
+    scanning: 'Numérisation...',
   },
   ar: {
     mainTitle: 'خزنة البنفسج',
@@ -609,6 +664,17 @@ export const translations = {
     unlockButton: 'فتح',
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
+    
+    // QR Scanner
+    scanQrTitle: 'مسح رمز الاستجابة السريعة',
+    scanQrDesc: 'وجه الكاميرا إلى رمز الاستجابة السريعة لمسح العنوان.',
+    cameraPermissionTitle: 'الوصول إلى الكاميرا مطلوب',
+    cameraPermissionDesc: 'يرجى السماح بالوصول إلى الكاميرا في متصفحك لاستخدام ماسح الاستجابة السريعة.',
+    addressScannedTitle: 'تم مسح العنوان',
+    addressScannedDesc: 'تم ملء عنوان الوجهة.',
+    invalidQrTitle: 'رمز QR غير صالح',
+    invalidQrDesc: 'رمز الاستجابة السريعة الممسوح ضوئيًا لا يحتوي على عنوان Ethereum صالح.',
+    scanning: 'جارٍ المسح...',
   },
   bn: {
     mainTitle: 'ভায়োলেট ভল্ট',
@@ -709,7 +775,18 @@ export const translations = {
     unlockWalletDesc: 'আপনার ভায়োলেট ভল্ট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
     unlockButton: 'আনলক করুন',
     unlockingButton: 'আনলক করা হচ্ছে...',
-    wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন.',
+    wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
+
+    // QR Scanner
+    scanQrTitle: 'QR কোড স্ক্যান করুন',
+    scanQrDesc: 'একটি ঠিকানা স্ক্যান করতে আপনার ক্যামেরা একটি QR কোডে নির্দেশ করুন।',
+    cameraPermissionTitle: 'ক্যামেরা অ্যাক্সেস প্রয়োজন',
+    cameraPermissionDesc: 'QR স্ক্যানার ব্যবহার করতে আপনার ব্রাউজারে ক্যামেরা অ্যাক্সেসের অনুমতি দিন।',
+    addressScannedTitle: 'ঠিকানা স্ক্যান করা হয়েছে',
+    addressScannedDesc: 'গন্তব্য ঠিকানা পূরণ করা হয়েছে।',
+    invalidQrTitle: 'অবৈধ QR কোড',
+    invalidQrDesc: 'স্ক্যান করা QR কোডে একটি বৈধ ইথেরিয়াম ঠিকানা নেই।',
+    scanning: 'স্ক্যান করা হচ্ছে...',
   },
   ru: {
     mainTitle: 'Violet Vault',
@@ -811,6 +888,17 @@ export const translations = {
     unlockButton: 'Разблокировать',
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
+
+    // QR Scanner
+    scanQrTitle: 'Сканировать QR-код',
+    scanQrDesc: 'Наведите камеру на QR-код, чтобы отсканировать адрес.',
+    cameraPermissionTitle: 'Требуется доступ к камере',
+    cameraPermissionDesc: 'Пожалуйста, разрешите доступ к камере в вашем браузере, чтобы использовать QR-сканер.',
+    addressScannedTitle: 'Адрес отсканирован',
+    addressScannedDesc: 'Адрес назначения был заполнен.',
+    invalidQrTitle: 'Неверный QR-код',
+    invalidQrDesc: 'Отсканированный QR-код не содержит действительного адреса Ethereum.',
+    scanning: 'Сканирование...',
   },
   pt: {
     mainTitle: 'Violet Vault',
@@ -912,6 +1000,17 @@ export const translations = {
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
+    
+    // QR Scanner
+    scanQrTitle: 'Escanear código QR',
+    scanQrDesc: 'Aponte sua câmera para um código QR para escanear um endereço.',
+    cameraPermissionTitle: 'Acesso à câmera necessário',
+    cameraPermissionDesc: 'Por favor, permita o acesso à câmera em seu navegador para usar o scanner de QR.',
+    addressScannedTitle: 'Endereço Escaneado',
+    addressScannedDesc: 'O endereço de destino foi preenchido.',
+    invalidQrTitle: 'Código QR inválido',
+    invalidQrDesc: 'O código QR escaneado não contém um endereço Ethereum válido.',
+    scanning: 'Escaneando...',
   },
   id: {
     mainTitle: 'Violet Vault',
@@ -1013,5 +1112,16 @@ export const translations = {
     unlockButton: 'Buka kunci',
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
+
+    // QR Scanner
+    scanQrTitle: 'Pindai Kode QR',
+    scanQrDesc: 'Arahkan kamera Anda ke kode QR untuk memindai alamat.',
+    cameraPermissionTitle: 'Diperlukan Akses Kamera',
+    cameraPermissionDesc: 'Harap izinkan akses kamera di browser Anda untuk menggunakan pemindai QR.',
+    addressScannedTitle: 'Alamat Dipindai',
+    addressScannedDesc: 'Alamat tujuan telah diisi.',
+    invalidQrTitle: 'Kode QR Tidak Valid',
+    invalidQrDesc: 'Kode QR yang dipindai tidak berisi alamat Ethereum yang valid.',
+    scanning: 'Memindai...',
   },
 };

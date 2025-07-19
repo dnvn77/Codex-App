@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -21,7 +21,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Chatbot } from '@/components/shared/Chatbot';
+import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
 
 interface DashboardViewProps {
@@ -73,6 +81,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
   const [isCalculatingGas, setIsCalculatingGas] = useState(true);
 
   const [ensResolution, setEnsResolution] = useState<{status: 'idle' | 'loading' | 'success' | 'error', address: string | null}>({ status: 'idle', address: null });
+  const [isScannerOpen, setScannerOpen] = useState(false);
 
   const maxSendableAmount = useMemo(() => {
     const max = wallet.balance - gasCost;
@@ -231,6 +240,30 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
     setNotificationAmount('');
   };
 
+  const handleQrScan = (data: string | null) => {
+    setScannerOpen(false);
+    if (data) {
+        // Basic validation for an Ethereum address
+        let address = data;
+        if (address.startsWith('ethereum:')) {
+            address = address.split(':')[1];
+        }
+        if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
+            setToAddress(address);
+            toast({
+                title: t.addressScannedTitle,
+                description: t.addressScannedDesc,
+            });
+        } else {
+            toast({
+                title: t.invalidQrTitle,
+                description: t.invalidQrDesc,
+                variant: 'destructive',
+            });
+        }
+    }
+  };
+
 
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
@@ -272,13 +305,29 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
                </div>
               <div className="space-y-1">
                 <Label htmlFor="toAddress">{t.destinationAddressLabel}</Label>
-                <Input
-                  id="toAddress"
-                  placeholder="0x... or vitalik.eth"
-                  value={toAddress}
-                  onChange={(e) => setToAddress(e.target.value)}
-                  disabled={isSending}
-                />
+                <div className="flex items-center gap-2">
+                    <Input
+                      id="toAddress"
+                      placeholder="0x... or vitalik.eth"
+                      value={toAddress}
+                      onChange={(e) => setToAddress(e.target.value)}
+                      disabled={isSending}
+                      className="flex-grow"
+                    />
+                    <Dialog open={isScannerOpen} onOpenChange={setScannerOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon" disabled={isSending}>
+                          <QrCode className="h-5 w-5" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                          <DialogTitle>{t.scanQrTitle}</DialogTitle>
+                        </DialogHeader>
+                        <QRScanner onScan={handleQrScan} t={t} />
+                      </DialogContent>
+                    </Dialog>
+                </div>
                  {ensResolution.status !== 'idle' && (
                   <div className="text-xs pt-1 flex items-center gap-2">
                     {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>{t.resolvingEns}</>}
