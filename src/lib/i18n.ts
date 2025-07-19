@@ -89,6 +89,7 @@ export const translations = {
     backToWalletButton: 'Back to Wallet',
     copied: 'Copied!',
     copiedDesc: (label: string) => `${label} has been copied to clipboard.`,
+    linkCopied: 'Link Copied!',
 
     // Password fields
     setPasswordTitle: 'Set a Password',
@@ -225,6 +226,7 @@ export const translations = {
     backToWalletButton: 'Volver a la Billetera',
     copied: '¡Copiado!',
     copiedDesc: (label: string) => `${label} ha sido copiado al portapapeles.`,
+    linkCopied: '¡Enlace copiado!',
     
     // Password fields
     setPasswordTitle: 'Establecer una Contraseña',
@@ -361,6 +363,7 @@ export const translations = {
     backToWalletButton: '返回钱包',
     copied: '已复制！',
     copiedDesc: (label: string) => `${label} 已被复制到剪贴板。`,
+    linkCopied: '链接已复制！',
 
     // Password fields
     setPasswordTitle: '设置密码',
@@ -496,6 +499,7 @@ export const translations = {
     backToWalletButton: 'वॉलेट पर वापस',
     copied: 'कॉपी किया गया!',
     copiedDesc: (label: string) => `${label} क्लिपबोर्ड पर कॉपी किया गया है।`,
+    linkCopied: 'लिंक कॉपी किया गया!',
 
     // Password fields
     setPasswordTitle: 'एक पासवर्ड सेट करें',
@@ -631,6 +635,7 @@ export const translations = {
     backToWalletButton: 'Retour au portefeuille',
     copied: 'Copié !',
     copiedDesc: (label: string) => `${label} a été copié dans le presse-papiers.`,
+    linkCopied: 'Lien copié !',
 
     // Password fields
     setPasswordTitle: 'Définir un mot de passe',
@@ -766,6 +771,7 @@ export const translations = {
     backToWalletButton: 'العودة إلى المحفظة',
     copied: 'تم النسخ!',
     copiedDesc: (label: string) => `تم نسخ ${label} إلى الحافظة.`,
+    linkCopied: 'تم نسخ الرابط!',
 
     // Password fields
     setPasswordTitle: 'تعيين كلمة مرور',
@@ -902,6 +908,7 @@ export const translations = {
     backToWalletButton: 'ওয়ালেটে ফিরে যান',
     copied: 'অনুলিপি করা হয়েছে!',
     copiedDesc: (label: string) => `${label} ক্লিপবোর্ডে অনুলিপি করা হয়েছে।`,
+    linkCopied: 'লিঙ্ক অনুলিপি করা হয়েছে!',
     
     // Password fields
     setPasswordTitle: 'একটি পাসওয়ার্ড সেট করুন',
@@ -1038,6 +1045,7 @@ export const translations = {
     backToWalletButton: 'Вернуться в кошелек',
     copied: 'Скопировано!',
     copiedDesc: (label: string) => `${label} скопировано в буфер обмена.`,
+    linkCopied: 'Ссылка скопирована!',
 
     // Password fields
     setPasswordTitle: 'Установить пароль',
@@ -1173,6 +1181,7 @@ export const translations = {
     backToWalletButton: 'Voltar para a Carteira',
     copied: 'Copiado!',
     copiedDesc: (label: string) => `${label} foi copiado para a área de transferência.`,
+    linkCopied: 'Link copiado!',
 
     // Password fields
     setPasswordTitle: 'Definir uma Senha',
@@ -1308,6 +1317,7 @@ export const translations = {
     backToWalletButton: 'Kembali ke Dompet',
     copied: 'Disalin!',
     copiedDesc: (label: string) => `${label} telah disalin ke papan klip.`,
+    linkCopied: 'Tautan disalin!',
 
     // Password fields
     setPasswordTitle: 'Atur Kata Sandi',

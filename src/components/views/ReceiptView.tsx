@@ -4,10 +4,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { ArrowLeft, CheckCircle, ExternalLink, Hash, Landmark, Box, Clipboard } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Clipboard } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
+import { ShortenedLink } from '@/components/shared/ShortenedLink';
 
 interface ReceiptViewProps {
   transaction: Transaction;
@@ -62,12 +62,13 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           </div>
         </div>
 
-        <Button asChild variant="outline" className="w-full mt-6">
-          <Link href={etherscanUrl} target="_blank" rel="noopener noreferrer">
-            {t.viewOnEtherscanButton}
-            <ExternalLink className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="mt-6">
+          <ShortenedLink 
+            fullUrl={etherscanUrl} 
+            displayPrefix="strawberry.eth/tx/" 
+            t={t} 
+          />
+        </div>
       </CardContent>
       <CardFooter>
         <Button variant="secondary" className="w-full" onClick={onBack}>
