@@ -90,7 +90,7 @@ export function Chatbot() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent className="flex flex-col w-full sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Elisa - Your Wallet Assistant</SheetTitle>
+            <SheetTitle>Straw chat</SheetTitle>
           </SheetHeader>
           <ScrollArea className="flex-1 pr-4 -mr-6" viewportRef={scrollAreaRef}>
             <div className="space-y-4 py-4">
@@ -104,8 +104,8 @@ export function Chatbot() {
                 >
                   {message.role === 'model' && (
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="female robot" />
-                      <AvatarFallback>E</AvatarFallback>
+                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="strawberry cartoon" />
+                      <AvatarFallback>S</AvatarFallback>
                     </Avatar>
                   )}
                   <div
@@ -128,8 +128,8 @@ export function Chatbot() {
               {isLoading && (
                 <div className="flex items-start gap-3 justify-start">
                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="female robot" />
-                      <AvatarFallback>E</AvatarFallback>
+                      <AvatarImage src="https://placehold.co/32x32.png" data-ai-hint="strawberry cartoon" />
+                      <AvatarFallback>S</AvatarFallback>
                     </Avatar>
                   <div className="bg-muted rounded-lg px-4 py-3 flex items-center">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

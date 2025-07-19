@@ -252,6 +252,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
                     isRecoveryMode={true} 
                     onPasswordReset={handlePasswordReset}
                     recoverySeedPhrase={recoverySeedPhrase}
+                    onWalletConnected={onWalletConnected}
                 />
             )}
         </DialogContent>

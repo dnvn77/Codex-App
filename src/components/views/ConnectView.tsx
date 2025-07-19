@@ -331,16 +331,18 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-            <svg
-              role="img"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10 text-primary"
-              fill="currentColor"
-            >
-              <title>Violet Vault</title>
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2.16c5.42 0 9.84 4.42 9.84 9.84S17.42 21.84 12 21.84 2.16 17.42 2.16 12 6.58 2.16 12 2.16zM8.83 8.01l-3.23 4.87c.3.96.79 1.85 1.43 2.62l3.41-5.13a4.34 4.34 0 00-1.61-2.36zm8.05 4.87l-3.24-4.87a4.34 4.34 0 00-1.61 2.36l3.42 5.13c.64-.77 1.13-1.66 1.43-2.62zM12 13.56l-1.6-2.4c.1-.07.2-.12.3-.18.84-.6 1.96-.6 2.8 0 .1.06.2.11.3.18l-1.8 2.4z"/>
-            </svg>
+             <svg
+                role="img"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-10 w-10 text-primary"
+                fill="currentColor"
+              >
+                <title>Strawberry Wallet</title>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                <path d="M16.5 12c-1.67 0-3.18-1.05-3.83-2.58l-1.34 2.58h-2.66l4.24-8.08L16.5 12zm-4.67-4.42L10.5 9.17l1.33-2.59H11.83z"/>
+                <path d="M12 14c-2.21 0-4-1.79-4-4h1.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5H16c0 2.21-1.79 4-4 4z"/>
+              </svg>
           </div>
           <CardTitle className="font-headline text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>

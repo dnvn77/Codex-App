@@ -28,7 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Chatbot } from '@/components/shared/Chatbot';
 import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
 
@@ -414,7 +413,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
           </AlertDialogContent>
         </AlertDialog>
       </Card>
-      <Chatbot />
     </>
   );
 }

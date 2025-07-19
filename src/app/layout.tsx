@@ -12,7 +12,7 @@ const lato = Lato({
 
 
 export const metadata: Metadata = {
-  title: 'Violet Vault',
+  title: 'Strawberry Wallet',
   description: 'Your private wallet on Telegram',
 };
 

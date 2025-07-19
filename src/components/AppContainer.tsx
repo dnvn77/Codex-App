@@ -87,7 +87,7 @@ export function AppContainer() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Initializing Violet Vault...</p>
+        <p className="text-muted-foreground">Initializing Strawberry Wallet...</p>
       </div>
     );
   }

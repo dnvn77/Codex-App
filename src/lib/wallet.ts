@@ -15,7 +15,7 @@ const MOCK_WORDS = [
   'strawberry', 'tangerine', 'ugli', 'vanilla', 'watermelon', 'xigua', 'yam', 'zucchini'
 ];
 
-const STORAGE_KEY = 'violet_vault_wallet';
+const STORAGE_KEY = 'strawberry_wallet';
 
 function generateRandomString(length: number, chars: string): string {
   let result = '';
