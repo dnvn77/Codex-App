@@ -11,6 +11,7 @@ import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction } from '@/lib/types';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -290,9 +291,39 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect }: Dashb
               <Label>{t.yourWalletAddressLabel}</Label>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-mono text-primary">{truncatedAddress}</p>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                       <Button variant="ghost" size="icon" className="h-8 w-8">
+                         <QrCode className="h-5 w-5" />
+                       </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-xs">
+                       <DialogHeader>
+                         <DialogTitle>{t.receiveFundsTitle}</DialogTitle>
+                       </DialogHeader>
+                       <div className="flex flex-col items-center justify-center p-4 gap-4">
+                         <div className="p-2 bg-white rounded-lg">
+                            <Image 
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallet.address}`}
+                              width={200}
+                              height={200}
+                              alt="Wallet Address QR Code"
+                              data-ai-hint="qr code"
+                            />
+                         </div>
+                         <p className="text-xs text-muted-foreground break-all text-center">{wallet.address}</p>
+                         <Button onClick={handleCopyAddress} className="w-full">
+                           <Copy className="mr-2 h-4 w-4" />
+                           {t.copyAddressButton}
+                         </Button>
+                       </div>
+                    </DialogContent>
+                  </Dialog>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(4)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
             </div>
