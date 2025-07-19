@@ -111,9 +111,20 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   useEffect(() => {
     const handleEnsLookup = async () => {
-      if (toAddress.endsWith('.eth')) {
+      let query = toAddress.trim();
+      if (!query) {
+        setEnsResolution({ status: 'idle', address: null });
+        return;
+      }
+
+      // If it doesn't look like an address and doesn't end with .eth, assume it's an ENS name
+      if (!query.startsWith('0x') && !query.endsWith('.eth')) {
+        query += '.eth';
+      }
+      
+      if (query.endsWith('.eth')) {
         setEnsResolution({ status: 'loading', address: null });
-        const resolvedAddress = await resolveEnsName(toAddress);
+        const resolvedAddress = await resolveEnsName(query);
         if (resolvedAddress) {
           setEnsResolution({ status: 'success', address: resolvedAddress });
         } else {
@@ -269,7 +280,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
   const isSendDisabled = useMemo(() => {
-    const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress));
+    const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress) && ensResolution.status !== 'success');
     return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid;
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
