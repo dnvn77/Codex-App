@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
 import { useIsMobile } from '@/hooks/use-mobile';
+import * as htmlToImage from 'html-to-image';
 
 interface ReceiptViewProps {
   transaction: Transaction;
@@ -46,24 +48,43 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const etherscanUrl = `https://sepolia.etherscan.io/tx/${transaction.txHash}`;
+  const receiptRef = useRef<HTMLDivElement>(null);
 
-  const handleShare = async () => {
-    const shareData = {
-      title: t.shareTxTitle,
-      text: t.shareTxText(transaction.txHash),
-      url: etherscanUrl,
-    };
+  const handleShare = useCallback(async () => {
+    if (!receiptRef.current) return;
+    
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback for desktop browsers where the button shouldn't be visible anyway
-        navigator.clipboard.writeText(etherscanUrl);
-        toast({
-            title: t.linkCopied,
-            description: t.shareUnsupportedDesc,
+        const dataUrl = await htmlToImage.toPng(receiptRef.current, { 
+            quality: 0.95,
+            backgroundColor: 'white',
         });
-      }
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
+
+        const shareData = {
+            title: t.shareTxTitle,
+            text: t.shareTxText(transaction.txHash),
+            files: [file],
+            url: etherscanUrl, // url is a fallback
+        };
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share(shareData);
+        } else if (navigator.share) {
+            // Fallback for browsers that support share but not files
+            await navigator.share({
+                title: t.shareTxTitle,
+                text: t.shareTxText(transaction.txHash),
+                url: etherscanUrl,
+            });
+        } else {
+             // Fallback for desktop browsers
+            navigator.clipboard.writeText(etherscanUrl);
+            toast({
+                title: t.linkCopied,
+                description: t.shareUnsupportedDesc,
+            });
+        }
     } catch (err) {
       console.error("Share failed:", err);
       toast({
@@ -72,47 +93,49 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         variant: "destructive",
       });
     }
-  };
+  }, [t, transaction.txHash, etherscanUrl]);
 
 
   return (
-    <Card className="w-full shadow-lg">
-      <CardHeader className="text-center">
-        <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-        <CardTitle className="mt-2">{t.txSentTitle}</CardTitle>
-        <CardDescription>{t.txSentDesc}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-1">
-          <ReceiptItem t={t} icon={<Hash className="h-5 w-5 text-accent" />} label={t.txHashLabel} value={transaction.txHash} isHash />
-          <ReceiptItem t={t} icon={<Landmark className="h-5 w-5 text-accent" />} label={t.toLabel} value={transaction.to} isHash />
-          <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={transaction.proposedOnL1.toString()} />
-          <div className="flex items-center justify-between py-3">
-            <span className="font-medium">{t.amountLabel}</span>
-            <span className="text-xl font-bold">{transaction.amount} ETH</span>
+    <>
+      <Card className="w-full shadow-lg" ref={receiptRef}>
+        <CardHeader className="text-center">
+          <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+          <CardTitle className="mt-2">{t.txSentTitle}</CardTitle>
+          <CardDescription>{t.txSentDesc}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1">
+            <ReceiptItem t={t} icon={<Hash className="h-5 w-5 text-accent" />} label={t.txHashLabel} value={transaction.txHash} isHash />
+            <ReceiptItem t={t} icon={<Landmark className="h-5 w-5 text-accent" />} label={t.toLabel} value={transaction.to} isHash />
+            <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={transaction.proposedOnL1.toString()} />
+            <div className="flex items-center justify-between py-3">
+              <span className="font-medium">{t.amountLabel}</span>
+              <span className="text-xl font-bold">{transaction.amount} ETH</span>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-6 flex flex-col gap-2">
-          <ShortenedLink 
-            fullUrl={etherscanUrl} 
-            displayPrefix="strawberry.eth/tx/" 
-            t={t} 
-          />
-          {isMobile && (
+          <div className="mt-6 flex flex-col gap-2">
+            <ShortenedLink 
+              fullUrl={etherscanUrl} 
+              displayPrefix="strawberry.eth/tx/" 
+              t={t} 
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="flex flex-col gap-2 mt-4 w-full">
+         {isMobile && (
             <Button variant="outline" className="w-full" onClick={handleShare}>
               <Share2 className="mr-2 h-4 w-4" />
               {t.shareButton}
             </Button>
           )}
-        </div>
-      </CardContent>
-      <CardFooter>
         <Button variant="secondary" className="w-full" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           {t.backToWalletButton}
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </>
   );
 }
