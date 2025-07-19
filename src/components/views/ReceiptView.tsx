@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Clipboard } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
@@ -34,7 +34,7 @@ const ReceiptItem = ({ icon, label, value, isHash = false, t }: { icon: React.Re
       </div>
       <div className="flex items-center gap-2">
         <span className={`font-mono font-medium text-right ${isHash ? 'text-primary' : ''}`}>{truncatedValue}</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy}><Clipboard className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy}><Copy className="h-4 w-4" /></Button>
       </div>
     </div>
   )
@@ -42,7 +42,36 @@ const ReceiptItem = ({ icon, label, value, isHash = false, t }: { icon: React.Re
 
 export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const t = useTranslations();
+  const { toast } = useToast();
   const etherscanUrl = `https://sepolia.etherscan.io/tx/${transaction.txHash}`;
+
+  const handleShare = async () => {
+    const shareData = {
+      title: t.shareTxTitle,
+      text: t.shareTxText(transaction.txHash),
+      url: etherscanUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback for desktop browsers
+        navigator.clipboard.writeText(etherscanUrl);
+        toast({
+            title: t.linkCopied,
+            description: t.shareUnsupportedDesc,
+        });
+      }
+    } catch (err) {
+      console.error("Share failed:", err);
+      toast({
+        title: t.error,
+        description: t.shareFailedDesc,
+        variant: "destructive",
+      });
+    }
+  };
+
 
   return (
     <Card className="w-full shadow-lg">
@@ -62,12 +91,16 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-2">
           <ShortenedLink 
             fullUrl={etherscanUrl} 
             displayPrefix="strawberry.eth/tx/" 
             t={t} 
           />
+          <Button variant="outline" className="w-full" onClick={handleShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            {t.shareButton}
+          </Button>
         </div>
       </CardContent>
       <CardFooter>

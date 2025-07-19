@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Check, Clipboard, AlertTriangle } from 'lucide-react';
+import { Check, Copy, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,7 @@ export function SeedPhraseDisplay({ seedPhrase }: SeedPhraseDisplayProps) {
             className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-accent"
             aria-label="Copy seed phrase"
           >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Clipboard className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </button>
           {words.map((word, index) => (
             <div key={index} className="flex items-center gap-2">

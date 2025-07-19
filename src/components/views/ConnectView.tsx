@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Copy } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -150,24 +150,24 @@ export function ConnectView({
   }
 
   const handleCreateWallet = () => {
-    const wallet = createWallet();
-    setNewWallet(wallet);
+    // Only generate a new wallet if one doesn't already exist for this session
+    if (!newWallet) {
+        const wallet = createWallet();
+        setNewWallet(wallet);
+    }
     setCreationStep('showSeed');
-    setSeedBackupConfirmed(false);
-    setConfirmationWords(['', '', '']);
-    setConfirmationErrors(['', '', '']);
     setCreateDialogOpen(true);
   };
   
-  const generateRandomIndices = (seed: string) => {
+  const generateRandomIndices = useCallback((seed: string) => {
     const indices = new Set<number>();
     const seedWordCount = seed.split(' ').length;
     while (indices.size < 3) {
         indices.add(Math.floor(Math.random() * seedWordCount));
     }
-    const sortedIndices = Array.from(indices).sort((a, b) => a - b);
-    return sortedIndices;
-  }
+    // No need to sort, fully random order is better.
+    return Array.from(indices);
+  }, []);
 
   const handleGoToConfirmation = () => {
     if(!seedBackupConfirmed) {
@@ -237,12 +237,10 @@ export function ConnectView({
         onWalletConnected(walletToSave);
       }
       
-      setCreateDialogOpen(false);
-      setNewWallet(null);
+      handleCloseCreateDialog();
       toast({
         title: isRecoveryMode ? t.passwordResetSuccessTitle : t.walletCreatedTitle,
         description: isRecoveryMode ? t.passwordResetSuccessDesc : t.walletCreatedDesc,
-        duration: 2000,
       });
     }
   };
@@ -336,11 +334,16 @@ export function ConnectView({
   const handleCloseCreateDialog = () => {
     setCreateDialogOpen(false);
     setTimeout(() => {
+        // Reset all creation-related state
         setNewWallet(null);
         setCreationStep('showSeed');
         setPassword('');
         setConfirmPassword('');
         setPasswordError('');
+        setSeedBackupConfirmed(false);
+        setConfirmationWords(['', '', '']);
+        setConfirmationErrors(['', '', '']);
+        setRandomWordIndices([]);
     }, 300);
   }
 
