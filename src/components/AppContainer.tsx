@@ -10,7 +10,6 @@ import { Loader2 } from 'lucide-react';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
-import { Chatbot } from '@/components/shared/Chatbot';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock';
 type Status = 'validating' | 'ready' | 'error';
@@ -126,7 +125,6 @@ export function AppContainer() {
           <ReceiptView transaction={transaction} onBack={handleBackToDashboard} />
         )}
       </div>
-       {status === 'ready' && <Chatbot />}
     </>
   );
 }

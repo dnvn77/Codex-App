@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { createWallet, importWalletFromSeed, storeWallet, validatePassword } from '@/lib/wallet';
+import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
 import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
@@ -42,6 +42,70 @@ interface ConnectViewProps {
 
 type SeedLength = 12 | 15 | 18 | 24;
 type CreationStep = 'showSeed' | 'confirmSeed' | 'setPassword';
+
+const WordInput = ({
+  index,
+  value,
+  onChange,
+  onPaste,
+  onSuggestionClick,
+}: {
+  index: number;
+  value: string;
+  onChange: (index: number, value: string) => void;
+  onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+  onSuggestionClick: (index: number, word: string) => void;
+}) => {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const typedValue = e.target.value.toLowerCase();
+    onChange(index, typedValue);
+    if (typedValue.length > 1) {
+      const filtered = bip39Wordlist.filter(word => word.startsWith(typedValue));
+      setSuggestions(filtered.slice(0, 5));
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestion = (word: string) => {
+    onSuggestionClick(index, word);
+    setSuggestions([]);
+  };
+
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
+      <Input
+        type="text"
+        value={value}
+        onChange={handleInputChange}
+        onPaste={onPaste}
+        className="pl-6 text-center"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck="false"
+        onBlur={() => setTimeout(() => setSuggestions([]), 100)} // Hide on blur
+      />
+      {suggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-32 overflow-y-auto">
+          {suggestions.map(word => (
+            <div
+              key={word}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent"
+              onMouseDown={() => handleSuggestion(word)}
+            >
+              {word}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export function ConnectView({ 
   onWalletConnected,
@@ -106,6 +170,14 @@ export function ConnectView({
   }
 
   const handleGoToConfirmation = () => {
+    if(!seedBackupConfirmed) {
+        toast({
+            title: t.error,
+            description: "Please confirm you have saved your seed phrase.",
+            variant: "destructive",
+        });
+        return;
+    }
     if (newWallet?.seedPhrase) {
       setRandomWordIndices(generateRandomIndices(newWallet.seedPhrase));
       setCreationStep('confirmSeed');
@@ -151,7 +223,7 @@ export function ConnectView({
       try {
         walletToSave = await importWalletFromSeed(recoverySeedPhrase);
       } catch (error) {
-        toast({ title: t.error, description: (error as Error).message, variant: "destructive", duration: 5000 });
+        toast({ title: t.error, description: (error as Error).message, variant: "destructive" });
         return;
       }
     }
@@ -202,11 +274,17 @@ export function ConnectView({
   };
 
   const handleWordChange = (index: number, value: string) => {
+    const newWords = [...seedWords];
     if (/^[a-zA-Z]*$/.test(value)) {
-      const newWords = [...seedWords];
       newWords[index] = value.trim().toLowerCase();
-      setSeedWords(newWords);
     }
+    setSeedWords(newWords);
+  };
+
+  const handleSuggestionClick = (index: number, word: string) => {
+      const newWords = [...seedWords];
+      newWords[index] = word;
+      setSeedWords(newWords);
   };
   
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -218,7 +296,6 @@ export function ConnectView({
         title: t.invalidInputTitle,
         description: t.invalidInputDesc,
         variant: "destructive",
-        duration: 5000,
       });
       return;
     }
@@ -234,7 +311,6 @@ export function ConnectView({
         title: t.invalidPasteTitle,
         description: t.invalidPasteDesc(words.length),
         variant: "destructive",
-        duration: 5000,
       });
     }
   };
@@ -242,6 +318,7 @@ export function ConnectView({
   const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
     try {
+      // Validate phrase before setting wallet state
       const wallet = await importWalletFromSeed(importSeedPhrase);
       setNewWallet(wallet); 
       setCreationStep('setPassword'); 
@@ -252,7 +329,6 @@ export function ConnectView({
         title: t.importErrorTitle,
         description: (error as Error).message || t.importErrorDesc,
         variant: "destructive",
-        duration: 5000,
       });
     }
   };
@@ -366,11 +442,11 @@ export function ConnectView({
                 <DialogDescription>{t.createWalletDesc}</DialogDescription>
               </DialogHeader>
               {newWallet && <SeedPhraseDisplay seedPhrase={newWallet.seedPhrase} />}
-               <div className="flex items-center space-x-2 my-4">
-                <Checkbox id="terms" checked={seedBackupConfirmed} onCheckedChange={(checked) => setSeedBackupConfirmed(checked as boolean)} />
+               <div className="flex items-start space-x-3 my-4 p-3 bg-secondary/30 rounded-lg">
+                <Checkbox id="terms" checked={seedBackupConfirmed} onCheckedChange={(checked) => setSeedBackupConfirmed(checked as boolean)} className="mt-1"/>
                 <label
                   htmlFor="terms"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-sm font-medium leading-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   {t.seedBackupConfirmation}
                 </label>
@@ -499,22 +575,16 @@ export function ConnectView({
 
             <div>
               <Label className="mb-2 block">{t.secretPhraseWordsLabel}</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2">
                 {seedWords.map((word, index) => (
-                  <div key={index} className="relative">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
-                    <Input
-                      type="text"
-                      value={word}
-                      onChange={(e) => handleWordChange(index, e.target.value)}
-                      onPaste={handlePaste}
-                      className="pl-6 text-center"
-                      autoComplete="off"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck="false"
-                    />
-                  </div>
+                  <WordInput
+                    key={index}
+                    index={index}
+                    value={word}
+                    onChange={handleWordChange}
+                    onPaste={handlePaste}
+                    onSuggestionClick={handleSuggestionClick}
+                  />
                 ))}
               </div>
                <p className="text-xs text-muted-foreground mt-2">

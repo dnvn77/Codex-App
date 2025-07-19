@@ -166,11 +166,12 @@ function toast({ ...props }: Toast) {
   })
 
   // Auto-dismiss logic
-  if (props.duration) {
-    setTimeout(() => {
-        dismiss();
-    }, props.duration);
-  }
+  const duration = props.variant === 'destructive' ? 5000 : props.duration || 2000;
+  
+  setTimeout(() => {
+      dismiss();
+  }, duration);
+
 
   return {
     id: id,

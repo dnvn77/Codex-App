@@ -65,8 +65,7 @@ const chatbotFlow = ai.defineFlow(
     const lang: Language = supportedLanguages.includes(languageCode as Language) ? (languageCode as Language) : 'en';
 
     // If history is empty, it means this is the first message.
-    // The component will handle the initial greeting message.
-    // This flow will now only respond to user input.
+    // Return a predefined greeting.
     if (history.length === 0) {
       const greetings: Record<Language, string> = {
         en: "Hello! I'm Straw chat, your assistant for Strawberry Wallet. How can I help you today?",

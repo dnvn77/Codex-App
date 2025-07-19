@@ -55,7 +55,6 @@ export function Chatbot() {
       title: "Chatbot Error",
       description: "Sorry, I couldn't get a response. Please try again.",
       variant: "destructive",
-      duration: 5000,
     });
   };
 
