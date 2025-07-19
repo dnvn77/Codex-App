@@ -54,10 +54,15 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
     if (!receiptRef.current) return;
     
     try {
-        const dataUrl = await htmlToImage.toPng(receiptRef.current, { 
+        const cardElement = receiptRef.current;
+        // Get the computed background color of the card to match the theme
+        const backgroundColor = window.getComputedStyle(cardElement).backgroundColor;
+
+        const dataUrl = await htmlToImage.toPng(cardElement, { 
             quality: 0.95,
-            backgroundColor: 'white',
+            backgroundColor: backgroundColor,
         });
+        
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
 
