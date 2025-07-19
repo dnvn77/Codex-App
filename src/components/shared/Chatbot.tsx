@@ -37,7 +37,7 @@ export function Chatbot() {
         setMessages([response]);
       }).catch(handleError).finally(() => setIsLoading(false));
     }
-  }, [isOpen, languageCode]);
+  }, [isOpen, languageCode, messages.length]);
 
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export function Chatbot() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-4 right-4 z-40">
         <Button onClick={() => setIsOpen(true)} size="icon" className="rounded-full h-14 w-14 shadow-lg">
           <MessageSquare />
         </Button>

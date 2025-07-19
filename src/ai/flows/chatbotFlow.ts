@@ -79,8 +79,15 @@ const chatbotFlow = ai.defineFlow(
       };
       return greetings[lang];
     }
-
+    
+    // For subsequent messages, call the model.
     const { output } = await chatbotPrompt({ history, languageCode: lang });
-    return output!;
+    
+    if (output === null || output === undefined) {
+      // In case the model returns a null/undefined response, provide a fallback.
+      return "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
+    }
+
+    return output;
   }
 );
