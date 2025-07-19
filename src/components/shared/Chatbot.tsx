@@ -17,6 +17,7 @@ import { Send, MessageSquare, Loader2, User } from 'lucide-react';
 import { askChatbot, type ChatbotMessage } from '@/ai/flows/chatbotFlow';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useTelegram } from '@/hooks/useTelegram';
 
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,16 +26,18 @@ export function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useTelegram();
+  const languageCode = user?.language_code;
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setIsLoading(true);
       // Initial greeting from the chatbot
-      askChatbot([]).then(response => {
+      askChatbot({ history: [], languageCode }).then(response => {
         setMessages([response]);
       }).catch(handleError).finally(() => setIsLoading(false));
     }
-  }, [isOpen]);
+  }, [isOpen, languageCode]);
 
 
   useEffect(() => {
@@ -66,7 +69,7 @@ export function Chatbot() {
     setIsLoading(true);
 
     try {
-      const response = await askChatbot(newMessages);
+      const response = await askChatbot({ history: newMessages, languageCode });
       setMessages(prev => [...prev, response]);
     } catch (error) {
       handleError(error as Error);
