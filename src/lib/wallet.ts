@@ -553,28 +553,30 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
     }
 }
 
-export async function verifyWordsFromPassword(password: string, wordsToVerify: { index: number; word: string }[]): Promise<{ success: boolean; seedPhrase: string | null }> {
-    const stored = getStoredWallet();
-    if (!stored) {
-        throw new Error("No stored wallet found to verify against.");
-    }
-    
+/**
+ * Verifies if a given seed phrase corresponds to the stored wallet address.
+ * @param seedPhrase The seed phrase to verify.
+ * @param storedAddress The address of the wallet currently in storage.
+ * @returns A Promise that resolves to true if the address matches, false otherwise.
+ */
+export async function verifySeedPhrase(seedPhrase: string, storedAddress: string): Promise<boolean> {
     try {
-        const seedPhrase = await decrypt(stored, password);
-        const correctWords = seedPhrase.split(' ');
-        
-        const allMatch = wordsToVerify.every(item => correctWords[item.index] === item.word);
-        
-        if (allMatch) {
-            return { success: true, seedPhrase: seedPhrase };
-        } else {
-            return { success: false, seedPhrase: null };
+        const words = seedPhrase.trim().toLowerCase().split(/\s+/);
+        if (![12, 15, 18, 24].includes(words.length)) {
+            throw new Error(`Invalid seed phrase length.`);
         }
-    } catch (e) {
-        // This will catch errors from decrypt, which usually means wrong password.
-        throw new Error("Failed to decrypt wallet. The password provided may be incorrect.");
+        if (words.some(word => !bip39Wordlist.includes(word))) {
+           throw new Error("Invalid seed phrase. Contains non-standard words.");
+        }
+        
+        const derivedKeys = deriveKeysFromSeed(seedPhrase);
+        return derivedKeys.address === storedAddress;
+    } catch (error) {
+        console.error("Error verifying seed phrase:", error);
+        return false;
     }
 }
+
 
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
