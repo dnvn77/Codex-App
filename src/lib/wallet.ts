@@ -282,23 +282,19 @@ function generateRandomString(length: number, chars: string): string {
 
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
 function mockHash(input: string): string {
-  // This is NOT a real hash function and is NOT secure. For demonstration only.
-  // It's a simple algorithm to create a deterministic, pseudo-random-looking hex string.
   let hash = 0;
-  if (input.length === 0) return '0000000000000000000000000000000000000000000000000000000000000000';
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash |= 0; // Convert to 32bit integer
   }
+  let hex = (hash >>> 0).toString(16); // Convert to unsigned and then to hex
   
-  let hex = '';
-  for(let i=0; i<8; i++){
-    // Tweak the hash to get different values for each segment
-    const segment = (hash + i*277) * (i+1);
-    hex += Math.abs(segment & 0xFFFFFFF).toString(16).padStart(7,'0');
+  // Pad with leading zeros to ensure consistent length, and repeat to get 64 chars
+  while(hex.length < 64) {
+    hex = hex + hex;
   }
-
+  
   return hex.substring(0, 64);
 }
 
@@ -356,16 +352,16 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
     if (words.some(word => !bip39Wordlist.includes(word))) {
        throw new Error("Invalid seed phrase. One or more words are not part of the official wordlist.");
     }
-
-    const derivedKeys = deriveKeysFromSeed(words.join(' '));
+    
+    const joinedSeed = words.join(' ');
+    const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
     // Simulate a "fetched" or deterministic balance for an imported wallet.
-    // This hash gives a pseudo-random but deterministic number from the seed.
-    const balanceHash = mockHash(seedPhrase + "_balance");
+    const balanceHash = mockHash(joinedSeed + "_balance");
     const balance = (parseInt(balanceHash.substring(0, 8), 16) % 20000) / 10000 + 0.1; // Range 0.1 to 2.1
 
     return {
-        seedPhrase: words.join(' '),
+        seedPhrase: joinedSeed,
         balance: parseFloat(balance.toFixed(4)),
         ...derivedKeys,
     };

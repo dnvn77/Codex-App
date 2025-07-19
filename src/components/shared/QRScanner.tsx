@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Video, VideoOff } from 'lucide-react';
+import { Loader2, VideoOff } from 'lucide-react';
 import jsQR from 'jsqr';
 
 interface QRScannerProps {
@@ -17,47 +17,14 @@ export function QRScanner({ onScan, t }: QRScannerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const { toast } = useToast();
+  const animationFrameId = useRef<number>();
 
-  useEffect(() => {
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        setHasCameraPermission(true);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-          requestAnimationFrame(tick);
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: t.cameraPermissionTitle,
-          description: t.cameraPermissionDesc,
-        });
-      }
-    };
-
-    getCameraPermission();
-
-    // Cleanup function to stop the camera stream
-    return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const tick = () => {
+  const tick = useCallback(() => {
     if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
       if (canvasRef.current) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         if (ctx) {
             canvas.height = video.videoHeight;
@@ -75,8 +42,47 @@ export function QRScanner({ onScan, t }: QRScannerProps) {
         }
       }
     }
-    requestAnimationFrame(tick);
-  };
+    animationFrameId.current = requestAnimationFrame(tick);
+  }, [onScan]);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    
+    const getCameraPermission = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          animationFrameId.current = requestAnimationFrame(tick);
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: t.cameraPermissionTitle,
+          description: t.cameraPermissionDesc,
+        });
+      }
+    };
+
+    getCameraPermission();
+
+    // Cleanup function to stop the camera stream
+    return () => {
+        if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+        }
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
+
 
   return (
     <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
