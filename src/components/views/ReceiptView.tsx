@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2 } from 'lucid
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ReceiptViewProps {
   transaction: Transaction;
@@ -43,6 +44,7 @@ const ReceiptItem = ({ icon, label, value, isHash = false, t }: { icon: React.Re
 export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const etherscanUrl = `https://sepolia.etherscan.io/tx/${transaction.txHash}`;
 
   const handleShare = async () => {
@@ -55,7 +57,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        // Fallback for desktop browsers
+        // Fallback for desktop browsers where the button shouldn't be visible anyway
         navigator.clipboard.writeText(etherscanUrl);
         toast({
             title: t.linkCopied,
@@ -97,10 +99,12 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             displayPrefix="strawberry.eth/tx/" 
             t={t} 
           />
-          <Button variant="outline" className="w-full" onClick={handleShare}>
-            <Share2 className="mr-2 h-4 w-4" />
-            {t.shareButton}
-          </Button>
+          {isMobile && (
+            <Button variant="outline" className="w-full" onClick={handleShare}>
+              <Share2 className="mr-2 h-4 w-4" />
+              {t.shareButton}
+            </Button>
+          )}
         </div>
       </CardContent>
       <CardFooter>
