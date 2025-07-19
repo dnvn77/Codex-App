@@ -7,7 +7,7 @@ import { DashboardView } from '@/components/views/DashboardView';
 import { ReceiptView } from '@/components/views/ReceiptView';
 import { LockView } from '@/components/views/LockView';
 import { Loader2 } from 'lucide-react';
-import type { Wallet } from '@/lib/types';
+import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
 
@@ -18,7 +18,8 @@ export function AppContainer() {
   const [view, setView] = useState<View>('connect');
   const [status, setStatus] = useState<Status>('validating');
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
+  const [transaction, setTransaction] = useState<any | null>(null);
 
   const { isReady, initData } = useTelegram();
 
@@ -35,7 +36,9 @@ export function AppContainer() {
           console.warn('Running outside of Telegram or initData is not available.');
         }
 
-        if (getStoredWallet()) {
+        const storedWallet = getStoredWallet();
+        setStoredWalletInfo(storedWallet);
+        if (storedWallet) {
           setView('lock');
         } else {
           setView('connect');
@@ -48,6 +51,8 @@ export function AppContainer() {
 
   const handleWalletConnected = (newWallet: Wallet) => {
     setWallet(newWallet);
+    const storedInfo = getStoredWallet();
+    setStoredWalletInfo(storedInfo);
     setView('dashboard');
   };
 
@@ -56,7 +61,7 @@ export function AppContainer() {
     setView('dashboard');
   }
 
-  const handleTransactionSent = (sentTransaction: Transaction) => {
+  const handleTransactionSent = (sentTransaction: any) => {
     if (wallet) {
       // Update wallet balance after transaction
       const newBalance = wallet.balance - sentTransaction.amount;
@@ -73,6 +78,7 @@ export function AppContainer() {
 
   const handleDisconnect = () => {
     setWallet(null);
+    setStoredWalletInfo(null);
     clearStoredWallet();
     setView('connect');
   };
@@ -97,7 +103,14 @@ export function AppContainer() {
   return (
     <div className="w-full">
       {view === 'connect' && <ConnectView onWalletConnected={handleWalletConnected} />}
-      {view === 'lock' && <LockView onWalletUnlocked={handleWalletUnlocked} />}
+      {view === 'lock' && storedWalletInfo && (
+        <LockView 
+          storedWallet={storedWalletInfo}
+          onWalletUnlocked={handleWalletUnlocked}
+          onDisconnect={handleDisconnect}
+          onWalletConnected={handleWalletConnected} // for password reset
+        />
+      )}
       {view === 'dashboard' && wallet && (
         <DashboardView
           wallet={wallet}

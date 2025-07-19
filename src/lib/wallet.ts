@@ -2,6 +2,7 @@
 "use client";
 
 import type { Wallet, Transaction, StoredWallet } from './types';
+import { commonPasswords } from './commonPasswords';
 
 // WARNING: This is a mock implementation for demonstration purposes.
 // Do not use this in a production environment.
@@ -268,4 +269,22 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
 
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
+}
+
+export function validatePassword(password: string): {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    number: boolean;
+    special: boolean;
+    common: boolean;
+} {
+    return {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[\W_]/.test(password), // Matches any non-word character
+        common: !commonPasswords.has(password.toLowerCase()),
+    };
 }

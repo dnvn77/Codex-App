@@ -97,6 +97,15 @@ export const translations = {
     finishSetupButton: 'Finish Setup',
     passwordTooShort: 'Password must be at least 8 characters long.',
     passwordsDoNotMatch: 'Passwords do not match.',
+    passwordDoesNotMeetRequirements: 'Password does not meet all requirements.',
+    
+    // Password requirements
+    reqLength: '8+ characters',
+    reqUppercase: '1 uppercase',
+    reqLowercase: '1 lowercase',
+    reqNumber: '1 number',
+    reqSpecial: '1 special char',
+    reqNotCommon: 'Not a common password',
     
     // Lock screen fields
     unlockWalletTitle: 'Unlock Your Wallet',
@@ -104,6 +113,16 @@ export const translations = {
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
+    forgotPasswordLink: 'Forgot password?',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'To reset your password, please confirm you own this wallet by entering the correct words from your secret phrase.',
+    setNewPasswordDesc: 'Create a new, strong password for your wallet.',
+    newPasswordLabel: 'New Password',
+    confirmNewPasswordLabel: 'Confirm New Password',
+    resetPasswordButton: 'Reset Password',
+    passwordResetSuccessTitle: 'Password Reset!',
+    passwordResetSuccessDesc: 'You can now use your new password.',
     
     // QR Scanner
     scanQrTitle: 'Scan QR Code',
@@ -209,6 +228,15 @@ export const translations = {
     finishSetupButton: 'Finalizar Configuración',
     passwordTooShort: 'La contraseña debe tener al menos 8 caracteres.',
     passwordsDoNotMatch: 'Las contraseñas no coinciden.',
+    passwordDoesNotMeetRequirements: 'La contraseña no cumple con todos los requisitos.',
+
+    // Password requirements
+    reqLength: '8+ caracteres',
+    reqUppercase: '1 mayúscula',
+    reqLowercase: '1 minúscula',
+    reqNumber: '1 número',
+    reqSpecial: '1 carácter especial',
+    reqNotCommon: 'No ser una contraseña común',
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear tu Billetera',
@@ -216,7 +244,17 @@ export const translations = {
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
-    
+    forgotPasswordLink: '¿Olvidaste tu contraseña?',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'Para restablecer tu contraseña, confirma que eres el dueño de esta billetera ingresando las palabras correctas de tu frase secreta.',
+    setNewPasswordDesc: 'Crea una contraseña nueva y segura para tu billetera.',
+    newPasswordLabel: 'Nueva Contraseña',
+    confirmNewPasswordLabel: 'Confirmar Nueva Contraseña',
+    resetPasswordButton: 'Restablecer Contraseña',
+    passwordResetSuccessTitle: '¡Contraseña Restablecida!',
+    passwordResetSuccessDesc: 'Ahora puedes usar tu nueva contraseña.',
+
     // QR Scanner
     scanQrTitle: 'Escanear código QR',
     scanQrDesc: 'Apunta tu cámara a un código QR para escanear una dirección.',
@@ -321,14 +359,33 @@ export const translations = {
     finishSetupButton: '完成设置',
     passwordTooShort: '密码必须至少为8个字符。',
     passwordsDoNotMatch: '密码不匹配。',
-    
+    passwordDoesNotMeetRequirements: '密码不符合所有要求。',
+
+    // Password requirements
+    reqLength: '8+ 个字符',
+    reqUppercase: '1 个大写字母',
+    reqLowercase: '1 个小写字母',
+    reqNumber: '1 个数字',
+    reqSpecial: '1 个特殊字符',
+    reqNotCommon: '不是常用密码',
+
     // Lock screen fields
     unlockWalletTitle: '解锁您的钱包',
     unlockWalletDesc: '输入您的密码以访问您的紫罗兰金库。',
     unlockButton: '解锁',
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
+    forgotPasswordLink: '忘记密码？',
 
+    // Password Recovery
+    confirmPhraseToResetDesc: '要重置您的密码，请通过输入您的秘密短语中的正确单词来确认您拥有此钱包。',
+    setNewPasswordDesc: '为您的钱包创建一个新的、强大的密码。',
+    newPasswordLabel: '新密码',
+    confirmNewPasswordLabel: '确认新密码',
+    resetPasswordButton: '重置密码',
+    passwordResetSuccessTitle: '密码已重置！',
+    passwordResetSuccessDesc: '您现在可以使用您的新密码。',
+    
     // QR Scanner
     scanQrTitle: '扫描二维码',
     scanQrDesc: '将您的相机对准二维码以扫描地址。',
@@ -433,6 +490,15 @@ export const translations = {
     finishSetupButton: 'सेटअप समाप्त करें',
     passwordTooShort: 'पासवर्ड कम से कम 8 वर्णों का होना चाहिए।',
     passwordsDoNotMatch: 'पासवर्ड मेल नहीं खाते।',
+    passwordDoesNotMeetRequirements: 'पासवर्ड सभी आवश्यकताओं को पूरा नहीं करता है।',
+
+    // Password requirements
+    reqLength: '8+ अक्षर',
+    reqUppercase: '1 बड़ा अक्षर',
+    reqLowercase: '1 छोटा अक्षर',
+    reqNumber: '1 संख्या',
+    reqSpecial: '1 विशेष वर्ण',
+    reqNotCommon: 'एक सामान्य पासवर्ड नहीं',
 
     // Lock screen fields
     unlockWalletTitle: 'अपना वॉलेट अनलॉक करें',
@@ -440,7 +506,17 @@ export const translations = {
     unlockButton: 'अनलॉक करें',
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
+    forgotPasswordLink: 'पासवर्ड भूल गए?',
 
+    // Password Recovery
+    confirmPhraseToResetDesc: 'अपना पासवर्ड रीसेट करने के लिए, कृपया पुष्टि करें कि आप अपने गुप्त वाक्यांश से सही शब्द दर्ज करके इस वॉलेट के मालिक हैं।',
+    setNewPasswordDesc: 'अपने वॉलेट के लिए एक नया, मजबूत पासवर्ड बनाएं।',
+    newPasswordLabel: 'नया पासवर्ड',
+    confirmNewPasswordLabel: 'नए पासवर्ड की पुष्टि करें',
+    resetPasswordButton: 'पासवर्ड रीसेट',
+    passwordResetSuccessTitle: 'पासवर्ड रीसेट हो गया!',
+    passwordResetSuccessDesc: 'अब आप अपना नया पासवर्ड इस्तेमाल कर सकते हैं।',
+    
     // QR Scanner
     scanQrTitle: 'क्यूआर कोड स्कैन करें',
     scanQrDesc: 'एक पता स्कैन करने के लिए अपने कैमरे को क्यूआर कोड पर इंगित करें।',
@@ -545,6 +621,15 @@ export const translations = {
     finishSetupButton: 'Terminer la configuration',
     passwordTooShort: 'Le mot de passe doit comporter au moins 8 caractères.',
     passwordsDoNotMatch: 'Les mots de passe ne correspondent pas.',
+    passwordDoesNotMeetRequirements: 'Le mot de passe ne remplit pas toutes les conditions.',
+
+    // Password requirements
+    reqLength: '8+ caractères',
+    reqUppercase: '1 majuscule',
+    reqLowercase: '1 minuscule',
+    reqNumber: '1 chiffre',
+    reqSpecial: '1 caractère spécial',
+    reqNotCommon: 'Pas un mot de passe courant',
 
     // Lock screen fields
     unlockWalletTitle: 'Déverrouiller votre portefeuille',
@@ -552,7 +637,17 @@ export const translations = {
     unlockButton: 'Déverrouiller',
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
+    forgotPasswordLink: 'Mot de passe oublié ?',
 
+    // Password Recovery
+    confirmPhraseToResetDesc: 'Pour réinitialiser votre mot de passe, veuillez confirmer que vous possédez ce portefeuille en entrant les mots corrects de votre phrase secrète.',
+    setNewPasswordDesc: 'Créez un nouveau mot de passe fort pour votre portefeuille.',
+    newPasswordLabel: 'Nouveau mot de passe',
+    confirmNewPasswordLabel: 'Confirmer le nouveau mot de passe',
+    resetPasswordButton: 'Réinitialiser le mot de passe',
+    passwordResetSuccessTitle: 'Mot de passe réinitialisé !',
+    passwordResetSuccessDesc: 'Vous pouvez maintenant utiliser votre nouveau mot de passe.',
+    
     // QR Scanner
     scanQrTitle: 'Scanner le code QR',
     scanQrDesc: 'Pointez votre appareil photo sur un code QR pour scanner une adresse.',
@@ -657,13 +752,32 @@ export const translations = {
     finishSetupButton: 'إنهاء الإعداد',
     passwordTooShort: 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.',
     passwordsDoNotMatch: 'كلمتا المرور غير متطابقتين.',
+    passwordDoesNotMeetRequirements: 'كلمة المرور لا تفي بجميع المتطلبات.',
     
+    // Password requirements
+    reqLength: '8+ أحرف',
+    reqUppercase: '1 حرف كبير',
+    reqLowercase: '1 حرف صغير',
+    reqNumber: '1 رقم',
+    reqSpecial: '1 حرف خاص',
+    reqNotCommon: 'ليست كلمة مرور شائعة',
+
     // Lock screen fields
     unlockWalletTitle: 'افتح محفظتك',
     unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى خزنة البنفسج الخاصة بك.',
     unlockButton: 'فتح',
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
+    forgotPasswordLink: 'هل نسيت كلمة المرور؟',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'لإعادة تعيين كلمة المرور الخاصة بك، يرجى تأكيد أنك تملك هذه المحفظة عن طريق إدخال الكلمات الصحيحة من عبارتك السرية.',
+    setNewPasswordDesc: 'أنشئ كلمة مرور جديدة وقوية لمحفظتك.',
+    newPasswordLabel: 'كلمة مرور جديدة',
+    confirmNewPasswordLabel: 'تأكيد كلمة المرور الجديدة',
+    resetPasswordButton: 'إعادة تعيين كلمة المرور',
+    passwordResetSuccessTitle: 'تمت إعادة تعيين كلمة المرور!',
+    passwordResetSuccessDesc: 'يمكنك الآن استخدام كلمة المرور الجديدة.',
     
     // QR Scanner
     scanQrTitle: 'مسح رمز الاستجابة السريعة',
@@ -769,6 +883,15 @@ export const translations = {
     finishSetupButton: 'সেটআপ শেষ করুন',
     passwordTooShort: 'পাসওয়ার্ড কমপক্ষে 8 অক্ষরের হতে হবে।',
     passwordsDoNotMatch: 'পাসওয়ার্ড মেলে না।',
+    passwordDoesNotMeetRequirements: 'পাসওয়ার্ড সমস্ত প্রয়োজনীয়তা পূরণ করে না।',
+    
+    // Password requirements
+    reqLength: '৮+ অক্ষর',
+    reqUppercase: '১টি বড় হাতের অক্ষর',
+    reqLowercase: '১টি ছোট হাতের অক্ষর',
+    reqNumber: '১টি সংখ্যা',
+    reqSpecial: '১টি বিশেষ অক্ষর',
+    reqNotCommon: 'সাধারণ পাসওয়ার্ড নয়',
 
     // Lock screen fields
     unlockWalletTitle: 'আপনার ওয়ালেট আনলক করুন',
@@ -776,6 +899,16 @@ export const translations = {
     unlockButton: 'আনলক করুন',
     unlockingButton: 'আনলক করা হচ্ছে...',
     wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
+    forgotPasswordLink: 'পাসওয়ার্ড ভুলে গেছেন?',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'আপনার পাসওয়ার্ড পুনরায় সেট করতে, আপনার গোপন বাক্যাংশ থেকে সঠিক শব্দ প্রবেশ করে এই ওয়ালেটের মালিকানা নিশ্চিত করুন।',
+    setNewPasswordDesc: 'আপনার ওয়ালেটের জন্য একটি নতুন, শক্তিশালী পাসওয়ার্ড তৈরি করুন।',
+    newPasswordLabel: 'নতুন পাসওয়ার্ড',
+    confirmNewPasswordLabel: 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+    resetPasswordButton: 'পাসওয়ার্ড পুনরায় সেট করুন',
+    passwordResetSuccessTitle: 'পাসওয়ার্ড পুনরায় সেট করা হয়েছে!',
+    passwordResetSuccessDesc: 'আপনি এখন আপনার নতুন পাসওয়ার্ড ব্যবহার করতে পারেন।',
 
     // QR Scanner
     scanQrTitle: 'QR কোড স্ক্যান করুন',
@@ -881,13 +1014,32 @@ export const translations = {
     finishSetupButton: 'Завершить настройку',
     passwordTooShort: 'Пароль должен содержать не менее 8 символов.',
     passwordsDoNotMatch: 'Пароли не совпадают.',
+    passwordDoesNotMeetRequirements: 'Пароль не соответствует всем требованиям.',
     
+    // Password requirements
+    reqLength: '8+ символов',
+    reqUppercase: '1 заглавная буква',
+    reqLowercase: '1 строчная буква',
+    reqNumber: '1 цифра',
+    reqSpecial: '1 спецсимвол',
+    reqNotCommon: 'Не распространенный пароль',
+
     // Lock screen fields
     unlockWalletTitle: 'Разблокировать ваш кошелек',
     unlockWalletDesc: 'Введите пароль для доступа к вашему Violet Vault.',
     unlockButton: 'Разблокировать',
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
+    forgotPasswordLink: 'Забыли пароль?',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'Чтобы сбросить пароль, подтвердите, что вы являетесь владельцем этого кошелька, введя правильные слова из вашей секретной фразы.',
+    setNewPasswordDesc: 'Создайте новый, надежный пароль для вашего кошелька.',
+    newPasswordLabel: 'Новый пароль',
+    confirmNewPasswordLabel: 'Подтвердите новый пароль',
+    resetPasswordButton: 'Сбросить пароль',
+    passwordResetSuccessTitle: 'Пароль сброшен!',
+    passwordResetSuccessDesc: 'Теперь вы можете использовать свой новый пароль.',
 
     // QR Scanner
     scanQrTitle: 'Сканировать QR-код',
@@ -993,6 +1145,15 @@ export const translations = {
     finishSetupButton: 'Concluir Configuração',
     passwordTooShort: 'A senha deve ter pelo menos 8 caracteres.',
     passwordsDoNotMatch: 'As senhas não coincidem.',
+    passwordDoesNotMeetRequirements: 'A senha não atende a todos os requisitos.',
+
+    // Password requirements
+    reqLength: '8+ caracteres',
+    reqUppercase: '1 maiúscula',
+    reqLowercase: '1 minúscula',
+    reqNumber: '1 número',
+    reqSpecial: '1 caractere especial',
+    reqNotCommon: 'Não é uma senha comum',
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear sua Carteira',
@@ -1000,6 +1161,16 @@ export const translations = {
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
+    forgotPasswordLink: 'Esqueceu a senha?',
+
+    // Password Recovery
+    confirmPhraseToResetDesc: 'Para redefinir sua senha, confirme que você possui esta carteira inserindo as palavras corretas de sua frase secreta.',
+    setNewPasswordDesc: 'Crie uma senha nova e forte para sua carteira.',
+    newPasswordLabel: 'Nova Senha',
+    confirmNewPasswordLabel: 'Confirmar Nova Senha',
+    resetPasswordButton: 'Redefinir Senha',
+    passwordResetSuccessTitle: 'Senha Redefinida!',
+    passwordResetSuccessDesc: 'Agora você pode usar sua nova senha.',
     
     // QR Scanner
     scanQrTitle: 'Escanear código QR',
@@ -1105,6 +1276,15 @@ export const translations = {
     finishSetupButton: 'Selesaikan Pengaturan',
     passwordTooShort: 'Kata sandi harus minimal 8 karakter.',
     passwordsDoNotMatch: 'Kata sandi tidak cocok.',
+    passwordDoesNotMeetRequirements: 'Kata sandi tidak memenuhi semua persyaratan.',
+
+    // Password requirements
+    reqLength: '8+ karakter',
+    reqUppercase: '1 huruf besar',
+    reqLowercase: '1 huruf kecil',
+    reqNumber: '1 angka',
+    reqSpecial: '1 karakter khusus',
+    reqNotCommon: 'Bukan kata sandi umum',
 
     // Lock screen fields
     unlockWalletTitle: 'Buka Kunci Dompet Anda',
@@ -1112,6 +1292,16 @@ export const translations = {
     unlockButton: 'Buka kunci',
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
+    forgotPasswordLink: 'Lupa kata sandi?',
+    
+    // Password Recovery
+    confirmPhraseToResetDesc: 'Untuk mengatur ulang kata sandi Anda, harap konfirmasikan bahwa Anda memiliki dompet ini dengan memasukkan kata-kata yang benar dari frasa rahasia Anda.',
+    setNewPasswordDesc: 'Buat kata sandi baru yang kuat untuk dompet Anda.',
+    newPasswordLabel: 'Kata Sandi Baru',
+    confirmNewPasswordLabel: 'Konfirmasi Kata Sandi Baru',
+    resetPasswordButton: 'Atur Ulang Kata Sandi',
+    passwordResetSuccessTitle: 'Kata Sandi Diatur Ulang!',
+    passwordResetSuccessDesc: 'Anda sekarang dapat menggunakan kata sandi baru Anda.',
 
     // QR Scanner
     scanQrTitle: 'Pindai Kode QR',
