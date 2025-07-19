@@ -283,14 +283,18 @@ function generateRandomString(length: number, chars: string): string {
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
 function mockHash(input: string): string {
   let hash = 0;
+  if (input.length === 0) return '0';
   for (let i = 0; i < input.length; i++) {
-    const char = input.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
+      const char = input.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
   }
-  let hex = (hash >>> 0).toString(16); // Convert to unsigned and then to hex
+  let hex = (hash >>> 0).toString(16); // Make it unsigned before converting
   
-  // Pad with leading zeros to ensure consistent length, and repeat to get 64 chars
+  // Pad and repeat to get a consistent length
+  while(hex.length < 8) {
+      hex = '0' + hex;
+  }
   while(hex.length < 64) {
     hex = hex + hex;
   }
@@ -549,6 +553,29 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
     }
 }
 
+export async function verifyWordsFromPassword(password: string, wordsToVerify: { index: number; word: string }[]): Promise<{ success: boolean; seedPhrase: string | null }> {
+    const stored = getStoredWallet();
+    if (!stored) {
+        throw new Error("No stored wallet found to verify against.");
+    }
+    
+    try {
+        const seedPhrase = await decrypt(stored, password);
+        const correctWords = seedPhrase.split(' ');
+        
+        const allMatch = wordsToVerify.every(item => correctWords[item.index] === item.word);
+        
+        if (allMatch) {
+            return { success: true, seedPhrase: seedPhrase };
+        } else {
+            return { success: false, seedPhrase: null };
+        }
+    } catch (e) {
+        // This will catch errors from decrypt, which usually means wrong password.
+        throw new Error("Failed to decrypt wallet. The password provided may be incorrect.");
+    }
+}
+
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
 }
@@ -570,3 +597,5 @@ export function validatePassword(password: string): {
         common: !commonPasswords.has(password.toLowerCase()),
     };
 }
+
+    
