@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
-import { unlockWallet } from '@/lib/wallet';
+import { Loader2, Lock, Eye, EyeOff, LogOut, AlertTriangle } from 'lucide-react';
+import { unlockWallet, importWalletFromSeed, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTranslations } from '@/hooks/useTranslations';
 import { ConnectView } from './ConnectView';
@@ -19,6 +19,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useToast } from "@/hooks/use-toast";
 
 interface LockViewProps {
   storedWallet: StoredWallet;
@@ -27,7 +28,36 @@ interface LockViewProps {
   onWalletConnected: (wallet: Wallet) => void; // Used for password reset
 }
 
-type RecoveryStep = 'start' | 'confirmSeed' | 'resetPassword';
+type RecoveryStep = 'enterSeed' | 'resetPassword';
+
+const WordInput = ({
+  index,
+  value,
+  onChange,
+  onPaste,
+}: {
+  index: number;
+  value: string;
+  onChange: (index: number, value: string) => void;
+  onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+}) => {
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
+      <Input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(index, e.target.value)}
+        onPaste={onPaste}
+        className="pl-6 text-center"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck="false"
+      />
+    </div>
+  );
+};
 
 export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalletConnected }: LockViewProps) {
   const [password, setPassword] = useState('');
@@ -36,13 +66,11 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
   const [showPassword, setShowPassword] = useState(false);
   
   const [isRecoveryOpen, setRecoveryOpen] = useState(false);
-  const [recoveryStep, setRecoveryStep] = useState<RecoveryStep>('start');
-  const [recoverySeedPhrase, setRecoverySeedPhrase] = useState('');
-  const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
-  const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
-  const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
+  const [recoveryStep, setRecoveryStep] = useState<RecoveryStep>('enterSeed');
+  const [recoverySeedPhrase, setRecoverySeedPhrase] = useState(Array(12).fill(''));
   
   const t = useTranslations();
+  const { toast } = useToast();
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,90 +95,80 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     }
   };
 
-  const handleForgotPassword = async () => {
-    setIsLoading(true);
-    setError('');
-    // This is a temporary measure for the demo. 
-    // In a real app, you would not expose the seed phrase like this.
-    // A more secure flow would involve email or another factor.
-    const tempPassword = prompt(t.debugRecoveryPrompt);
-    if (!tempPassword) {
-        setIsLoading(false);
-        return;
+  const handleForgotPassword = () => {
+    setRecoveryOpen(true);
+  };
+
+  const handleVerifySeedPhrase = async () => {
+    const seedPhrase = recoverySeedPhrase.join(' ').trim();
+    if (recoverySeedPhrase.some(w => !w)) {
+      toast({ title: t.error, description: t.enterAllWords, variant: 'destructive' });
+      return;
     }
     
+    setIsLoading(true);
     try {
-        const wallet = await unlockWallet(tempPassword);
-        if (wallet && wallet.seedPhrase) {
-            setRecoverySeedPhrase(wallet.seedPhrase);
-            const indices = new Set<number>();
-            while (indices.size < 3) {
-              indices.add(Math.floor(Math.random() * wallet.seedPhrase.split(' ').length));
-            }
-            setRandomWordIndices(Array.from(indices));
-            setRecoveryStep('confirmSeed');
-            setRecoveryOpen(true);
-        } else {
-            alert(t.debugRecoveryError);
-        }
-    } catch (e) {
-        alert(t.debugRecoveryError);
+      const wallet = await importWalletFromSeed(seedPhrase);
+      // We must verify that the imported wallet's address matches the locked wallet's address.
+      if (wallet.address === storedWallet.address) {
+        setRecoveryStep('resetPassword');
+      } else {
+        toast({ title: t.error, description: t.seedPhraseMismatch, variant: 'destructive' });
+      }
+    } catch(err) {
+      toast({ title: t.importErrorTitle, description: (err as Error).message, variant: 'destructive' });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleConfirmRecoverySeed = () => {
-    if (!recoverySeedPhrase) return;
-    const correctWords = recoverySeedPhrase.split(' ');
-    const newErrors = ['', '', ''];
-    let allCorrect = true;
-
-    randomWordIndices.forEach((wordIndex, arrayIndex) => {
-      if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
-        newErrors[arrayIndex] = t.incorrectWordError;
-        allCorrect = false;
-      }
-    });
+  const handleWordChange = (index: number, value: string) => {
+    const newWords = [...recoverySeedPhrase];
+    if (/^[a-zA-Z]*$/.test(value)) {
+      newWords[index] = value.trim().toLowerCase();
+    }
+    setRecoverySeedPhrase(newWords);
+  };
+  
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text').toLowerCase();
     
-    setConfirmationErrors(newErrors);
+    if (!/^[a-z\s]*$/.test(pastedText)) {
+      toast({
+        title: t.invalidInputTitle,
+        description: t.invalidInputDesc,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (allCorrect) {
-      setRecoveryStep('resetPassword');
+    const words = pastedText.trim().split(/\s+/);
+    
+    if (words.length === 12) {
+      setRecoverySeedPhrase(words);
+    } else {
+      toast({
+        title: t.invalidPasteTitle,
+        description: t.invalidPasteDesc(words.length),
+        variant: "destructive",
+      });
     }
   };
   
-  const handleConfirmationWordChange = (index: number, value: string) => {
-    const newWords = [...confirmationWords];
-    newWords[index] = value;
-    setConfirmationWords(newWords);
-
-    const newErrors = [...confirmationErrors];
-    if (newErrors[index]) {
-      newErrors[index] = '';
-      setConfirmationErrors(newErrors);
-    }
-  };
 
   const handlePasswordReset = (wallet: Wallet) => {
-    setRecoveryOpen(false);
-    // Reset state after closing
-    setTimeout(() => {
-        setRecoveryStep('start');
-        setRecoverySeedPhrase('');
-        setConfirmationWords(['','','']);
-        setConfirmationErrors(['','','']);
-    }, 300);
+    handleCloseRecovery();
     onWalletUnlocked(wallet);
   }
 
   const handleCloseRecovery = () => {
     setRecoveryOpen(false);
      setTimeout(() => {
-        setRecoveryStep('start');
-        setRecoverySeedPhrase('');
-        setConfirmationWords(['','','']);
-        setConfirmationErrors(['','','']);
+        setRecoveryStep('enterSeed');
+        setRecoverySeedPhrase(Array(12).fill(''));
+        setIsLoading(false);
+        setError('');
     }, 300);
   }
 
@@ -216,35 +234,43 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
       </Card>
       
       <Dialog open={isRecoveryOpen} onOpenChange={handleCloseRecovery}>
-        <DialogContent>
-            {recoveryStep === 'confirmSeed' && (
+        <DialogContent className="sm:max-w-md">
+            {recoveryStep === 'enterSeed' && (
               <>
                 <DialogHeader>
-                  <DialogTitle>{t.confirmPhraseTitle}</DialogTitle>
-                  <DialogDescription>{t.confirmPhraseToResetDesc}</DialogDescription>
+                  <DialogTitle>{t.recoverWalletTitle}</DialogTitle>
+                  <DialogDescription>{t.recoverWalletDesc}</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                  {randomWordIndices.map((wordIndex, arrayIndex) => (
-                    <div key={wordIndex}>
-                      <Label htmlFor={`recovery-confirmationWord-${arrayIndex}`} className="font-semibold">
-                        {t.enterWordLabel(wordIndex + 1)}
-                      </Label>
-                      <Input
-                        id={`recovery-confirmationWord-${arrayIndex}`}
-                        value={confirmationWords[arrayIndex]}
-                        onChange={(e) => handleConfirmationWordChange(arrayIndex, e.target.value)}
-                        className="mt-1 text-base"
-                        autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck="false"
-                      />
-                      {confirmationErrors[arrayIndex] && (
-                        <p className="text-destructive text-sm mt-1">{confirmationErrors[arrayIndex]}</p>
-                      )}
+                   <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p>{t.recoverWalletWarning}</p>
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">{t.secretPhraseWordsLabel}</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2">
+                      {recoverySeedPhrase.map((word, index) => (
+                        <WordInput
+                          key={index}
+                          index={index}
+                          value={word}
+                          onChange={handleWordChange}
+                          onPaste={handlePaste}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {t.pasteDisclaimer}
+                    </p>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={handleCloseRecovery}>{t.cancelButton}</Button>
-                  <Button onClick={handleConfirmRecoverySeed} disabled={confirmationWords.some(w => !w)}>{t.continueButton}</Button>
+                  <Button onClick={handleVerifySeedPhrase} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin" /> : t.verifyButton}
+                  </Button>
                 </DialogFooter>
               </>
             )}
@@ -252,7 +278,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
                 <ConnectView 
                     isRecoveryMode={true} 
                     onPasswordReset={handlePasswordReset}
-                    recoverySeedPhrase={recoverySeedPhrase}
+                    recoverySeedPhrase={recoverySeedPhrase.join(' ')}
                     onWalletConnected={onWalletConnected}
                 />
             )}

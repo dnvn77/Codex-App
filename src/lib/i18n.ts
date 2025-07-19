@@ -123,12 +123,14 @@ export const translations = {
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
     forgotPasswordLink: 'Forgot password?',
-    debugRecoveryPrompt: 'DEBUG: To start recovery, please enter your current password to get the seed phrase for the confirmation step.',
-    debugRecoveryError: 'Wrong password. Cannot initiate recovery flow for this demo.',
-
-
+    
     // Password Recovery
-    confirmPhraseToResetDesc: 'To reset your password, please confirm you own this wallet by entering the correct words from your secret phrase.',
+    recoverWalletTitle: 'Recover Wallet',
+    recoverWalletDesc: 'To reset your password, you must first prove ownership by entering your 12-word secret phrase.',
+    recoverWalletWarning: 'This is the only way to regain access if you have forgotten your password. Never share this phrase.',
+    verifyButton: 'Verify',
+    enterAllWords: 'Please enter all 12 words of your seed phrase.',
+    seedPhraseMismatch: "The seed phrase you entered does not match the one for this wallet. Please check and try again.",
     setNewPasswordDesc: 'Create a new, strong password for your wallet.',
     newPasswordLabel: 'New Password',
     confirmNewPasswordLabel: 'Confirm New Password',
@@ -267,12 +269,14 @@ export const translations = {
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
     forgotPasswordLink: '¿Olvidaste tu contraseña?',
-    debugRecoveryPrompt: 'DEBUG: Para iniciar la recuperación, por favor ingresa tu contraseña actual para obtener la frase secreta para el paso de confirmación.',
-    debugRecoveryError: 'Contraseña incorrecta. No se puede iniciar el flujo de recuperación para esta demostración.',
-
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'Para restablecer tu contraseña, confirma que eres el dueño de esta billetera ingresando las palabras correctas de tu frase secreta.',
+    recoverWalletTitle: 'Recuperar Billetera',
+    recoverWalletDesc: 'Para restablecer tu contraseña, primero debes demostrar que eres el propietario introduciendo tu frase secreta de 12 palabras.',
+    recoverWalletWarning: 'Esta es la única forma de recuperar el acceso si has olvidado tu contraseña. Nunca compartas esta frase.',
+    verifyButton: 'Verificar',
+    enterAllWords: 'Por favor, introduce las 12 palabras de tu frase semilla.',
+    seedPhraseMismatch: "La frase semilla que introdujiste no coincide con la de esta billetera. Por favor, compruébala e inténtalo de nuevo.",
     setNewPasswordDesc: 'Crea una contraseña nueva y segura para tu billetera.',
     newPasswordLabel: 'Nueva Contraseña',
     confirmNewPasswordLabel: 'Confirmar Nueva Contraseña',
@@ -411,11 +415,14 @@ export const translations = {
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
     forgotPasswordLink: '忘记密码？',
-    debugRecoveryPrompt: '调试：要开始恢复，请输入您当前的密码以获取确认步骤的助记词。',
-    debugRecoveryError: '密码错误。无法为此演示启动恢复流程。',
 
     // Password Recovery
-    confirmPhraseToResetDesc: '要重置您的密码，请通过输入您的秘密短语中的正确单词来确认您拥有此钱包。',
+    recoverWalletTitle: '恢复钱包',
+    recoverWalletDesc: '要重置您的密码，您必须首先通过输入您的12个单词的秘密短语来证明所有权。',
+    recoverWalletWarning: '如果您忘记了密码，这是重新获得访问权限的唯一方法。切勿分享此短语。',
+    verifyButton: '验证',
+    enterAllWords: '请输入您助记词的所有12个单词。',
+    seedPhraseMismatch: '您输入的助记词与此钱包的助记词不符。请检查后重试。',
     setNewPasswordDesc: '为您的钱包创建一个新的、强大的密码。',
     newPasswordLabel: '新密码',
     confirmNewPasswordLabel: '确认新密码',
@@ -554,12 +561,14 @@ export const translations = {
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
     forgotPasswordLink: 'पासवर्ड भूल गए?',
-    debugRecoveryPrompt: 'डीबग: रिकवरी शुरू करने के लिए, कृपया पुष्टिकरण चरण के लिए बीज वाक्यांश प्राप्त करने के लिए अपना वर्तमान पासवर्ड दर्ज करें।',
-    debugRecoveryError: 'गलत पासवर्ड। इस डेमो के लिए रिकवरी प्रवाह शुरू नहीं किया जा सकता है।',
-
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'अपना पासवर्ड रीसेट करने के लिए, कृपया पुष्टि करें कि आप अपने गुप्त वाक्यांश से सही शब्द दर्ज करके इस वॉलेट के मालिक हैं।',
+    recoverWalletTitle: 'वॉलेट पुनर्प्राप्त करें',
+    recoverWalletDesc: 'अपना पासवर्ड रीसेट करने के लिए, आपको पहले अपने 12-शब्दों वाले गुप्त वाक्यांश को दर्ज करके स्वामित्व साबित करना होगा।',
+    recoverWalletWarning: 'यदि आप अपना पासवर्ड भूल गए हैं तो पहुंच पुनः प्राप्त करने का यह एकमात्र तरीका है। इस वाक्यांश को कभी साझा न करें।',
+    verifyButton: 'सत्यापित करें',
+    enterAllWords: 'कृपया अपने बीज वाक्यांश के सभी 12 शब्द दर्ज करें।',
+    seedPhraseMismatch: 'आपके द्वारा दर्ज किया गया बीज वाक्यांश इस वॉलेट के लिए मेल नहीं खाता है। कृपया जांचें और पुनः प्रयास करें।',
     setNewPasswordDesc: 'अपने वॉलेट के लिए एक नया, मजबूत पासवर्ड बनाएं।',
     newPasswordLabel: 'नया पासवर्ड',
     confirmNewPasswordLabel: 'नए पासवर्ड की पुष्टि करें',
@@ -698,11 +707,14 @@ export const translations = {
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
     forgotPasswordLink: 'Mot de passe oublié ?',
-    debugRecoveryPrompt: 'DÉBOGAGE : Pour commencer la récupération, veuillez entrer votre mot de passe actuel pour obtenir la phrase de départ pour l\'étape de confirmation.',
-    debugRecoveryError: 'Mauvais mot de passe. Impossible de lancer le flux de récupération pour cette démo.',
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'Pour réinitialiser votre mot de passe, veuillez confirmer que vous possédez ce portefeuille en entrant les mots corrects de votre phrase secrète.',
+    recoverWalletTitle: 'Récupérer le portefeuille',
+    recoverWalletDesc: 'Pour réinitialiser votre mot de passe, vous devez d\'abord prouver que vous en êtes le propriétaire en saisissant votre phrase secrète de 12 mots.',
+    recoverWalletWarning: 'C\'est le seul moyen de retrouver l\'accès si vous avez oublié votre mot de passe. Ne partagez jamais cette phrase.',
+    verifyButton: 'Vérifier',
+    enterAllWords: 'Veuillez entrer les 12 mots de votre phrase de départ.',
+    seedPhraseMismatch: 'La phrase de départ que vous avez saisie ne correspond pas à celle de ce portefeuille. Veuillez vérifier et réessayer.',
     setNewPasswordDesc: 'Créez un nouveau mot de passe fort pour votre portefeuille.',
     newPasswordLabel: 'Nouveau mot de passe',
     confirmNewPasswordLabel: 'Confirmer le nouveau mot de passe',
@@ -841,12 +853,14 @@ export const translations = {
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
     forgotPasswordLink: 'هل نسيت كلمة المرور؟',
-    debugRecoveryPrompt: 'تصحيح الأخطاء: لبدء الاسترداد، يرجى إدخال كلمة المرور الحالية للحصول على العبارة الأولية لخطوة التأكيد.',
-    debugRecoveryError: 'كلمة مرور خاطئة. لا يمكن بدء تدفق الاسترداد لهذا العرض التوضيحي.',
-
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'لإعادة تعيين كلمة المرور الخاصة بك، يرجى تأكيد أنك تملك هذه المحفظة عن طريق إدخال الكلمات الصحيحة من عبارتك السرية.',
+    recoverWalletTitle: 'استعادة المحفظة',
+    recoverWalletDesc: 'لإعادة تعيين كلمة المرور، يجب عليك أولاً إثبات الملكية عن طريق إدخال عبارتك السرية المكونة من 12 كلمة.',
+    recoverWalletWarning: 'هذه هي الطريقة الوحيدة لاستعادة الوصول إذا نسيت كلمة المرور. لا تشارك هذه العبارة أبدًا.',
+    verifyButton: 'تحقق',
+    enterAllWords: 'الرجاء إدخال جميع كلمات عبارة البذور الـ 12.',
+    seedPhraseMismatch: 'عبارة البذور التي أدخلتها لا تتطابق مع عبارة هذه المحفظة. يرجى التحقق والمحاولة مرة أخرى.',
     setNewPasswordDesc: 'أنشئ كلمة مرور جديدة وقوية لمحفظتك.',
     newPasswordLabel: 'كلمة مرور جديدة',
     confirmNewPasswordLabel: 'تأكيد كلمة المرور الجديدة',
@@ -985,12 +999,14 @@ export const translations = {
     unlockingButton: 'আনলক করা হচ্ছে...',
     wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
     forgotPasswordLink: 'পাসওয়ার্ড ভুলে গেছেন?',
-    debugRecoveryPrompt: 'ডিবাগ: পুনরুদ্ধার শুরু করতে, নিশ্চিতকরণ পদক্ষেপের জন্য বীজ বাক্যাংশ পেতে আপনার বর্তমান পাসওয়ার্ড লিখুন।',
-    debugRecoveryError: 'ভুল পাসওয়ার্ড। এই ডেমোর জন্য পুনরুদ্ধার প্রবাহ শুরু করা যাবে না।',
-
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'আপনার পাসওয়ার্ড পুনরায় সেট করতে, আপনার গোপন বাক্যাংশ থেকে সঠিক শব্দ প্রবেশ করে এই ওয়ালেটের মালিকানা নিশ্চিত করুন।',
+    recoverWalletTitle: 'ওয়ালেট পুনরুদ্ধার করুন',
+    recoverWalletDesc: 'আপনার পাসওয়ার্ড পুনরায় সেট করতে, আপনাকে প্রথমে আপনার 12-শব্দের গোপন বাক্যাংশ প্রবেশ করে মালিকানা প্রমাণ করতে হবে।',
+    recoverWalletWarning: 'আপনি যদি আপনার পাসওয়ার্ড ভুলে যান তবে অ্যাক্সেস ফিরে পাওয়ার এটিই একমাত্র উপায়। এই বাক্যাংশটি কখনও শেয়ার করবেন না।',
+    verifyButton: 'যাচাই করুন',
+    enterAllWords: 'অনুগ্রহ করে আপনার বীজ বাক্যাংশের সমস্ত 12টি শব্দ প্রবেশ করান।',
+    seedPhraseMismatch: 'আপনার প্রবেশ করা বীজ বাক্যাংশটি এই ওয়ালেটেরটির সাথে মেলে না। অনুগ্রহ করে পরীক্ষা করে আবার চেষ্টা করুন।',
     setNewPasswordDesc: 'আপনার ওয়ালেটের জন্য একটি নতুন, শক্তিশালী পাসওয়ার্ড তৈরি করুন।',
     newPasswordLabel: 'নতুন পাসওয়ার্ড',
     confirmNewPasswordLabel: 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
@@ -1129,11 +1145,14 @@ export const translations = {
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
     forgotPasswordLink: 'Забыли пароль?',
-    debugRecoveryPrompt: 'ОТЛАДКА: Чтобы начать восстановление, введите текущий пароль, чтобы получить сид-фразу для шага подтверждения.',
-    debugRecoveryError: 'Неверный пароль. Не удается запустить процесс восстановления для этой демонстрации.',
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'Чтобы сбросить пароль, подтвердите, что вы являетесь владельцем этого кошелька, введя правильные слова из вашей секретной фразы.',
+    recoverWalletTitle: 'Восстановить кошелек',
+    recoverWalletDesc: 'Чтобы сбросить пароль, вы должны сначала подтвердить право собственности, введя свою секретную фразу из 12 слов.',
+    recoverWalletWarning: 'Это единственный способ восстановить доступ, если вы забыли пароль. Никогда не делитесь этой фразой.',
+    verifyButton: 'Проверить',
+    enterAllWords: 'Пожалуйста, введите все 12 слов вашей сид-фразы.',
+    seedPhraseMismatch: 'Введенная вами сид-фраза не соответствует фразе для этого кошелька. Пожалуйста, проверьте и попробуйте снова.',
     setNewPasswordDesc: 'Создайте новый, надежный пароль для вашего кошелька.',
     newPasswordLabel: 'Новый пароль',
     confirmNewPasswordLabel: 'Подтвердите новый пароль',
@@ -1272,11 +1291,14 @@ export const translations = {
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
     forgotPasswordLink: 'Esqueceu a senha?',
-    debugRecoveryPrompt: 'DEBUG: Para iniciar a recuperação, insira sua senha atual para obter a frase semente para a etapa de confirmação.',
-    debugRecoveryError: 'Senha incorreta. Não é possível iniciar o fluxo de recuperação para esta demonstração.',
 
     // Password Recovery
-    confirmPhraseToResetDesc: 'Para redefinir sua senha, confirme que você possui esta carteira inserindo as palavras corretas de sua frase secreta.',
+    recoverWalletTitle: 'Recuperar Carteira',
+    recoverWalletDesc: 'Para redefinir sua senha, você deve primeiro provar a propriedade inserindo sua frase secreta de 12 palavras.',
+    recoverWalletWarning: 'Esta é a única maneira de recuperar o acesso se você esqueceu sua senha. Nunca compartilhe esta frase.',
+    verifyButton: 'Verificar',
+    enterAllWords: 'Por favor, insira todas as 12 palavras da sua frase semente.',
+    seedPhraseMismatch: 'A frase semente que você inseriu não corresponde à desta carteira. Por favor, verifique e tente novamente.',
     setNewPasswordDesc: 'Crie uma senha nova e forte para sua carteira.',
     newPasswordLabel: 'Nova Senha',
     confirmNewPasswordLabel: 'Confirmar Nova Senha',
@@ -1415,12 +1437,14 @@ export const translations = {
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
     forgotPasswordLink: 'Lupa kata sandi?',
-    debugRecoveryPrompt: 'DEBUG: Untuk memulai pemulihan, masukkan kata sandi Anda saat ini untuk mendapatkan frasa benih untuk langkah konfirmasi.',
-    debugRecoveryError: 'Kata sandi salah. Tidak dapat memulai alur pemulihan untuk demo ini.',
 
-    
     // Password Recovery
-    confirmPhraseToResetDesc: 'Untuk mengatur ulang kata sandi Anda, harap konfirmasikan bahwa Anda memiliki dompet ini dengan memasukkan kata-kata yang benar dari frasa rahasia Anda.',
+    recoverWalletTitle: 'Pulihkan Dompet',
+    recoverWalletDesc: 'Untuk mengatur ulang kata sandi Anda, Anda harus terlebih dahulu membuktikan kepemilikan dengan memasukkan frasa rahasia 12 kata Anda.',
+    recoverWalletWarning: 'Ini adalah satu-satunya cara untuk mendapatkan kembali akses jika Anda lupa kata sandi Anda. Jangan pernah membagikan frasa ini.',
+    verifyButton: 'Verifikasi',
+    enterAllWords: 'Silakan masukkan semua 12 kata dari frasa benih Anda.',
+    seedPhraseMismatch: 'Frasa benih yang Anda masukkan tidak cocok dengan frasa untuk dompet ini. Silakan periksa dan coba lagi.',
     setNewPasswordDesc: 'Buat kata sandi baru yang kuat untuk dompet Anda.',
     newPasswordLabel: 'Kata Sandi Baru',
     confirmNewPasswordLabel: 'Konfirmasi Kata Sandi Baru',
