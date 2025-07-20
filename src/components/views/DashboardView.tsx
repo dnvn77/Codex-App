@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, fetchAssetPrices } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -89,14 +89,55 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [showBalances, setShowBalances] = useState(true);
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
+  
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
-  // Mock assets data
-  const [assets, setAssets] = useState<Asset[]>([
-    { name: 'Ethereum', ticker: 'ETH', balance: wallet.balance, priceUSD: 3700.50, change5m: -0.25, icon: '/ethereum.svg' },
-    { name: 'USD Coin', ticker: 'USDC', balance: 1050.23, priceUSD: 1.00, change5m: 0.01, icon: '/usdc.svg' },
-    { name: 'Wrapped BTC', ticker: 'WBTC', balance: 0.00, priceUSD: 68000.80, change5m: 1.2, icon: '/wbtc.svg' },
-    { name: 'Strawberry Token', ticker: 'STRW', balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
-  ]);
+  const assetSymbols = useMemo(() => ['ETH', 'USDC', 'WBTC', 'STRW'], []);
+
+  const updateAssetPrices = useCallback(async () => {
+    setAssetStatus('loading');
+    try {
+      const prices = await fetchAssetPrices(assetSymbols);
+      
+      setAssets(prevAssets => {
+        const newAssets = [
+          { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 0, change5m: 0, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+          { name: 'USD Coin', ticker: 'USDC', id: 3408, balance: 1050.23, priceUSD: 0, change5m: 0, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+          { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, balance: 0.00, priceUSD: 0, change5m: 0, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
+          { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
+        ];
+
+        return newAssets.map(asset => {
+            const priceData = prices[asset.ticker];
+            if (priceData) {
+                return {
+                    ...asset,
+                    priceUSD: priceData.price,
+                    // Note: CMC basic plan doesn't provide 5m change, so we simulate it.
+                    change5m: (Math.random() - 0.5) * 2,
+                };
+            }
+            return asset;
+        });
+      });
+      setAssetStatus('success');
+    } catch (error) {
+      console.error('Failed to fetch asset prices:', error);
+      setAssetStatus('error');
+       toast({
+        title: 'Error de Red',
+        description: 'No se pudieron cargar los precios de los activos. Por favor, inténtelo de nuevo más tarde.',
+        variant: 'destructive',
+      });
+    }
+  }, [assetSymbols, wallet.balance, toast]);
+
+  useEffect(() => {
+    updateAssetPrices(); // Fetch on initial load
+    const interval = setInterval(updateAssetPrices, 5 * 60 * 1000); // 5 minutes
+    return () => clearInterval(interval);
+  }, [updateAssetPrices]);
   
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
@@ -107,21 +148,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const max = wallet.balance - gasCost;
     return max > 0 ? max : 0;
   }, [wallet.balance, gasCost]);
-
-  useEffect(() => {
-    // Simulate price updates every 5 seconds
-    const interval = setInterval(() => {
-      setAssets(prevAssets =>
-        prevAssets.map(asset => ({
-          ...asset,
-          change5m: (Math.random() - 0.5) * 2, // New random change between -2% and 2%
-          priceUSD: asset.priceUSD * (1 + (Math.random() - 0.5) * 0.001) // small price fluctuation
-        }))
-      );
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
 
   useEffect(() => {
     setIsCalculatingGas(true);
@@ -411,7 +437,21 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   />
                 </div>
               </div>
-              <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} />
+              {assetStatus === 'loading' && (
+                <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+                    <p className="text-muted-foreground mt-2">Cargando precios...</p>
+                </div>
+              )}
+              {assetStatus === 'error' && (
+                <div className="text-center py-8 text-destructive">
+                    <AlertTriangle className="h-8 w-8 mx-auto" />
+                    <p className="mt-2">No se pudieron cargar los activos.</p>
+                </div>
+              )}
+              {assetStatus === 'success' && (
+                <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} />
+              )}
             </div>
 
             <Separator />

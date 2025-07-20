@@ -33,6 +33,7 @@ export interface Transaction {
 export interface Asset {
   name: string;
   ticker: string;
+  id: number; // CoinMarketCap ID
   balance: number;
   priceUSD: number;
   change5m: number; // Percentage change
