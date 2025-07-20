@@ -34,7 +34,6 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
-import { fetchAssetPrices, type AssetPriceInput, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -97,36 +96,23 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     
-    // Define the initial state of assets with their balances
-    const initialAssets: Record<string, number> = {
-        'ETH': wallet.balance,
-        'USDC': 2500.50,
-        'WBTC': 0.05,
-        'STRW': 50000,
-    };
-    
-    const input: AssetPriceInput = { symbols: Object.keys(initialAssets) };
-
+    // Using stable, simulated data to avoid external API issues.
     try {
-        const prices: AssetPriceOutput = await fetchAssetPrices(input);
-        
-        const updatedAssets = prices.map(asset => ({
-            ...asset,
-            balance: initialAssets[asset.ticker] || 0,
-        }));
+        const simulatedAssets: Asset[] = [
+            { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+            { name: 'USD Coin', ticker: 'USDC', id: 3408, balance: 2500.50, priceUSD: 1.00, change5m: 0.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+            { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, balance: 0.05, priceUSD: 68000.50, change5m: 2.3, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
+            { name: 'Tether', ticker: 'USDT', id: 825, balance: 1234.56, priceUSD: 1.00, change5m: 0.05, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
+            { name: 'Chainlink', ticker: 'LINK', id: 1975, balance: 350.75, priceUSD: 18.50, change5m: -2.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png' },
+            { name: 'Uniswap', ticker: 'UNI', id: 7083, balance: 500.00, priceUSD: 11.20, change5m: 3.4, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png' },
+            { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
+        ];
 
-        setAssets(updatedAssets);
+        setAssets(simulatedAssets);
         setAssetStatus('success');
     } catch (error) {
         console.error("Failed to fetch asset prices:", error);
         setAssetStatus('error');
-        // Fallback to mock data on error to maintain UI stability
-        setAssets([
-            { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-            { name: 'USD Coin', ticker: 'USDC', id: 3408, balance: 2500.50, priceUSD: 1.00, change5m: 0.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
-            { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, balance: 0.05, priceUSD: 68000.50, change5m: 2.3, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
-            { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
-        ]);
     }
   }, [wallet.balance]);
 
@@ -142,9 +128,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
 
   const maxSendableAmount = useMemo(() => {
-    const max = wallet.balance - gasCost;
+    const ethAsset = assets.find(a => a.ticker === 'ETH');
+    if (!ethAsset) return 0;
+    const max = ethAsset.balance - gasCost;
     return max > 0 ? max : 0;
-  }, [wallet.balance, gasCost]);
+  }, [assets, gasCost]);
 
   useEffect(() => {
     setIsCalculatingGas(true);
@@ -214,11 +202,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
     if (newAmount) {
       const numericAmount = parseFloat(newAmount);
+      const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
       if (isNaN(numericAmount)) {
         setAmountError(t.invalidNumberError);
       } else if (numericAmount < 0) {
         setAmountError(t.negativeAmountError);
-      } else if (numericAmount + gasCost > wallet.balance) {
+      } else if (numericAmount + gasCost > ethBalance) {
         setAmountError(t.insufficientBalanceError);
       } else {
         setAmountError('');
@@ -233,7 +222,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setAmount(maxAmountStr);
     // Trigger validation with the new amount
     const numericAmount = parseFloat(maxAmountStr);
-    if (numericAmount + gasCost > wallet.balance) {
+    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+    if (numericAmount + gasCost > ethBalance) {
       setAmountError(t.insufficientBalanceError);
     } else {
       setAmountError('');
@@ -272,9 +262,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSendClick = () => {
+    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
     // Final check before proceeding
     const numericAmount = parseFloat(amount);
-    if (numericAmount + gasCost > wallet.balance) {
+    if (numericAmount + gasCost > ethBalance) {
         setAmountError(t.insufficientBalanceError);
         toast({ title: t.error, description: t.insufficientBalanceError, variant: 'destructive' });
         return;
