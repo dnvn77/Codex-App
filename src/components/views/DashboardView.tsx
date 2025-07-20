@@ -34,6 +34,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
+import { fetchAssetPrices, type AssetPriceInput, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -95,24 +96,44 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
-    // Using simulated data for stability
-    await new Promise(res => setTimeout(res, 500)); // Simulate network delay
+    
+    // Define the initial state of assets with their balances
+    const initialAssets: Record<string, number> = {
+        'ETH': wallet.balance,
+        'USDC': 2500.50,
+        'WBTC': 0.05,
+        'STRW': 50000,
+    };
+    
+    const input: AssetPriceInput = { symbols: Object.keys(initialAssets) };
 
-    setAssets([
-        { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-        { name: 'Bitcoin', ticker: 'BTC', id: 1, balance: 0.05, priceUSD: 68500.75, change5m: 2.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-        { name: 'Solana', ticker: 'SOL', id: 5426, balance: 10, priceUSD: 172.50, change5m: -3.5, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-        { name: 'Tether', ticker: 'USDT', id: 825, balance: 2500.50, priceUSD: 1.00, change5m: 0.0, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
-        { name: 'XRP', ticker: 'XRP', id: 52, balance: 500, priceUSD: 0.52, change5m: 1.5, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/52.png' },
-        { name: 'Cardano', ticker: 'ADA', id: 2010, balance: 2000, priceUSD: 0.45, change5m: -0.8, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2010.png' },
-        { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
-    ]);
-    setAssetStatus('success');
+    try {
+        const prices: AssetPriceOutput = await fetchAssetPrices(input);
+        
+        const updatedAssets = prices.map(asset => ({
+            ...asset,
+            balance: initialAssets[asset.ticker] || 0,
+        }));
 
+        setAssets(updatedAssets);
+        setAssetStatus('success');
+    } catch (error) {
+        console.error("Failed to fetch asset prices:", error);
+        setAssetStatus('error');
+        // Fallback to mock data on error to maintain UI stability
+        setAssets([
+            { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+            { name: 'USD Coin', ticker: 'USDC', id: 3408, balance: 2500.50, priceUSD: 1.00, change5m: 0.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+            { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, balance: 0.05, priceUSD: 68000.50, change5m: 2.3, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
+            { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
+        ]);
+    }
   }, [wallet.balance]);
 
   useEffect(() => {
     updateAssetPrices(); // Fetch on initial load
+    const interval = setInterval(updateAssetPrices, 300000); // Update every 5 minutes
+    return () => clearInterval(interval);
   }, [updateAssetPrices]);
   
   const totalBalanceUSD = useMemo(() => {
