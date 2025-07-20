@@ -1,81 +1,59 @@
 
 'use server';
 /**
- * @fileOverview A flow to fetch asset prices from CoinMarketCap.
- *
- * - fetchAssetPrices - A function that fetches prices for given symbols.
+ * @fileOverview A flow to fetch asset prices.
+ * This flow is currently using simulated data due to API instability.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import {ai} from '@/ai/genkit';
+import {z} from 'zod';
+import type {Asset} from '@/lib/types';
 
 const AssetPriceInputSchema = z.object({
-  symbols: z.array(z.string()),
+  symbols: z.array(z.string()).describe('An array of asset ticker symbols, e.g., ["ETH", "BTC"].'),
 });
 export type AssetPriceInput = z.infer<typeof AssetPriceInputSchema>;
 
-const AssetPriceSchema = z.object({
-  price: z.number(),
-});
-const AssetPriceOutputSchema = z.record(z.string(), AssetPriceSchema);
+const AssetPriceOutputSchema = z.array(
+    z.object({
+        name: z.string(),
+        ticker: z.string(),
+        id: z.number(),
+        balance: z.number(),
+        priceUSD: z.number(),
+        change5m: z.number(),
+        icon: z.string(),
+    })
+);
 export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
-// This function is exported and can be called directly from React components.
 export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPriceOutput> {
-  return assetPriceFlow(input);
+  // Currently returning stable, simulated data to avoid external API issues.
+  // This can be replaced with a live API call in the future.
+  const simulatedPrices: Record<string, Omit<Asset, 'balance' | 'ticker'>> = {
+    'ETH': { name: 'Ethereum', id: 1027, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+    'USDC': { name: 'USD Coin', id: 3408, priceUSD: 1.00, change5m: 0.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+    'WBTC': { name: 'Wrapped BTC', id: 3717, priceUSD: 68000.50, change5m: 2.3, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
+    'STRW': { name: 'Strawberry Token', id: 0, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
+  };
+
+  const results = input.symbols.map(symbol => {
+      const data = simulatedPrices[symbol];
+      // Note: Balance is not handled here, it comes from the wallet state on the client.
+      return { ...data, ticker: symbol, balance: 0 }; 
+  });
+  
+  return results as AssetPriceOutput;
 }
 
-const assetPriceFlow = ai.defineFlow(
+// The Genkit flow definition can be kept for future integration with a live API.
+const fetchAssetPricesFlow = ai.defineFlow(
   {
-    name: 'assetPriceFlow',
+    name: 'fetchAssetPricesFlow',
     inputSchema: AssetPriceInputSchema,
     outputSchema: AssetPriceOutputSchema,
   },
-  async ({ symbols }) => {
-    const apiKey = process.env.COINMARKETCAP_API_KEY;
-    if (!apiKey) {
-      console.error("CoinMarketCap API key is not set in .env file.");
-      throw new Error("API Key not available on the server.");
-    }
-    
-    // In a production app, consider using a more robust fetch library or the built-in node fetch.
-    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}`;
-    
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'X-CMC_PRO_API_KEY': apiKey,
-          'Accept': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("CoinMarketCap API Error Body:", errorBody);
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-
-      if (data.status.error_code !== 0) {
-        throw new Error(data.status.error_message);
-      }
-
-      const prices: AssetPriceOutput = {};
-      for (const symbol in data.data) {
-        if (data.data[symbol]) {
-          prices[symbol] = {
-              price: data.data[symbol].quote.USD.price
-          };
-        }
-      }
-      return prices;
-
-    } catch (error) {
-      console.error("CoinMarketCap API fetch error in flow:", error);
-      // Depending on requirements, you might want to re-throw or return a specific error structure.
-      // For now, re-throwing to let the client handle it.
-      throw error;
-    }
+  async (input) => {
+    return fetchAssetPrices(input);
   }
 );
