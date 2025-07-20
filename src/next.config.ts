@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'api.qrserver.com',
       },
+       {
+        protocol: 'https',
+        hostname: 's2.coinmarketcap.com',
+        port: '',
+        pathname: '/static/img/coins/64x64/**',
+      }
     ],
   },
 };
