@@ -120,19 +120,14 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     setIsLoading(true);
     setError('');
 
-    // Simulate delay for effect
-    await new Promise(resolve => setTimeout(resolve, 500));
-
     try {
+        await new Promise(resolve => setTimeout(resolve, 500));
         const unlockedWallet = await unlockWallet(password);
-        if (unlockedWallet) {
-          onWalletUnlocked(unlockedWallet);
-        } else {
-          throw new Error("Unlock failed");
-        }
+        onWalletUnlocked(unlockedWallet!);
     } catch {
       setError(t.wrongPasswordError);
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
   
@@ -268,8 +263,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
              <button 
                 type="button" 
                 onClick={() => setRecoveryOpen(true)}
-                className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed" 
-                disabled={isLoading}
+                className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline" 
               >
                 {t.forgotPasswordLink}
              </button>
@@ -365,5 +359,3 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     </>
   );
 }
-
-    

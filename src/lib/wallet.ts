@@ -369,8 +369,12 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
     const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
     // Simulate a "fetched" or deterministic balance for an imported wallet.
-    const balanceHash = mockHash(joinedSeed + "_balance");
-    const balance = (parseInt(balanceHash.substring(0, 8), 16) % 20000) / 10000 + 0.1; // Range 0.1 to 2.1
+    // Replace the previous unstable hash-based balance generation with a simpler, stable one.
+    let sum = 0;
+    for (let i = 0; i < joinedSeed.length; i++) {
+        sum += joinedSeed.charCodeAt(i);
+    }
+    const balance = (sum % 20000) / 10000 + 0.1; // Range 0.1 to 2.1
 
     return {
         seedPhrase: joinedSeed,
@@ -432,66 +436,6 @@ export async function resolveEnsName(ensName: string): Promise<string | null> {
       resolve(address || null);
     }, 1000);
   });
-}
-
-/**
- * Fetches latest prices for given crypto symbols from CoinMarketCap.
- * This function should be called from a server-side component or API route in a real app
- * to protect the API key. Here it is client-side for demonstration.
- */
-export async function fetchAssetPrices(symbols: string[]): Promise<Record<string, { price: number }>> {
-    // In a real app, this API key should be stored in an environment variable on the server.
-    const apiKey = process.env.NEXT_PUBLIC_COINMARKETCAP_API_KEY || '42f2a334-d7ee-4a56-9c22-92e022e8a069';
-    if (!apiKey) {
-        console.warn("CoinMarketCap API key is not set. Prices will not be fetched.");
-        throw new Error("API Key not available");
-    }
-
-    // A proxy is often needed to bypass CORS issues when calling from the client.
-    // For this demo, we assume a simple direct fetch or a pre-configured proxy.
-    const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&CMC_PRO_API_KEY=${apiKey}`;
-    
-    try {
-        const response = await fetch(url, {
-            mode: 'no-cors' // This is a temporary workaround for client-side demo and may not work in all browsers. A proper proxy is the right solution.
-        });
-        
-        if (!response.ok) {
-            // Because of no-cors, we can't get detailed error messages, but we can check the type.
-            if(response.type === 'opaque') {
-              console.warn("Received an opaque response from CoinMarketCap. This is likely due to CORS. Prices cannot be fetched directly from the client. A server-side proxy is required for production.");
-              // Returning mock data to prevent app from crashing
-              return {
-                'ETH': { price: 3700.50 },
-                'USDC': { price: 1.00 },
-                'WBTC': { price: 68000.80 }
-              };
-            }
-            throw new Error(`API call failed with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.status.error_code !== 0) {
-            throw new Error(data.status.error_message);
-        }
-
-        const prices: Record<string, { price: number }> = {};
-        for (const symbol in data.data) {
-            prices[symbol] = {
-                price: data.data[symbol].quote.USD.price
-            };
-        }
-        return prices;
-    } catch (error) {
-        console.error("CoinMarketCap API fetch error:", error);
-         // Fallback to mock data on error to keep the UI functional
-        return {
-            'ETH': { price: 3700.50 },
-            'USDC': { price: 1.00 },
-            'WBTC': { price: 68000.80 }
-        };
-    }
 }
 
 
@@ -617,7 +561,7 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
         };
     } catch (e) {
         console.error("Decryption failed (likely wrong password):", e);
-        return null;
+        throw e;
     }
 }
 

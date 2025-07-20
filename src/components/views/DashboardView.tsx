@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, fetchAssetPrices } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName } from '@/lib/wallet';
+import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -98,7 +99,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
-      const prices = await fetchAssetPrices(assetSymbols);
+      const prices = await fetchAssetPrices({ symbols: assetSymbols });
       
       setAssets(prevAssets => {
         const newAssets = [
@@ -117,6 +118,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                     // Note: CMC basic plan doesn't provide 5m change, so we simulate it.
                     change5m: (Math.random() - 0.5) * 2,
                 };
+            }
+            // For STRW or other tokens not in the API response, keep the old logic or a default.
+            if(asset.ticker === 'STRW'){
+                return asset;
             }
             return asset;
         });

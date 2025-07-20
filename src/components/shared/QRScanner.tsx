@@ -37,26 +37,32 @@ export function QRScanner({ onScan, t }: QRScannerProps) {
 
             if (code) {
                 onScan(code.data);
-                return; // Stop scanning once a code is found
+                // No return here, allow the cleanup function to handle stopping the stream
+            } else {
+                animationFrameId.current = requestAnimationFrame(tick);
             }
         }
       }
+    } else {
+        animationFrameId.current = requestAnimationFrame(tick);
     }
-    animationFrameId.current = requestAnimationFrame(tick);
   }, [onScan]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
     
-    const getCameraPermission = async () => {
+    const startScan = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         setHasCameraPermission(true);
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          animationFrameId.current = requestAnimationFrame(tick);
+          // Use onloadedmetadata to ensure video dimensions are available before playing
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play();
+            animationFrameId.current = requestAnimationFrame(tick);
+          };
         }
       } catch (error) {
         console.error('Error accessing camera:', error);
@@ -69,9 +75,9 @@ export function QRScanner({ onScan, t }: QRScannerProps) {
       }
     };
 
-    getCameraPermission();
+    startScan();
 
-    // Cleanup function to stop the camera stream
+    // Cleanup function to stop the camera stream when the component unmounts
     return () => {
         if (animationFrameId.current) {
             cancelAnimationFrame(animationFrameId.current);
@@ -81,7 +87,7 @@ export function QRScanner({ onScan, t }: QRScannerProps) {
         }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick]);
+  }, []);
 
 
   return (
