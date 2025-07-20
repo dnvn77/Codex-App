@@ -7,14 +7,39 @@ import { DashboardView } from '@/components/views/DashboardView';
 import { ReceiptView } from '@/components/views/ReceiptView';
 import { LockView } from '@/components/views/LockView';
 import { CreditsView } from '@/components/views/CreditsView';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send, Twitter, Mail } from 'lucide-react';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
+import { Button } from './ui/button';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
 type Status = 'validating' | 'ready' | 'error';
+
+const AppFooter = () => (
+  <footer className="w-full max-w-md mx-auto text-center py-4 mt-4 border-t border-border/50">
+    <p className="text-sm text-muted-foreground mb-2">Need help? Contact us.</p>
+    <div className="flex justify-center items-center gap-4">
+      <Button variant="ghost" size="icon" asChild>
+        <a href="https://t.me/your_telegram_contact" target="_blank" rel="noopener noreferrer">
+          <Send />
+        </a>
+      </Button>
+      <Button variant="ghost" size="icon" asChild>
+        <a href="https://twitter.com/your_twitter_contact" target="_blank" rel="noopener noreferrer">
+          <Twitter />
+        </a>
+      </Button>
+      <Button variant="ghost" size="icon" asChild>
+        <a href="mailto:contact@yourdomain.com">
+          <Mail />
+        </a>
+      </Button>
+    </div>
+  </footer>
+);
+
 
 export function AppContainer() {
   const [view, setView] = useState<View>('connect');
@@ -108,6 +133,8 @@ export function AppContainer() {
       </div>
     );
   }
+  
+  const showFooter = status === 'ready' && (view === 'dashboard' || view === 'credits' || view === 'receipt');
 
   return (
     <>
@@ -136,7 +163,8 @@ export function AppContainer() {
           <CreditsView onBack={handleBackToDashboard} />
         )}
       </div>
-       {status === 'ready' && (view === 'dashboard' || view === 'receipt' || view === 'credits') && <Chatbot />}
+      {showFooter && <AppFooter />}
+      {status === 'ready' && (view === 'dashboard' || view === 'receipt' || view === 'credits') && <Chatbot />}
     </>
   );
 }

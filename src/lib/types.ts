@@ -29,3 +29,12 @@ export interface Transaction {
   amount: number;
   proposedOnL1: number;
 }
+
+export interface Asset {
+  name: string;
+  ticker: string;
+  balance: number;
+  priceUSD: number;
+  change5m: number; // Percentage change
+  icon: string;
+}

@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName } from '@/lib/wallet';
-import type { Wallet, Transaction } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star } from 'lucide-react';
+import type { Wallet, Transaction, Asset } from '@/lib/types';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -31,6 +31,9 @@ import {
 } from '@/components/ui/dialog';
 import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { AssetList } from '@/components/shared/AssetList';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -83,11 +86,42 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const [ensResolution, setEnsResolution] = useState<{status: 'idle' | 'loading' | 'success' | 'error', address: string | null}>({ status: 'idle', address: null });
   const [isScannerOpen, setScannerOpen] = useState(false);
+  
+  const [showBalances, setShowBalances] = useState(true);
+  const [hideZeroBalances, setHideZeroBalances] = useState(true);
+
+  // Mock assets data
+  const [assets, setAssets] = useState<Asset[]>([
+    { name: 'Ethereum', ticker: 'ETH', balance: wallet.balance, priceUSD: 3700.50, change5m: -0.25, icon: '/ethereum.svg' },
+    { name: 'USD Coin', ticker: 'USDC', balance: 1050.23, priceUSD: 1.00, change5m: 0.01, icon: '/usdc.svg' },
+    { name: 'Wrapped BTC', ticker: 'WBTC', balance: 0.00, priceUSD: 68000.80, change5m: 1.2, icon: '/wbtc.svg' },
+    { name: 'Strawberry Token', ticker: 'STRW', balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
+  ]);
+  
+  const totalBalanceUSD = useMemo(() => {
+    return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
+  }, [assets]);
+  
 
   const maxSendableAmount = useMemo(() => {
     const max = wallet.balance - gasCost;
     return max > 0 ? max : 0;
   }, [wallet.balance, gasCost]);
+
+  useEffect(() => {
+    // Simulate price updates every 5 seconds
+    const interval = setInterval(() => {
+      setAssets(prevAssets =>
+        prevAssets.map(asset => ({
+          ...asset,
+          change5m: (Math.random() - 0.5) * 2, // New random change between -2% and 2%
+          priceUSD: asset.priceUSD * (1 + (Math.random() - 0.5) * 0.001) // small price fluctuation
+        }))
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   useEffect(() => {
     setIsCalculatingGas(true);
@@ -288,8 +322,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     <>
       <Card className="w-full shadow-lg">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>{t.dashboardTitle}</CardTitle>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>{t.dashboardTitle}</CardTitle>
+              <CardDescription>{t.dashboardDesc}</CardDescription>
+            </div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" onClick={onShowCredits}>
                 <Star className="mr-2 h-4 w-4"/>
@@ -301,14 +338,26 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               </Button>
             </div>
           </div>
-          <CardDescription>{t.dashboardDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-secondary/50">
-              <Label>{t.yourWalletAddressLabel}</Label>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-mono text-primary">{truncatedAddress}</p>
+            <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+               <div className='flex justify-between items-center'>
+                <div>
+                  <Label>{t.totalBalanceLabel}</Label>
+                   <div className="flex items-center gap-2">
+                    <p className="text-2xl font-bold">
+                       {showBalances ? `$${totalBalanceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                    </p>
+                  </div>
+                </div>
+                 <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
+                  {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
+              </div>
+
+               <div className="flex items-center justify-between">
+                <Label>{t.yourWalletAddressLabel}</Label>
                 <div className="flex items-center">
                   <Dialog>
                     <DialogTrigger asChild>
@@ -343,8 +392,27 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   </Button>
                 </div>
               </div>
-              <p className="text-2xl font-bold mt-2">{wallet.balance.toFixed(4)} ETH <span className="text-sm font-normal text-muted-foreground">(Sepolia)</span></p>
+              <p className="text-sm font-mono text-primary text-right">{truncatedAddress}</p>
             </div>
+            
+            <Separator />
+            
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">{t.assetsTitle}</h3>
+                 <div className="flex items-center space-x-2">
+                  <Label htmlFor="hide-zero" className="text-sm text-muted-foreground">{t.hideZeroBalancesLabel}</Label>
+                  <Switch
+                    id="hide-zero"
+                    checked={hideZeroBalances}
+                    onCheckedChange={setHideZeroBalances}
+                  />
+                </div>
+              </div>
+              <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} />
+            </div>
+
+            <Separator />
 
             <div className="space-y-2 pt-4">
                <div className="flex justify-between items-start">
