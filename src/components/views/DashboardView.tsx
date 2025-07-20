@@ -287,8 +287,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleQrScan = (data: string | null) => {
-    setScannerOpen(false);
     if (data) {
+        setScannerOpen(false);
         // Basic validation for an Ethereum address
         let address = data;
         if (address.startsWith('ethereum:')) {
@@ -307,6 +307,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 variant: 'destructive',
             });
         }
+    } else {
+      setScannerOpen(false);
     }
   };
 
