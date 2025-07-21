@@ -37,6 +37,6 @@ export interface Asset {
   id: number; // CoinMarketCap ID
   balance: number;
   priceUSD: number;
-  change5m: number; // Percentage change
+  change24h: number; // Percentage change in 24h
   icon: string;
 }

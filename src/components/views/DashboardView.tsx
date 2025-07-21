@@ -31,13 +31,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -63,24 +56,23 @@ interface DashboardViewProps {
   onShowCredits: () => void;
 }
 
-const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change5m'>[] = [
-    { name: 'Ethereum', ticker: 'ETH', id: 1027, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-    { name: 'USD Coin', ticker: 'USDC', id: 3408, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
-    { name: 'Tether', ticker: 'USDT', id: 825, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
-    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
-    { name: 'Chainlink', ticker: 'LINK', id: 1975, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png' },
-    { name: 'Uniswap', ticker: 'UNI', id: 7083, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png' },
-    { name: 'Dai', ticker: 'DAI', id: 4943, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png' },
-    { name: 'Lido DAO', ticker: 'LDO', id: 22353, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/22353.png' },
-    { name: 'Arbitrum', ticker: 'ARB', id: 25163, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/25163.png' },
-    { name: 'Optimism', ticker: 'OP', id: 22312, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/22312.png' },
-    { name: 'Aave', ticker: 'AAVE', id: 7278, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7278.png' },
-    { name: 'Maker', ticker: 'MKR', id: 1518, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1518.png' },
-    { name: 'The Sandbox', ticker: 'SAND', id: 6210, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/6210.png' },
-    { name: 'Decentraland', ticker: 'MANA', id: 1966, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1966.png' },
+const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h'>[] = [
+    { name: 'Ethereum', ticker: 'ETH', id: 1027, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png` },
+    { name: 'USD Coin', ticker: 'USDC', id: 3408, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png` },
+    { name: 'Tether', ticker: 'USDT', id: 825, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/825.png` },
+    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png` },
+    { name: 'Chainlink', ticker: 'LINK', id: 1975, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png` },
+    { name: 'Uniswap', ticker: 'UNI', id: 7083, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png` },
+    { name: 'Dai', ticker: 'DAI', id: 4943, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png` },
+    { name: 'Lido DAO', ticker: 'LDO', id: 22353, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/22353.png` },
+    { name: 'Arbitrum', ticker: 'ARB', id: 25163, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/25163.png` },
+    { name: 'Optimism', ticker: 'OP', id: 22312, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/22312.png` },
+    { name: 'Aave', ticker: 'AAVE', id: 7278, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/7278.png` },
+    { name: 'Maker', ticker: 'MKR', id: 1518, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1518.png` },
+    { name: 'The Sandbox', ticker: 'SAND', id: 6210, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/6210.png` },
+    { name: 'Decentraland', ticker: 'MANA', id: 1966, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1966.png` },
     { name: 'Strawberry Token', ticker: 'STRW', id: 0, icon: '/strawberry-logo.svg' }
 ];
-const TOP_7_TICKERS = ['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI'];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
   const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
@@ -136,7 +128,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
 
-  // Mock balances for demonstration. In a real app, these would be fetched.
    const MOCK_BALANCES: Record<string, number> = useMemo(() => ({
     'ETH': wallet.balance,
     'USDC': 2500.50,
@@ -147,12 +138,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     'DAI': 1500.00,
     'STRW': 50000,
   }), [wallet.balance]);
+  
+  const userAssetSymbols = useMemo(() => Object.keys(MOCK_BALANCES), [MOCK_BALANCES]);
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
-      // Use the stable, simulated flow
-      const priceData = await fetchAssetPrices({ symbols: Object.keys(MOCK_BALANCES) });
+      const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
       
       const userAssets = priceData.map(asset => ({
         ...asset,
@@ -163,13 +155,18 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       setAssetStatus('success');
     } catch (error) {
         console.error("Failed to fetch asset prices:", error);
+        toast({
+            title: t.error,
+            description: 'Could not load asset prices. Please try again later.',
+            variant: 'destructive',
+        });
         setAssetStatus('error');
     }
-  }, [MOCK_BALANCES]);
+  }, [userAssetSymbols, MOCK_BALANCES, toast, t]);
 
   useEffect(() => {
-    updateAssetPrices(); // Fetch on initial load
-    const interval = setInterval(updateAssetPrices, 300000); // Update every 5 minutes
+    updateAssetPrices();
+    const interval = setInterval(updateAssetPrices, 5 * 60 * 1000); // 5 minutes
     return () => clearInterval(interval);
   }, [updateAssetPrices]);
   
@@ -178,11 +175,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, [assets]);
   
   const selectedAsset = useMemo(() => {
-    return assets.find(a => a.ticker === selectedAssetTicker) || null;
+    return assets.find(a => a.ticker === selectedAssetTicker) || ALL_EVM_ASSETS.find(a => a.ticker === selectedAssetTicker) || null;
   }, [assets, selectedAssetTicker]);
 
   const maxSendableAmount = useMemo(() => {
-    if (!selectedAsset) return 0;
+    if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
     if (selectedAsset.ticker === 'ETH') {
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
@@ -194,19 +191,17 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
       if (toAddress && parseFloat(amount) > 0) {
-        // Simulate gas calculation based on inputs
-        const baseGas = selectedAssetTicker === 'ETH' ? 0.00030 : 0.00050; // Tokens cost more gas
+        const baseGas = selectedAssetTicker === 'ETH' ? 0.00030 : 0.00050;
         const newGas = baseGas + Math.random() * 0.00030;
-        const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005; //Slightly vary the average
+        const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005;
         setGasCost(newGas);
         setAverageGas(newAvg);
       } else {
-        // Set a default gas cost if inputs are empty for max calculation
         setGasCost(0.00042);
         setAverageGas(0.00045);
       }
       setIsCalculatingGas(false);
-    }, 500); // Simulate network/calculation delay
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [toAddress, amount, selectedAssetTicker]);
@@ -219,7 +214,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         return;
       }
 
-      // If it doesn't look like an address and doesn't end with .eth, assume it's an ENS name
       if (!query.startsWith('0x') && !query.endsWith('.eth')) {
         query += '.eth';
       }
@@ -259,7 +253,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
     if (newAmount && selectedAsset) {
       const numericAmount = parseFloat(newAmount);
-      const balance = selectedAsset.balance;
+      const balance = selectedAsset.balance || 0;
       const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
 
       if (isNaN(numericAmount)) {
@@ -280,7 +274,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const handleSetMaxAmount = () => {
     if (!selectedAsset) return;
-    const maxAmountStr = maxSendableAmount.toFixed(8).replace(/\.?0+$/, ''); // Use high precision then trim
+    const maxAmountStr = maxSendableAmount.toFixed(8).replace(/\.?0+$/, '');
     setAmount(maxAmountStr);
     handleAmountChange({ target: { value: maxAmountStr } } as React.ChangeEvent<HTMLInputElement>);
   };
@@ -302,7 +296,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
     setIsSending(true);
     try {
-      // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker);
       onTransactionSent(tx);
@@ -318,11 +311,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const handleSendClick = () => {
     const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-    // Final check before proceeding
     const numericAmount = parseFloat(amount);
     if (!selectedAsset) return;
 
-    if (numericAmount > selectedAsset.balance) {
+    if (numericAmount > (selectedAsset.balance || 0)) {
       setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
       toast({ title: t.error, description: t.insufficientTokenBalanceError(selectedAsset.ticker), variant: 'destructive' });
       return;
@@ -344,7 +336,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const handleHighGasCancel = () => {
     setIsConfirmingTx(false);
-    // Use a short timeout to prevent dialogs from overlapping awkwardly
     setTimeout(() => {
       setNotificationAddress(toAddress);
       setNotificationAmount(amount);
@@ -353,8 +344,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSetupGasNotification = () => {
-    // In a real app, this would subscribe to a push service.
-    // Here, we just show a confirmation toast.
     toast({
         title: t.gasAlertSetTitle,
         description: t.gasAlertSetDesc(notificationAmount, selectedAssetTicker, notificationAddress),
@@ -367,7 +356,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const handleQrScan = (data: string | null) => {
     if (data) {
         setScannerOpen(false);
-        // Basic validation for an Ethereum address
         let address = data;
         if (address.startsWith('ethereum:')) {
             address = address.split(':')[1];
@@ -641,7 +629,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           </Button>
         </CardFooter>
         
-        {/* High Gas Warning Dialog */}
         <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -668,7 +655,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           </AlertDialogContent>
         </AlertDialog>
         
-        {/* Notify on Gas Drop Dialog */}
         <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
           <AlertDialogContent>
               <AlertDialogHeader>

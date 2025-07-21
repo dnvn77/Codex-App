@@ -66,7 +66,7 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetLi
                    <p className="font-mono">
                      ${asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  <ChangeIndicator value={asset.change5m} />
+                  <ChangeIndicator value={asset.change24h} />
                 </div>
               </TableCell>
               <TableCell className="text-right">
