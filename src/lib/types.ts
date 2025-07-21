@@ -28,6 +28,7 @@ export interface Transaction {
   to: string;
   amount: number;
   ticker: string;
+  icon?: string;
   proposedOnL1: number;
 }
 

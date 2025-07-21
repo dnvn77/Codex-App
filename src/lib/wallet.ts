@@ -390,9 +390,10 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
  * @param to The recipient's address.
  * @param amount The amount of the asset to send.
  * @param ticker The ticker of the asset being sent.
+ * @param icon The icon URL of the asset being sent.
  * @returns A mock Transaction object.
  */
-export function sendTransaction(fromWallet: Wallet, to: string, amount: number, ticker: string): Transaction {
+export function sendTransaction(fromWallet: Wallet, to: string, amount: number, ticker: string, icon?: string): Transaction {
   if (amount <= 0) {
     throw new Error('Amount must be positive.');
   }
@@ -410,6 +411,7 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number, 
     to,
     amount,
     ticker,
+    icon,
     proposedOnL1,
   };
 }

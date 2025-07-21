@@ -11,6 +11,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
 import { useIsMobile } from '@/hooks/use-mobile';
 import * as htmlToImage from 'html-to-image';
+import Image from 'next/image';
 
 interface ReceiptViewProps {
   transaction: Transaction;
@@ -95,7 +96,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         variant: "destructive",
       });
     }
-  }, [t, transaction.txHash, etherscanUrl]);
+  }, [t, transaction.txHash, etherscanUrl, toast]);
 
 
   return (
@@ -112,15 +113,18 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             <ReceiptItem t={t} icon={<Landmark className="h-5 w-5 text-accent" />} label={t.toLabel} value={transaction.to} isHash />
             <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={transaction.proposedOnL1.toString()} />
             <div className="flex items-center justify-between py-3">
-              <span className="font-medium">{t.amountLabel}</span>
-              <span className="text-xl font-bold">{transaction.amount} {transaction.ticker}</span>
+              <span className="font-medium text-muted-foreground">{t.amountLabel}</span>
+              <div className="flex items-center gap-2">
+                {transaction.icon && <Image src={transaction.icon} alt={transaction.ticker} width={24} height={24} className="rounded-full" />}
+                <span className="text-xl font-bold">{transaction.amount} {transaction.ticker}</span>
+              </div>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-2">
             <ShortenedLink 
               fullUrl={etherscanUrl} 
-              displayPrefix="strawberry.eth/tx/" 
+              displayPrefix="sepolia.etherscan.io/tx/" 
               t={t} 
             />
           </div>

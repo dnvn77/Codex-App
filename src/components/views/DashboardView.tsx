@@ -128,7 +128,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
 
-   const MOCK_BALANCES: Record<string, number> = useMemo(() => ({
+  const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
     'USDC': 2500.50,
     'WBTC': 0.05,
@@ -137,9 +137,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     'UNI': 500.00,
     'DAI': 1500.00,
     'STRW': 50000,
-  }), [wallet.balance]);
+  });
   
-  const userAssetSymbols = useMemo(() => Object.keys(MOCK_BALANCES), [MOCK_BALANCES]);
+  const userAssetSymbols = useMemo(() => Object.keys(mockBalances), [mockBalances]);
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
@@ -148,7 +148,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       
       const userAssets = priceData.map(asset => ({
         ...asset,
-        balance: MOCK_BALANCES[asset.ticker] || 0
+        balance: mockBalances[asset.ticker] || 0
       })).sort((a, b) => (b.balance * b.priceUSD) - (a.balance * a.priceUSD));
 
       setAssets(userAssets);
@@ -162,7 +162,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [userAssetSymbols, MOCK_BALANCES, toast, t]);
+  }, [userAssetSymbols, mockBalances, toast, t]);
 
   useEffect(() => {
     updateAssetPrices();
@@ -297,8 +297,27 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setIsSending(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker);
+      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
       onTransactionSent(tx);
+      
+      // Update balances after transaction
+      setMockBalances(prevBalances => {
+          const newBalances = { ...prevBalances };
+          const sentAmount = parseFloat(amount);
+          
+          // Update the sent asset's balance
+          if (newBalances[selectedAsset.ticker] !== undefined) {
+              newBalances[selectedAsset.ticker] -= sentAmount;
+          }
+
+          // Always update ETH balance for gas
+          if (newBalances['ETH'] !== undefined) {
+              newBalances['ETH'] -= gasCost;
+          }
+          
+          return newBalances;
+      });
+
       setToAddress('');
       setAmount('');
     } catch (error) {
@@ -536,7 +555,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               </div>
 
                <div className="grid grid-cols-5 gap-2 items-end pt-2">
-                <div className="col-span-3 space-y-1">
+                <div className="col-span-3 space-y-1 pt-6">
                   <div className="flex justify-between items-end">
                     <Label htmlFor="amount">{t.amountLabel}</Label>
                     <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>

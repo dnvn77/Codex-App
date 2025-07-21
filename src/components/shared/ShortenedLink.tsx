@@ -15,7 +15,7 @@ interface ShortenedLinkProps {
 export function ShortenedLink({ fullUrl, displayPrefix, t }: ShortenedLinkProps) {
   const { toast } = useToast();
   const hash = fullUrl.split('/').pop() || '';
-  const shortenedHash = `${hash.slice(0, 4)}...${hash.slice(-4)}`;
+  const shortenedHash = `${hash.slice(0, 6)}...${hash.slice(-6)}`;
   const displayUrl = `${displayPrefix}${shortenedHash}`;
 
   const handleCopy = () => {
