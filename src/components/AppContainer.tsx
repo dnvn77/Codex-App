@@ -10,7 +10,7 @@ import { CreditsView } from '@/components/views/CreditsView';
 import { Loader2, Send, Twitter, Mail } from 'lucide-react';
 import type { Wallet, StoredWallet, Transaction } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
-import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
+import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
 import { Button } from './ui/button';
 
