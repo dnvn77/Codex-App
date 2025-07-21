@@ -312,15 +312,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       
       setMockBalances(newBalances);
       
-      // Pass the updated wallet object to the parent
+      const finalEthBalance = Math.max(0, newBalances['ETH']);
+      updateStoredWalletBalance(finalEthBalance);
+      
       const updatedWallet = {
           ...wallet,
-          balance: newBalances['ETH'] // The primary balance is the ETH balance
+          balance: finalEthBalance
       };
-      updateStoredWalletBalance(newBalances['ETH']);
       
-      // We pass the transaction object with the updated wallet
-      onTransactionSent({ ...tx, wallet: updatedWallet } as any);
+      onTransactionSent({ ...tx, wallet: updatedWallet });
 
       setToAddress('');
       setAmount('');
@@ -577,7 +577,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </div>
 
                 <div className="col-span-2 space-y-1">
-                    <Label htmlFor="asset">{t.assetLabel}</Label>
+                    <div className="h-6 flex items-end">
+                      <Label htmlFor="asset">{t.assetLabel}</Label>
+                    </div>
                      <Popover open={isAssetSelectorOpen} onOpenChange={setAssetSelectorOpen}>
                         <PopoverTrigger asChild>
                             <Button

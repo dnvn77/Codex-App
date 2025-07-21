@@ -10,7 +10,7 @@ import { CreditsView } from '@/components/views/CreditsView';
 import { Loader2, Send, Twitter, Mail } from 'lucide-react';
 import type { Wallet, StoredWallet, Transaction } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
-import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
+import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
 import { Button } from './ui/button';
 
@@ -89,11 +89,10 @@ export function AppContainer() {
   }
 
   const handleTransactionSent = (sentTransaction: Transaction) => {
-    // The DashboardView now sends the fully updated wallet object.
+    // DashboardView now sends the fully updated wallet object.
     // We just need to update the state here.
     if (sentTransaction.wallet) {
       setWallet(sentTransaction.wallet);
-      updateStoredWalletBalance(sentTransaction.wallet.balance);
     }
     setTransaction(sentTransaction);
     setView('receipt');

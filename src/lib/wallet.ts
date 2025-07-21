@@ -536,7 +536,6 @@ export function updateStoredWalletBalance(newBalance: number): void {
   const stored = getStoredWallet();
   if (!stored) return;
   
-  // Ensure balance doesn't go negative
   const finalBalance = Math.max(0, newBalance);
 
   const updatedWallet: StoredWallet = {
