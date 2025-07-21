@@ -70,12 +70,14 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetLi
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                <p className="font-mono font-semibold">
-                  {showBalances ? asset.balance.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '••••••'}
-                </p>
-                <p className="text-xs font-mono text-muted-foreground">
-                  {showBalances ? `$${(asset.balance * asset.priceUSD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
-                </p>
+                <div className="flex flex-col items-end">
+                    <p className="font-mono font-semibold">
+                    {showBalances ? asset.balance.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '••••••'}
+                    </p>
+                    <p className="text-xs font-mono text-muted-foreground">
+                    {showBalances ? `$${(asset.balance * asset.priceUSD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                    </p>
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -160,6 +160,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'Select asset',
     tokenPortalInfo: 'This token will be sent through a secure Aztec Portal contract.',
+    searchAssetPlaceholder: 'Search for an asset...',
+    noAssetFound: 'No asset found.',
   },
   es: {
     mainTitle: 'Strawberry Wallet',
@@ -317,6 +319,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'Seleccionar activo',
     tokenPortalInfo: 'Este token se enviará a través de un contrato Portal de Aztec seguro.',
+    searchAssetPlaceholder: 'Buscar un activo...',
+    noAssetFound: 'No se encontró ningún activo.',
   },
   zh: {
     mainTitle: '草莓钱包',
@@ -474,6 +478,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: '选择资产',
     tokenPortalInfo: '此代币将通过安全的 Aztec Portal 合约发送。',
+    searchAssetPlaceholder: '搜索资产...',
+    noAssetFound: '未找到资产。',
   },
   hi: {
     mainTitle: 'स्ट्रॉबेरी वॉलेट',
@@ -631,6 +637,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'संपत्ति चुनें',
     tokenPortalInfo: 'यह टोकन एक सुरक्षित एज़्टेक पोर्टल अनुबंध के माध्यम से भेजा जाएगा।',
+    searchAssetPlaceholder: 'एक संपत्ति खोजें...',
+    noAssetFound: 'कोई संपत्ति नहीं मिली।',
   },
   fr: {
     mainTitle: 'Strawberry Wallet',
@@ -784,10 +792,12 @@ export const translations = {
     invalidQrDesc: 'Le code QR scanné ne contient pas d\'adresse Ethereum valide.',
     scanning: 'Numérisation...',
     loadingCamera: 'Chargement de la caméra...',
-
+    
     // Send Flow
     selectAssetLabel: 'Sélectionner l\'actif',
     tokenPortalInfo: 'Ce jeton sera envoyé via un contrat sécurisé Aztec Portal.',
+    searchAssetPlaceholder: 'Rechercher un actif...',
+    noAssetFound: 'Aucun actif trouvé.',
   },
   ar: {
     mainTitle: 'محفظة الفراولة',
@@ -945,6 +955,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'اختر الأصل',
     tokenPortalInfo: 'سيتم إرسال هذا الرمز عبر عقد Aztec Portal آمن.',
+    searchAssetPlaceholder: 'ابحث عن أصل...',
+    noAssetFound: 'لم يتم العثور على أي أصل.',
   },
   bn: {
     mainTitle: 'স্ট্রবেরি ওয়ালেট',
@@ -1102,6 +1114,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'সম্পদ নির্বাচন করুন',
     tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত অ্যাজটেক পোর্টাল চুক্তির মাধ্যমে পাঠানো হবে।',
+    searchAssetPlaceholder: 'একটি সম্পদ খুঁজুন...',
+    noAssetFound: 'কোন সম্পদ পাওয়া যায়নি।',
   },
   ru: {
     mainTitle: 'Клубничный кошелек',
@@ -1259,6 +1273,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'Выберите актив',
     tokenPortalInfo: 'Этот токен будет отправлен через безопасный контракт Aztec Portal.',
+    searchAssetPlaceholder: 'Поиск актива...',
+    noAssetFound: 'Актив не найден.',
   },
   pt: {
     mainTitle: 'Carteira de Morango',
@@ -1416,6 +1432,8 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'Selecione o ativo',
     tokenPortalInfo: 'Este token será enviado através de um contrato seguro do Portal Aztec.',
+    searchAssetPlaceholder: 'Buscar um ativo...',
+    noAssetFound: 'Nenhum ativo encontrado.',
   },
   id: {
     mainTitle: 'Dompet Stroberi',
@@ -1573,5 +1591,7 @@ export const translations = {
     // Send Flow
     selectAssetLabel: 'Pilih aset',
     tokenPortalInfo: 'Token ini akan dikirim melalui kontrak Portal Aztec yang aman.',
+    searchAssetPlaceholder: 'Cari aset...',
+    noAssetFound: 'Aset tidak ditemukan.',
   },
 };

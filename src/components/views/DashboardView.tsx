@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info } from 'lucide-react';
+import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -36,6 +37,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
@@ -48,6 +62,25 @@ interface DashboardViewProps {
   onDisconnect: () => void;
   onShowCredits: () => void;
 }
+
+const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change5m'>[] = [
+    { name: 'Ethereum', ticker: 'ETH', id: 1027, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+    { name: 'USD Coin', ticker: 'USDC', id: 3408, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
+    { name: 'Tether', ticker: 'USDT', id: 825, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
+    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
+    { name: 'Chainlink', ticker: 'LINK', id: 1975, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png' },
+    { name: 'Uniswap', ticker: 'UNI', id: 7083, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png' },
+    { name: 'Dai', ticker: 'DAI', id: 4943, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png' },
+    { name: 'Lido DAO', ticker: 'LDO', id: 22353, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/22353.png' },
+    { name: 'Arbitrum', ticker: 'ARB', id: 25163, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/25163.png' },
+    { name: 'Optimism', ticker: 'OP', id: 22312, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/22312.png' },
+    { name: 'Aave', ticker: 'AAVE', id: 7278, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7278.png' },
+    { name: 'Maker', ticker: 'MKR', id: 1518, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1518.png' },
+    { name: 'The Sandbox', ticker: 'SAND', id: 6210, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/6210.png' },
+    { name: 'Decentraland', ticker: 'MANA', id: 1966, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1966.png' },
+    { name: 'Strawberry Token', ticker: 'STRW', id: 0, icon: '/strawberry-logo.svg' }
+];
+const TOP_7_TICKERS = ['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI'];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
   const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
@@ -100,29 +133,39 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  
+  const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
+
+  // Mock balances for demonstration. In a real app, these would be fetched.
+   const MOCK_BALANCES: Record<string, number> = useMemo(() => ({
+    'ETH': wallet.balance,
+    'USDC': 2500.50,
+    'WBTC': 0.05,
+    'USDT': 1234.56,
+    'LINK': 350.75,
+    'UNI': 500.00,
+    'DAI': 1500.00,
+    'STRW': 50000,
+  }), [wallet.balance]);
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
-    
-    // Using stable, simulated data to avoid external API issues.
     try {
-        const simulatedAssets: Asset[] = [
-            { name: 'Ethereum', ticker: 'ETH', id: 1027, balance: wallet.balance, priceUSD: 3750.23, change5m: -1.2, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-            { name: 'USD Coin', ticker: 'USDC', id: 3408, balance: 2500.50, priceUSD: 1.00, change5m: 0.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' },
-            { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, balance: 0.05, priceUSD: 68000.50, change5m: 2.3, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png' },
-            { name: 'Tether', ticker: 'USDT', id: 825, balance: 1234.56, priceUSD: 1.00, change5m: 0.05, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png' },
-            { name: 'Chainlink', ticker: 'LINK', id: 1975, balance: 350.75, priceUSD: 18.50, change5m: -2.1, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png' },
-            { name: 'Uniswap', ticker: 'UNI', id: 7083, balance: 500.00, priceUSD: 11.20, change5m: 3.4, icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png' },
-            { name: 'Strawberry Token', ticker: 'STRW', id: 0, balance: 50000, priceUSD: 0.002, change5m: 5.5, icon: '/strawberry-logo.svg' }
-        ];
+      // Use the stable, simulated flow
+      const priceData = await fetchAssetPrices({ symbols: Object.keys(MOCK_BALANCES) });
+      
+      const userAssets = priceData.map(asset => ({
+        ...asset,
+        balance: MOCK_BALANCES[asset.ticker] || 0
+      })).sort((a, b) => (b.balance * b.priceUSD) - (a.balance * a.priceUSD));
 
-        setAssets(simulatedAssets);
-        setAssetStatus('success');
+      setAssets(userAssets);
+      setAssetStatus('success');
     } catch (error) {
         console.error("Failed to fetch asset prices:", error);
         setAssetStatus('error');
     }
-  }, [wallet.balance]);
+  }, [MOCK_BALANCES]);
 
   useEffect(() => {
     updateAssetPrices(); // Fetch on initial load
@@ -524,21 +567,56 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
                 <div className="col-span-2 space-y-1">
                     <Label htmlFor="asset">{t.assetLabel}</Label>
-                    <Select value={selectedAssetTicker} onValueChange={setSelectedAssetTicker} disabled={isSending}>
-                      <SelectTrigger id="asset" className="h-10">
-                        <SelectValue placeholder={t.selectAssetLabel} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {assets.filter(a => a.balance > 0 || !hideZeroBalances).map(asset => (
-                           <SelectItem key={asset.ticker} value={asset.ticker}>
-                              <div className="flex items-center gap-2">
-                                <Image src={asset.icon} alt={asset.name} width={20} height={20} className="rounded-full" data-ai-hint={`${asset.name} logo`}/>
-                                <span>{asset.ticker}</span>
-                              </div>
-                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                     <Popover open={isAssetSelectorOpen} onOpenChange={setAssetSelectorOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={isAssetSelectorOpen}
+                            className="w-full justify-between h-10"
+                            disabled={isSending}
+                            >
+                            <div className="flex items-center gap-2">
+                                {selectedAsset ? (
+                                    <Image src={selectedAsset.icon} alt={selectedAsset.name} width={20} height={20} className="rounded-full" />
+                                ) : <div className="w-5 h-5"/>}
+                                {selectedAsset ? selectedAsset.ticker : t.selectAssetLabel}
+                            </div>
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[200px] p-0">
+                            <Command>
+                            <CommandInput placeholder={t.searchAssetPlaceholder} />
+                            <CommandList>
+                                <CommandEmpty>{t.noAssetFound}</CommandEmpty>
+                                <CommandGroup>
+                                {ALL_EVM_ASSETS.map((asset) => (
+                                    <CommandItem
+                                    key={asset.ticker}
+                                    value={asset.name}
+                                    onSelect={() => {
+                                        setSelectedAssetTicker(asset.ticker);
+                                        setAssetSelectorOpen(false);
+                                    }}
+                                    >
+                                     <CheckCircle
+                                        className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedAssetTicker === asset.ticker ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                     <div className="flex items-center gap-2">
+                                        <Image src={asset.icon} alt={asset.name} width={20} height={20} className="rounded-full" />
+                                        <span>{asset.ticker}</span>
+                                      </div>
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
               </div>
               <div>
