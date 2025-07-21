@@ -8,7 +8,7 @@ import { ReceiptView } from '@/components/views/ReceiptView';
 import { LockView } from '@/components/views/LockView';
 import { CreditsView } from '@/components/views/CreditsView';
 import { Loader2, Send, Twitter, Mail } from 'lucide-react';
-import type { Wallet, StoredWallet } from '@/lib/types';
+import type { Wallet, StoredWallet, Transaction } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { getStoredWallet, clearStoredWallet, updateStoredWalletBalance } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
@@ -46,7 +46,7 @@ export function AppContainer() {
   const [status, setStatus] = useState<Status>('validating');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
-  const [transaction, setTransaction] = useState<any | null>(null);
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
 
   const { isReady, initData } = useTelegram();
 
@@ -88,14 +88,12 @@ export function AppContainer() {
     setView('dashboard');
   }
 
-  const handleTransactionSent = (sentTransaction: any) => {
-    if (wallet) {
-      // Update wallet balance after transaction
-      const newBalance = wallet.balance - sentTransaction.amount - 0.00042; // Subtracting mock gas fee
-      const updatedWallet = { ...wallet, balance: newBalance };
-      setWallet(updatedWallet);
-      // Persist the new balance to localStorage
-      updateStoredWalletBalance(newBalance);
+  const handleTransactionSent = (sentTransaction: Transaction) => {
+    // The DashboardView now sends the fully updated wallet object.
+    // We just need to update the state here.
+    if (sentTransaction.wallet) {
+      setWallet(sentTransaction.wallet);
+      updateStoredWalletBalance(sentTransaction.wallet.balance);
     }
     setTransaction(sentTransaction);
     setView('receipt');
