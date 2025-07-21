@@ -388,19 +388,18 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
  * Simulates sending a private transaction.
  * @param fromWallet The sender's wallet.
  * @param to The recipient's address.
- * @param amount The amount of ETH to send.
+ * @param amount The amount of the asset to send.
+ * @param ticker The ticker of the asset being sent.
  * @returns A mock Transaction object.
  */
-export function sendTransaction(fromWallet: Wallet, to: string, amount: number): Transaction {
-  if (fromWallet.balance < amount) {
-    throw new Error('Insufficient balance for this transaction.');
-  }
+export function sendTransaction(fromWallet: Wallet, to: string, amount: number, ticker: string): Transaction {
   if (amount <= 0) {
     throw new Error('Amount must be positive.');
   }
 
   // In a real Aztec transaction, the nullifierKey would be used to generate nullifiers for the notes being spent.
   // The appKey would be used to sign the transaction.
+  // If the asset is not ETH, this would involve interacting with a TokenPortal contract.
 
   const txHash = '0x' + generateRandomString(64, '0123456789abcdef');
   const proposedOnL1 = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120);
@@ -410,6 +409,7 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number):
     from: fromWallet.address,
     to,
     amount,
+    ticker,
     proposedOnL1,
   };
 }
@@ -611,5 +611,3 @@ export function validatePassword(password: string): {
         common: !commonPasswords.has(password.toLowerCase()),
     };
 }
-
-    

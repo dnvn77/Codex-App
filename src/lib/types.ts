@@ -27,6 +27,7 @@ export interface Transaction {
   from: string;
   to: string;
   amount: number;
+  ticker: string;
   proposedOnL1: number;
 }
 

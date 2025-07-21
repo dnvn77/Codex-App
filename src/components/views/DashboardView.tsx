@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -29,6 +29,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
@@ -72,6 +79,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const t = useTranslations();
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [selectedAssetTicker, setSelectedAssetTicker] = useState('ETH');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
   
@@ -126,20 +134,26 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
   }, [assets]);
   
+  const selectedAsset = useMemo(() => {
+    return assets.find(a => a.ticker === selectedAssetTicker) || null;
+  }, [assets, selectedAssetTicker]);
 
   const maxSendableAmount = useMemo(() => {
-    const ethAsset = assets.find(a => a.ticker === 'ETH');
-    if (!ethAsset) return 0;
-    const max = ethAsset.balance - gasCost;
-    return max > 0 ? max : 0;
-  }, [assets, gasCost]);
+    if (!selectedAsset) return 0;
+    if (selectedAsset.ticker === 'ETH') {
+      const max = selectedAsset.balance - gasCost;
+      return max > 0 ? max : 0;
+    }
+    return selectedAsset.balance;
+  }, [selectedAsset, gasCost]);
 
   useEffect(() => {
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
       if (toAddress && parseFloat(amount) > 0) {
         // Simulate gas calculation based on inputs
-        const newGas = 0.00030 + Math.random() * 0.00030; // Random gas between 0.00030 and 0.00060
+        const baseGas = selectedAssetTicker === 'ETH' ? 0.00030 : 0.00050; // Tokens cost more gas
+        const newGas = baseGas + Math.random() * 0.00030;
         const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005; //Slightly vary the average
         setGasCost(newGas);
         setAverageGas(newAvg);
@@ -152,7 +166,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }, 500); // Simulate network/calculation delay
 
     return () => clearTimeout(timer);
-  }, [toAddress, amount]);
+  }, [toAddress, amount, selectedAssetTicker]);
   
   useEffect(() => {
     const handleEnsLookup = async () => {
@@ -200,15 +214,19 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const newAmount = e.target.value;
     setAmount(newAmount);
 
-    if (newAmount) {
+    if (newAmount && selectedAsset) {
       const numericAmount = parseFloat(newAmount);
+      const balance = selectedAsset.balance;
       const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+
       if (isNaN(numericAmount)) {
         setAmountError(t.invalidNumberError);
       } else if (numericAmount < 0) {
         setAmountError(t.negativeAmountError);
-      } else if (numericAmount + gasCost > ethBalance) {
-        setAmountError(t.insufficientBalanceError);
+      } else if (numericAmount > balance) {
+        setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
+      } else if (gasCost > ethBalance) {
+        setAmountError(t.insufficientGasError);
       } else {
         setAmountError('');
       }
@@ -218,16 +236,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSetMaxAmount = () => {
-    const maxAmountStr = maxSendableAmount.toFixed(18).replace(/\.?0+$/, ''); // Use high precision then trim
+    if (!selectedAsset) return;
+    const maxAmountStr = maxSendableAmount.toFixed(8).replace(/\.?0+$/, ''); // Use high precision then trim
     setAmount(maxAmountStr);
-    // Trigger validation with the new amount
-    const numericAmount = parseFloat(maxAmountStr);
-    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-    if (numericAmount + gasCost > ethBalance) {
-      setAmountError(t.insufficientBalanceError);
-    } else {
-      setAmountError('');
-    }
+    handleAmountChange({ target: { value: maxAmountStr } } as React.ChangeEvent<HTMLInputElement>);
   };
 
 
@@ -236,7 +248,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
 
-    if (!finalAddress || !amount || amountError) {
+    if (!finalAddress || !amount || amountError || !selectedAsset) {
       toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
       return;
     }
@@ -249,7 +261,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     try {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount));
+      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker);
       onTransactionSent(tx);
       setToAddress('');
       setAmount('');
@@ -265,11 +277,20 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
     // Final check before proceeding
     const numericAmount = parseFloat(amount);
-    if (numericAmount + gasCost > ethBalance) {
-        setAmountError(t.insufficientBalanceError);
-        toast({ title: t.error, description: t.insufficientBalanceError, variant: 'destructive' });
-        return;
+    if (!selectedAsset) return;
+
+    if (numericAmount > selectedAsset.balance) {
+      setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
+      toast({ title: t.error, description: t.insufficientTokenBalanceError(selectedAsset.ticker), variant: 'destructive' });
+      return;
     }
+
+    if (gasCost > ethBalance) {
+      setAmountError(t.insufficientGasError);
+      toast({ title: t.error, description: t.insufficientGasError, variant: 'destructive' });
+      return;
+    }
+
 
     if (gasCost > averageGas) {
       setIsConfirmingTx(true);
@@ -293,7 +314,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     // Here, we just show a confirmation toast.
     toast({
         title: t.gasAlertSetTitle,
-        description: t.gasAlertSetDesc(notificationAmount, notificationAddress),
+        description: t.gasAlertSetDesc(notificationAmount, selectedAssetTicker, notificationAddress),
     });
     setShowGasNotifyPrompt(false);
     setNotificationAddress('');
@@ -482,22 +503,52 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   </div>
                 )}
               </div>
-              <div className="space-y-1">
-                <div className="flex justify-between items-end">
-                  <Label htmlFor="amount">{t.amountLabel}</Label>
-                  <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>
-                    {t.maxAmountLabel}: {maxSendableAmount.toFixed(5)}
-                  </button>
+
+               <div className="grid grid-cols-5 gap-2">
+                <div className="col-span-3 space-y-1">
+                  <div className="flex justify-between items-end">
+                    <Label htmlFor="amount">{t.amountLabel}</Label>
+                    <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>
+                      {t.maxAmountLabel}: {maxSendableAmount.toFixed(5)}
+                    </button>
+                  </div>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="0.01"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    disabled={isSending}
+                  />
                 </div>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.01"
-                  value={amount}
-                  onChange={handleAmountChange}
-                  disabled={isSending}
-                />
+
+                <div className="col-span-2 space-y-1">
+                    <Label htmlFor="asset">{t.assetLabel}</Label>
+                    <Select value={selectedAssetTicker} onValueChange={setSelectedAssetTicker} disabled={isSending}>
+                      <SelectTrigger id="asset" className="h-10">
+                        <SelectValue placeholder={t.selectAssetLabel} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assets.filter(a => a.balance > 0 || !hideZeroBalances).map(asset => (
+                           <SelectItem key={asset.ticker} value={asset.ticker}>
+                              <div className="flex items-center gap-2">
+                                <Image src={asset.icon} alt={asset.name} width={20} height={20} className="rounded-full" data-ai-hint={`${asset.name} logo`}/>
+                                <span>{asset.ticker}</span>
+                              </div>
+                           </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                </div>
+              </div>
+              <div>
                 {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
+                {selectedAssetTicker !== 'ETH' && (
+                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md">
+                        <Info className="h-4 w-4 flex-shrink-0" />
+                        <p>{t.tokenPortalInfo}</p>
+                    </div>
+                )}
               </div>
             </div>
           </div>

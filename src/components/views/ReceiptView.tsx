@@ -113,7 +113,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={transaction.proposedOnL1.toString()} />
             <div className="flex items-center justify-between py-3">
               <span className="font-medium">{t.amountLabel}</span>
-              <span className="text-xl font-bold">{transaction.amount} ETH</span>
+              <span className="text-xl font-bold">{transaction.amount} {transaction.ticker}</span>
             </div>
           </div>
 
