@@ -32,7 +32,7 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetLi
     const Icon = isPositive ? ArrowUpRight : ArrowDownRight;
 
     return (
-      <span className={cn('flex items-center text-xs font-medium', color)}>
+      <span className={cn('flex items-center justify-end text-xs font-medium', color)}>
         <Icon className="h-3 w-3 mr-1" />
         {Math.abs(value).toFixed(2)}%
       </span>
@@ -64,9 +64,9 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetLi
               <TableCell className="text-right">
                 <div>
                    <p className="font-mono">
-                     {showBalances ? `$${asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                     ${asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  {showBalances && <ChangeIndicator value={asset.change5m} />}
+                  <ChangeIndicator value={asset.change5m} />
                 </div>
               </TableCell>
               <TableCell className="text-right">
