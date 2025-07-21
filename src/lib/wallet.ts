@@ -535,10 +535,13 @@ export function getStoredWallet(): StoredWallet | null {
 export function updateStoredWalletBalance(newBalance: number): void {
   const stored = getStoredWallet();
   if (!stored) return;
+  
+  // Ensure balance doesn't go negative
+  const finalBalance = Math.max(0, newBalance);
 
   const updatedWallet: StoredWallet = {
     ...stored,
-    balance: newBalance
+    balance: finalBalance
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWallet));
 }

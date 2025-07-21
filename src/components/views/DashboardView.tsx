@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, updateStoredWalletBalance } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search } from 'lucide-react';
@@ -298,25 +298,29 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
-      onTransactionSent(tx);
       
-      // Update balances after transaction
-      setMockBalances(prevBalances => {
-          const newBalances = { ...prevBalances };
-          const sentAmount = parseFloat(amount);
-          
-          // Update the sent asset's balance
-          if (newBalances[selectedAsset.ticker] !== undefined) {
-              newBalances[selectedAsset.ticker] -= sentAmount;
-          }
+      const newBalances = { ...mockBalances };
+      const sentAmount = parseFloat(amount);
+      
+      if (newBalances[selectedAsset.ticker] !== undefined) {
+        newBalances[selectedAsset.ticker] -= sentAmount;
+      }
 
-          // Always update ETH balance for gas
-          if (newBalances['ETH'] !== undefined) {
-              newBalances['ETH'] -= gasCost;
-          }
-          
-          return newBalances;
-      });
+      if (newBalances['ETH'] !== undefined) {
+        newBalances['ETH'] -= gasCost;
+      }
+      
+      setMockBalances(newBalances);
+      
+      // Pass the updated wallet object to the parent
+      const updatedWallet = {
+          ...wallet,
+          balance: newBalances['ETH'] // The primary balance is the ETH balance
+      };
+      updateStoredWalletBalance(newBalances['ETH']);
+      
+      // We pass the transaction object with the updated wallet
+      onTransactionSent({ ...tx, wallet: updatedWallet } as any);
 
       setToAddress('');
       setAmount('');
@@ -697,5 +701,3 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
-
-    
