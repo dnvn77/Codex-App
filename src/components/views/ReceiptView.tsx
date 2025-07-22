@@ -5,13 +5,14 @@ import { useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2, Info } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
 import { useIsMobile } from '@/hooks/use-mobile';
 import * as htmlToImage from 'html-to-image';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface ReceiptViewProps {
   transaction: Transaction;
@@ -137,6 +138,12 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         </CardContent>
         <CardFooter className="flex-col gap-3">
           <ShortenedLink fullUrl={etherscanUrl} displayPrefix="sepolia.etherscan.io/tx/" t={t} />
+          {transaction.ticker !== 'ETH' && (
+              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md w-full">
+                  <Info className="h-4 w-4 flex-shrink-0" />
+                  <p>{t.tokenPortalInfo}</p>
+              </div>
+          )}
           <div className="flex gap-2 w-full">
             <Button variant="secondary" className="w-full" onClick={onBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />

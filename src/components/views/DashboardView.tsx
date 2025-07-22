@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, updateStoredWalletBalance } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search } from 'lucide-react';
@@ -139,7 +139,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     'STRW': 50000,
   });
   
-  const userAssetSymbols = useMemo(() => Object.keys(mockBalances), [mockBalances]);
+  const userAssetSymbols = useMemo(() => {
+    // Always include ETH for gas calculations, even if balance is 0.
+    const symbols = new Set(Object.keys(mockBalances));
+    symbols.add('ETH');
+    return Array.from(symbols);
+  }, [mockBalances]);
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
@@ -166,8 +171,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   useEffect(() => {
     updateAssetPrices();
-    const interval = setInterval(updateAssetPrices, 5 * 60 * 1000); // 5 minutes
-    return () => clearInterval(interval);
+    // No longer using interval, will use a manual refresh button
+    // const interval = setInterval(updateAssetPrices, 5 * 60 * 1000); // 5 minutes
+    // return () => clearInterval(interval);
   }, [updateAssetPrices]);
   
   const totalBalanceUSD = useMemo(() => {
@@ -313,7 +319,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       setMockBalances(newBalances);
       
       const finalEthBalance = Math.max(0, newBalances['ETH']);
-      updateStoredWalletBalance(finalEthBalance);
       
       const updatedWallet = {
           ...wallet,
@@ -321,6 +326,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       };
       
       onTransactionSent({ ...tx, wallet: updatedWallet });
+      updateAssetPrices();
 
       setToAddress('');
       setAmount('');
@@ -513,7 +519,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </div>
               )}
               {assetStatus === 'success' && (
-                <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} />
+                <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} onRefresh={updateAssetPrices} isRefreshing={assetStatus === 'loading'}/>
               )}
             </div>
 

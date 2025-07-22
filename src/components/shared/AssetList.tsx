@@ -5,20 +5,23 @@ import type { Asset } from '@/lib/types';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AssetListProps {
   assets: Asset[];
   showBalances: boolean;
   hideZeroBalances: boolean;
   t: any; // Translation object
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
-export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetListProps) {
+export function AssetList({ assets, showBalances, hideZeroBalances, t, onRefresh, isRefreshing }: AssetListProps) {
   
   const filteredAssets = hideZeroBalances ? assets.filter(asset => asset.balance > 0) : assets;
 
-  if (filteredAssets.length === 0) {
+  if (filteredAssets.length === 0 && !isRefreshing) {
     return (
       <div className="text-center text-muted-foreground py-8">
         <p>No assets to display.</p>
@@ -41,6 +44,12 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t }: AssetLi
 
   return (
     <div className="w-full">
+       <div className="flex justify-end mb-2">
+            <Button variant="ghost" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                <span className="sr-only">Refresh Prices</span>
+            </Button>
+        </div>
       <Table>
         <TableHeader>
           <TableRow>
