@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteAssets, setFavoriteAssets } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert } from 'lucide-react';
@@ -60,7 +60,7 @@ interface DashboardViewProps {
   onShowCredits: () => void;
 }
 
-const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h'>[] = [
+const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'isFavorite'>[] = [
     { name: 'Ethereum', ticker: 'ETH', id: 1027, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png` },
     { name: 'USD Coin', ticker: 'USDC', id: 3408, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png` },
     { name: 'Tether', ticker: 'USDT', id: 825, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/825.png` },
@@ -129,6 +129,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [favoriteAssets, setFavoriteAssetsState] = useState<Set<string>>(new Set());
   
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
   
@@ -155,15 +156,30 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
 
+  useEffect(() => {
+    setFavoriteAssetsState(getFavoriteAssets());
+  }, []);
+
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
       const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
+      const currentFavorites = getFavoriteAssets();
       
       const userAssets = priceData.map(asset => ({
         ...asset,
-        balance: mockBalances[asset.ticker] || 0
-      })).sort((a, b) => (b.balance * b.priceUSD) - (a.balance * a.priceUSD));
+        balance: mockBalances[asset.ticker] || 0,
+        isFavorite: currentFavorites.has(asset.ticker)
+      })).sort((a, b) => {
+        // Primary sort: favorites first
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+
+        // Secondary sort: by USD value
+        const valueA = a.balance * a.priceUSD;
+        const valueB = b.balance * b.priceUSD;
+        return valueB - valueA;
+      });
 
       setAssets(userAssets);
       setAssetStatus('success');
@@ -181,6 +197,18 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   useEffect(() => {
     updateAssetPrices();
   }, [updateAssetPrices]);
+
+  const handleToggleFavorite = useCallback((ticker: string) => {
+    const newFavorites = new Set(favoriteAssets);
+    if (newFavorites.has(ticker)) {
+      newFavorites.delete(ticker);
+    } else {
+      newFavorites.add(ticker);
+    }
+    setFavoriteAssets(Array.from(newFavorites));
+    setFavoriteAssetsState(newFavorites);
+    updateAssetPrices();
+  }, [favoriteAssets, updateAssetPrices]);
   
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
@@ -313,7 +341,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
       
-      // Use a functional update for setMockBalances to ensure we have the latest state
       setMockBalances(prevBalances => {
           const newBalances = { ...prevBalances };
           const sentAmount = parseFloat(amount);
@@ -552,7 +579,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </div>
               )}
               {assetStatus === 'success' && (
-                <AssetList assets={assets} showBalances={showBalances} hideZeroBalances={hideZeroBalances} t={t} onRefresh={updateAssetPrices} isRefreshing={assetStatus === 'loading'}/>
+                <AssetList 
+                  assets={assets} 
+                  showBalances={showBalances} 
+                  hideZeroBalances={hideZeroBalances} 
+                  t={t} 
+                  onRefresh={updateAssetPrices} 
+                  isRefreshing={assetStatus === 'loading'}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               )}
             </div>
 
@@ -800,5 +835,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
 
     

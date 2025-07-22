@@ -41,4 +41,7 @@ export interface Asset {
   priceUSD: number;
   change24h: number; // Percentage change in 24h
   icon: string;
+  isFavorite: boolean;
 }
+
+    

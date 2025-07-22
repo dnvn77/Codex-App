@@ -271,6 +271,7 @@ export const bip39Wordlist: string[] = [
 // and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
 
 const STORAGE_KEY = 'strawberry_wallet';
+const FAVORITES_KEY = 'strawberry_wallet_favorites';
 
 function generateRandomString(length: number, chars: string): string {
   let result = '';
@@ -596,6 +597,7 @@ export async function verifySeedPhrase(seedPhrase: string, storedAddress: string
 
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(FAVORITES_KEY);
 }
 
 export function validatePassword(password: string): {
@@ -615,3 +617,24 @@ export function validatePassword(password: string): {
         common: !commonPasswords.has(password.toLowerCase()),
     };
 }
+
+// --- Favorites Management ---
+
+export function getFavoriteAssets(): Set<string> {
+  const favorites = localStorage.getItem(FAVORITES_KEY);
+  if (favorites) {
+    try {
+      const parsed = JSON.parse(favorites);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  }
+  return new Set();
+}
+
+export function setFavoriteAssets(favorites: string[]): void {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+}
+
+    
