@@ -313,28 +313,28 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
       
-      const newBalances = { ...mockBalances };
-      const sentAmount = parseFloat(amount);
-      
-      if (newBalances[selectedAsset.ticker] !== undefined) {
-        newBalances[selectedAsset.ticker] -= sentAmount;
-      }
+      // Use a functional update for setMockBalances to ensure we have the latest state
+      setMockBalances(prevBalances => {
+          const newBalances = { ...prevBalances };
+          const sentAmount = parseFloat(amount);
 
-      if (newBalances['ETH'] !== undefined) {
-        newBalances['ETH'] -= gasCost;
-      }
-      
-      setMockBalances(newBalances);
-      
-      const finalEthBalance = Math.max(0, newBalances['ETH']);
-      
-      const updatedWallet: Wallet = {
-          ...wallet,
-          balance: finalEthBalance
-      };
-      
-      onTransactionSent({ ...tx, wallet: updatedWallet });
-      await updateAssetPrices();
+          if (newBalances[selectedAsset.ticker] !== undefined) {
+              newBalances[selectedAsset.ticker] = Math.max(0, newBalances[selectedAsset.ticker] - sentAmount);
+          }
+
+          if (newBalances['ETH'] !== undefined) {
+              newBalances['ETH'] = Math.max(0, newBalances['ETH'] - gasCost);
+          }
+          
+          const updatedWallet: Wallet = {
+              ...wallet,
+              balance: newBalances['ETH']
+          };
+          
+          onTransactionSent({ ...tx, wallet: updatedWallet });
+
+          return newBalances;
+      });
 
       setToAddress('');
       setAmount('');

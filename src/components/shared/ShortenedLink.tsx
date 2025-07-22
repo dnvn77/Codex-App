@@ -28,10 +28,10 @@ export function ShortenedLink({ fullUrl, displayPrefix, t }: ShortenedLinkProps)
 
   return (
     <div className="flex items-center justify-between w-full p-3 rounded-lg bg-secondary/50">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-sm text-primary">{displayUrl}</span>
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="font-mono text-sm text-primary break-all">{displayUrl}</span>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
           <Copy className="h-4 w-4" />
         </Button>
@@ -44,3 +44,5 @@ export function ShortenedLink({ fullUrl, displayPrefix, t }: ShortenedLinkProps)
     </div>
   );
 }
+
+    

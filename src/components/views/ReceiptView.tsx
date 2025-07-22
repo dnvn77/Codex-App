@@ -11,7 +11,6 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
 import { useIsMobile } from '@/hooks/use-mobile';
 import * as htmlToImage from 'html-to-image';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface ReceiptViewProps {
@@ -39,7 +38,7 @@ const ReceiptItem = ({ icon, label, value, isHash = false, t }: { icon: React.Re
       </div>
       <div className="flex items-center gap-2">
         <span className={`font-mono font-medium text-right break-all ${isHash ? 'text-primary' : ''}`}>{truncatedValue}</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={handleCopy}><Copy className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 no-print" onClick={handleCopy}><Copy className="h-4 w-4" /></Button>
       </div>
     </div>
   )
@@ -55,6 +54,10 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const handleShare = useCallback(async () => {
     if (!receiptRef.current) return;
     
+    // Temporarily hide copy buttons for capture
+    const buttons = receiptRef.current.querySelectorAll('.no-print');
+    buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+
     try {
         const cardElement = receiptRef.current;
         const style = window.getComputedStyle(cardElement);
@@ -72,6 +75,9 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             }
         });
         
+        // Restore buttons after capture
+        buttons.forEach(btn => (btn as HTMLElement).style.display = '');
+
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
 
@@ -99,6 +105,9 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             });
         }
     } catch (err) {
+      // Restore buttons even if sharing fails or is cancelled
+      buttons.forEach(btn => (btn as HTMLElement).style.display = '');
+      
       // Only show error if it's not an AbortError (user cancellation)
       if (err instanceof DOMException && err.name === 'AbortError') {
           console.log('Share action was cancelled by the user.');
@@ -129,7 +138,8 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
             <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={String(transaction.proposedOnL1)} />
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
-                {transaction.icon && <Image src={transaction.icon} alt={transaction.ticker} width={20} height={20} className="h-5 w-5 rounded-full" data-ai-hint={`${transaction.ticker} logo`} />}
+                 {/* Use a standard img tag for better html-to-image compatibility */}
+                {transaction.icon && <img src={transaction.icon} alt={transaction.ticker} className="h-5 w-5 rounded-full" data-ai-hint={`${transaction.ticker} logo`} />}
                 <span className="text-muted-foreground">{t.amountLabel}</span>
               </div>
               <span className="font-mono font-medium">{transaction.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })} {transaction.ticker}</span>
@@ -169,3 +179,5 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
     </>
   );
 }
+
+    
