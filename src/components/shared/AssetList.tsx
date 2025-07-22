@@ -63,7 +63,7 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t, onRefresh
         <TableBody>
           {filteredAssets.map((asset) => (
             <TableRow key={asset.ticker}>
-              <TableCell>
+              <TableCell className="px-1">
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(asset.ticker)}>
                     <Star className={cn("h-5 w-5 text-yellow-400", asset.isFavorite && "fill-current")} />
                 </Button>
