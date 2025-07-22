@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -22,12 +22,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -108,7 +112,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
   
-  const [isConfirmingTx, setIsConfirmingTx] = useState(false);
+  const [showHighGasConfirm, setShowHighGasConfirm] = useState(false);
   const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
   const [notificationAddress, setNotificationAddress] = useState('');
   const [notificationAmount, setNotificationAmount] = useState('');
@@ -127,6 +131,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
   
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
+  
+  const [isAmountConfirmOpen, setAmountConfirmOpen] = useState(false);
+  const [isPasswordConfirmOpen, setPasswordConfirmOpen] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
@@ -171,9 +180,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   useEffect(() => {
     updateAssetPrices();
-    // No longer using interval, will use a manual refresh button
-    // const interval = setInterval(updateAssetPrices, 5 * 60 * 1000); // 5 minutes
-    // return () => clearInterval(interval);
   }, [updateAssetPrices]);
   
   const totalBalanceUSD = useMemo(() => {
@@ -287,7 +293,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
 
   const executeSend = async () => {
-    setIsConfirmingTx(false);
+    setAmountConfirmOpen(false);
+    setPasswordConfirmOpen(false);
+    setShowHighGasConfirm(false);
 
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
 
@@ -320,13 +328,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       
       const finalEthBalance = Math.max(0, newBalances['ETH']);
       
-      const updatedWallet = {
+      const updatedWallet: Wallet = {
           ...wallet,
           balance: finalEthBalance
       };
       
       onTransactionSent({ ...tx, wallet: updatedWallet });
-      updateAssetPrices();
+      await updateAssetPrices();
 
       setToAddress('');
       setAmount('');
@@ -339,32 +347,57 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSendClick = () => {
+    const numericAmount = parseFloat(amount) || 0;
+    if (!selectedAsset || !selectedAsset.priceUSD) return;
+
+    const usdValue = numericAmount * selectedAsset.priceUSD;
+    
+    // Basic validation checks before showing any dialogs
     const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-    const numericAmount = parseFloat(amount);
-    if (!selectedAsset) return;
-
     if (numericAmount > (selectedAsset.balance || 0)) {
-      setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
-      toast({ title: t.error, description: t.insufficientTokenBalanceError(selectedAsset.ticker), variant: 'destructive' });
-      return;
+        setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
+        toast({ title: t.error, description: t.insufficientTokenBalanceError(selectedAsset.ticker), variant: 'destructive' });
+        return;
     }
-
     if (gasCost > ethBalance) {
-      setAmountError(t.insufficientGasError);
-      toast({ title: t.error, description: t.insufficientGasError, variant: 'destructive' });
-      return;
+        setAmountError(t.insufficientGasError);
+        toast({ title: t.error, description: t.insufficientGasError, variant: 'destructive' });
+        return;
     }
 
-
-    if (gasCost > averageGas) {
-      setIsConfirmingTx(true);
+    // Amount-based confirmation logic
+    if (usdValue >= 3000) {
+        setPasswordConfirmOpen(true);
+    } else if (usdValue >= 1000) {
+        setAmountConfirmOpen(true);
     } else {
-      executeSend();
+        // High gas check for smaller amounts
+        if (gasCost > averageGas) {
+            setShowHighGasConfirm(true);
+        } else {
+            executeSend();
+        }
+    }
+  };
+  
+  const handlePasswordConfirm = async () => {
+    setIsSending(true);
+    setConfirmPasswordError('');
+    try {
+        await unlockWallet(confirmPassword);
+        // Password is correct, proceed with transaction
+        setPasswordConfirmOpen(false);
+        setConfirmPassword('');
+        await executeSend();
+    } catch (e) {
+        setConfirmPasswordError(t.wrongPasswordError);
+    } finally {
+        setIsSending(false);
     }
   };
   
   const handleHighGasCancel = () => {
-    setIsConfirmingTx(false);
+    setShowHighGasConfirm(false);
     setTimeout(() => {
       setNotificationAddress(toAddress);
       setNotificationAmount(amount);
@@ -660,7 +693,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           </Button>
         </CardFooter>
         
-        <AlertDialog open={isConfirmingTx} onOpenChange={setIsConfirmingTx}>
+        <AlertDialog open={showHighGasConfirm} onOpenChange={setShowHighGasConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
@@ -686,6 +719,64 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           </AlertDialogContent>
         </AlertDialog>
         
+        <AlertDialog open={isAmountConfirmOpen} onOpenChange={setAmountConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <ShieldAlert className="text-primary" />
+                Confirm Transaction
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to send a significant amount. Please confirm the details below.
+                <div className="my-4 space-y-2 text-foreground break-all">
+                  <p><b>Amount:</b> {parseFloat(amount).toLocaleString()} {selectedAsset?.ticker}</p>
+                  <p><b>Value:</b> ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setAmountConfirmOpen(false); gasCost > averageGas ? setShowHighGasConfirm(true) : executeSend(); }}>
+                Confirm & Send
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={isPasswordConfirmOpen} onOpenChange={setPasswordConfirmOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <ShieldCheck className="text-destructive" />
+                        Password Required for High-Value Transaction
+                    </DialogTitle>
+                    <DialogDescription>
+                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="confirm_password">Password</Label>
+                    <Input 
+                        id="confirm_password" 
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            setConfirmPasswordError('');
+                        }}
+                    />
+                    {confirmPasswordError && <p className="text-destructive text-sm mt-1">{confirmPasswordError}</p>}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handlePasswordConfirm} disabled={isSending || !confirmPassword}>
+                        {isSending ? <Loader2 className="animate-spin" /> : 'Authorize & Send'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
         <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
           <AlertDialogContent>
               <AlertDialogHeader>
@@ -709,3 +800,5 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
