@@ -404,7 +404,7 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number, 
   // If the asset is not ETH, this would involve interacting with a TokenPortal contract.
 
   const txHash = '0x' + generateRandomString(64, '0123456789abcdef');
-  const proposedOnL1 = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120);
+  const l1SettlementBlock = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120);
 
   return {
     txHash,
@@ -413,7 +413,7 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number, 
     amount,
     ticker,
     icon,
-    proposedOnL1,
+    l1SettlementBlock,
   };
 }
 

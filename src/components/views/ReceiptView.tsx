@@ -135,7 +135,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           <div className="space-y-1">
             <ReceiptItem t={t} icon={<Hash className="h-5 w-5 text-accent" />} label={t.txHashLabel} value={transaction.txHash} isHash />
             <ReceiptItem t={t} icon={<Landmark className="h-5 w-5 text-accent" />} label={t.toLabel} value={transaction.to} isHash />
-            <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={String(transaction.proposedOnL1)} />
+            <ReceiptItem t={t} icon={<Box className="h-5 w-5 text-accent" />} label={t.blockNumberLabel} value={String(transaction.l1SettlementBlock)} />
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                  {/* Use a standard img tag for better html-to-image compatibility */}
@@ -179,5 +179,3 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
     </>
   );
 }
-
-    

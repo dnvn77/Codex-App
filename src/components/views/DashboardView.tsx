@@ -835,7 +835,3 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
-
-    
-
-    

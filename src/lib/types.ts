@@ -29,7 +29,7 @@ export interface Transaction {
   amount: number;
   ticker: string;
   icon?: string;
-  proposedOnL1: number;
+  l1SettlementBlock: number;
   wallet?: Wallet; // Include the updated wallet state
 }
 
