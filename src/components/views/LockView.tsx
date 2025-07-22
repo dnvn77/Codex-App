@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface LockViewProps {
   storedWallet: StoredWallet;
-  onWalletUnlocked: (wallet: Wallet) => void;
+  onWalletUnlocked: (password: string) => void;
   onDisconnect: () => void;
   onWalletConnected: (wallet: Wallet) => void; // Used for password reset
 }
@@ -122,8 +122,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
 
     try {
         await new Promise(resolve => setTimeout(resolve, 500));
-        const unlockedWallet = await unlockWallet(password);
-        onWalletUnlocked(unlockedWallet!);
+        await onWalletUnlocked(password);
     } catch {
       setError(t.wrongPasswordError);
     } finally {
@@ -203,7 +202,12 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
 
   const handlePasswordReset = (wallet: Wallet) => {
     handleCloseRecovery();
-    onWalletUnlocked(wallet);
+    // After reset, we need to treat it as a fresh unlock
+    unlockWallet(password).then(unlockedWallet => {
+      if(unlockedWallet) {
+        onWalletUnlocked(password);
+      }
+    });
   }
   
   const handleSeedLengthChange = (value: string) => {
@@ -349,7 +353,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
             {recoveryStep === 'resetPassword' && fullSeedForReset && (
                 <ConnectView 
                     isRecoveryMode={true} 
-                    onPasswordReset={handlePasswordReset}
+                    onPasswordReset={onWalletConnected}
                     recoverySeedPhrase={fullSeedForReset}
                     onWalletConnected={onWalletConnected} // This prop is required by ConnectView
                 />

@@ -10,6 +10,7 @@ import { CreditsView } from '@/components/views/CreditsView';
 import { Loader2, Send, Twitter, Mail } from 'lucide-react';
 import type { Wallet, StoredWallet, Transaction } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
 import { Chatbot } from '@/components/shared/Chatbot';
 import { Button } from './ui/button';
@@ -50,6 +51,16 @@ export function AppContainer() {
 
   const { isReady, initData } = useTelegram();
 
+  const handleLock = () => {
+    if (view !== 'lock' && view !== 'connect') {
+      setWallet(null); // Clear active wallet state
+      setView('lock');
+    }
+  };
+
+  useInactivityTimeout(handleLock);
+
+
   useEffect(() => {
     // This effect simulates backend validation of Telegram's initData.
     // In a real app, you would send `initData` to your backend for secure verification.
@@ -83,14 +94,15 @@ export function AppContainer() {
     setView('dashboard');
   };
 
-  const handleWalletUnlocked = (unlockedWallet: Wallet) => {
-    setWallet(unlockedWallet);
-    setView('dashboard');
+  const handleWalletUnlocked = async (password: string) => {
+    const unlockedWallet = await unlockWallet(password);
+    if(unlockedWallet) {
+        setWallet(unlockedWallet);
+        setView('dashboard');
+    }
   }
 
   const handleTransactionSent = (sentTransaction: Transaction) => {
-    // DashboardView now sends the fully updated wallet object.
-    // We just need to update the state here.
     if (sentTransaction.wallet) {
       setWallet(sentTransaction.wallet);
     }
