@@ -129,7 +129,7 @@ const getCurrencyFromLanguageCode = (lang?: string): string => {
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
-  const { user, isReady } = useTelegram();
+  const { user } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -184,7 +184,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   useEffect(() => {
     // This effect runs on the client side only
-    setBrowserLanguage(navigator.language);
+    if (typeof window !== 'undefined') {
+      setBrowserLanguage(navigator.language);
+    }
   }, []);
 
   const localCurrencyCode = useMemo(() => {
@@ -249,7 +251,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     } finally {
       setIsCurrencyConversionLoading(false);
     }
-  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode]);
+  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, setCurrencyConversion]);
   
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
@@ -538,6 +540,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
   const currencySymbol = currencyConversion?.currencySymbol || '$';
+  const showCurrencySwitch = localCurrencyCode && localCurrencyCode !== 'USD';
 
   return (
     <>
@@ -564,7 +567,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
                 <div className="flex justify-between items-center mb-2">
-                    {(localCurrencyCode !== 'USD' && isReady) ? (
+                    {showCurrencySwitch ? (
                       <div className="flex items-center space-x-2">
                           <Label htmlFor="currency-switch" className="text-sm font-medium">USD</Label>
                           <Switch id="currency-switch" checked={isLocalCurrency} onCheckedChange={setIsLocalCurrency} />
