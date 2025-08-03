@@ -129,7 +129,7 @@ const getCurrencyFromLanguageCode = (lang?: string): string => {
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
-  const { user, isReady } = useTelegram();
+  const { user } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -153,6 +153,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
   
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetPricesUSD, setAssetPricesUSD] = useState<Omit<Asset, 'balance' | 'isFavorite'>[]>([]);
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [favoriteAssets, setFavoriteAssetsState] = useState<Set<string>>(new Set());
   
@@ -186,12 +187,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       setBrowserLanguage(navigator.language);
     }
   }, []);
-
+  
   const localCurrencyCode = useMemo(() => {
     const lang = user?.language_code || browserLanguage;
     return getCurrencyFromLanguageCode(lang);
   }, [user?.language_code, browserLanguage]);
-
+  
   const userAssetSymbols = useMemo(() => {
     const symbols = new Set(Object.keys(mockBalances));
     symbols.add('ETH');
@@ -202,37 +203,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setAssetStatus('loading');
     try {
       const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
-      const currentFavorites = getFavoriteAssets();
-      
-      let conversionResult: ConversionResult | null = null;
-      if (isLocalCurrency && localCurrencyCode !== 'USD') {
-        const pricesToConvert = priceData.map(p => p.priceUSD);
-        conversionResult = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
-        setCurrencyConversion(conversionResult);
-      } else {
-        setCurrencyConversion(null);
-      }
-
-      const getConvertedPrice = (ticker: string, originalPrice: number) => {
-          if (!conversionResult) return originalPrice;
-          const priceIndex = priceData.findIndex(p => p.ticker === ticker);
-          return conversionResult.convertedValues[priceIndex] || originalPrice;
-      };
-
-      const userAssets = priceData.map(asset => ({
-        ...asset,
-        priceUSD: getConvertedPrice(asset.ticker, asset.priceUSD),
-        balance: mockBalances[asset.ticker] || 0,
-        isFavorite: currentFavorites.has(asset.ticker),
-      })).sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
-        const valueA = a.balance * a.priceUSD;
-        const valueB = b.balance * b.priceUSD;
-        return valueB - valueA;
-      });
-
-      setAssets(userAssets);
+      setAssetPricesUSD(priceData);
       setAssetStatus('success');
     } catch (error) {
         console.error("Failed to fetch asset prices:", error);
@@ -243,11 +214,56 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, isLocalCurrency]);
+  }, [userAssetSymbols, toast, t]);
 
   useEffect(() => {
     updateAssetPrices();
   }, [updateAssetPrices]);
+  
+  useEffect(() => {
+    const applyConversion = async () => {
+        if (assetStatus !== 'success') return;
+        
+        let conversionResult: ConversionResult | null = null;
+        if (isLocalCurrency && localCurrencyCode !== 'USD') {
+            const pricesToConvert = assetPricesUSD.map(p => p.priceUSD);
+            try {
+              conversionResult = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
+            } catch (e) {
+              console.error("Currency conversion failed", e);
+              toast({ title: t.error, description: "Could not convert to local currency.", variant: "destructive"});
+            }
+        }
+        setCurrencyConversion(conversionResult);
+
+        const currentFavorites = getFavoriteAssets();
+        const getConvertedPrice = (ticker: string, originalPrice: number) => {
+            if (!conversionResult) return originalPrice;
+            const priceIndex = assetPricesUSD.findIndex(p => p.ticker === ticker);
+            return conversionResult.convertedValues[priceIndex] ?? originalPrice;
+        };
+
+        const userAssets = assetPricesUSD.map(asset => ({
+            ...asset,
+            priceUSD: getConvertedPrice(asset.ticker, asset.priceUSD),
+            balance: mockBalances[asset.ticker] || 0,
+            isFavorite: currentFavorites.has(asset.ticker),
+        })).sort((a, b) => {
+            if (a.isFavorite && !b.isFavorite) return -1;
+            if (!a.isFavorite && b.isFavorite) return 1;
+            // Use original USD price for sorting value regardless of display currency
+            const originalPriceA = assetPricesUSD.find(p => p.ticker === a.ticker)?.priceUSD || 0;
+            const originalPriceB = assetPricesUSD.find(p => p.ticker === b.ticker)?.priceUSD || 0;
+            const valueA = a.balance * originalPriceA;
+            const valueB = b.balance * originalPriceB;
+            return valueB - valueA;
+        });
+
+        setAssets(userAssets);
+    };
+
+    applyConversion();
+  }, [isLocalCurrency, assetStatus, assetPricesUSD, localCurrencyCode, mockBalances, toast, t]);
   
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
@@ -266,31 +282,36 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
     setFavoriteAssets(Array.from(newFavorites));
     setFavoriteAssetsState(newFavorites);
-    updateAssetPrices(); 
-  }, [favoriteAssets, updateAssetPrices]);
+  }, [favoriteAssets]);
   
   const totalBalance = useMemo(() => {
-    return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
-  }, [assets]);
+    return assets.reduce((total, asset) => {
+        const originalPrice = assetPricesUSD.find(p => p.ticker === asset.ticker)?.priceUSD || 0;
+        const valueInUSD = asset.balance * originalPrice;
+        return total + valueInUSD;
+    }, 0);
+  }, [assets, assetPricesUSD]);
+  
+  const displayTotalBalance = useMemo(() => {
+      if (currencyConversion) {
+          return totalBalance * currencyConversion.exchangeRate;
+      }
+      return totalBalance;
+  }, [totalBalance, currencyConversion]);
   
   const selectedAsset = useMemo(() => {
-    return assets.find(a => a.ticker === selectedAssetTicker) || ALL_EVM_ASSETS.find(a => a.ticker === selectedAssetTicker) || null;
+    return assets.find(a => a.ticker === selectedAssetTicker) || null;
   }, [assets, selectedAssetTicker]);
 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
     
-    const ethAsset = assets.find(a => a.ticker === 'ETH');
-    
     if (selectedAsset.ticker === 'ETH') {
-      const ethPriceInDisplayCurrency = ethAsset?.priceUSD || 0;
-      const gasCostInDisplayCurrency = (ethPriceInDisplayCurrency / (ethAsset?.priceUSD || 1)) * gasCost;
-
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
     }
     return selectedAsset.balance;
-  }, [selectedAsset, gasCost, assets]);
+  }, [selectedAsset, gasCost]);
 
 
   useEffect(() => {
@@ -438,7 +459,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     if (!selectedAsset) return;
     
     // Always calculate USD value for confirmation logic, even if display is local
-    const originalPriceUSD = (selectedAsset.priceUSD || 0) / (currencyConversion?.exchangeRate || 1);
+    const originalPriceUSD = assetPricesUSD.find(p => p.ticker === selectedAsset.ticker)?.priceUSD || 0;
     const usdValue = numericAmount * originalPriceUSD;
 
     const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
@@ -577,7 +598,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   <Label>{t.totalBalanceLabel}</Label>
                    <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold">
-                       {showBalances ? `${currencySymbol}${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                       {showBalances ? `${currencySymbol}${displayTotalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
                     </p>
                   </div>
                 </div>
@@ -647,8 +668,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                     className="w-full"
                 >
                     <CarouselContent>
-                    {assetsForCarousel.map((asset, index) => (
-                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    {assetsForCarousel.map((asset) => (
+                        <CarouselItem key={asset.ticker} className="md:basis-1/2 lg:basis-1/3">
                             <div className="p-1">
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -880,7 +901,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 You are about to send a significant amount. Please confirm the details below.
                 <div className="my-4 space-y-2 text-foreground break-all">
                   <p><b>Amount:</b> {parseFloat(amount).toLocaleString()} {selectedAsset?.ticker}</p>
-                  <p><b>Value:</b> ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p><b>Value:</b> ~${(parseFloat(amount) * (assetPricesUSD.find(p=>p.ticker === selectedAsset?.ticker)?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
                 </div>
               </AlertDialogDescription>
@@ -902,7 +923,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                         Password Required for High-Value Transaction
                     </DialogTitle>
                     <DialogDescription>
-                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount) * (assetPricesUSD.find(p=>p.ticker === selectedAsset?.ticker)?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
