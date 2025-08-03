@@ -53,9 +53,9 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { FavoriteAssetChart } from '../shared/FavoriteAssetChart';
-import { DetailedAssetChart } from '../shared/DetailedAssetChart';
-import { TransactionHistory } from '../shared/TransactionHistory';
+import { FavoriteAssetChart } from '@/components/shared/FavoriteAssetChart';
+import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
+import { TransactionHistory } from '@/components/shared/TransactionHistory';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -174,7 +174,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         balance: mockBalances[asset.ticker] || 0,
         isFavorite: currentFavorites.has(asset.ticker),
         // This simulates a 5-minute price change for the table view
-        change24h: asset.change24h * (1 + (Math.random() - 0.5) * 0.01),
+        change24h: asset.change24h,
       })).sort((a, b) => {
         // Primary sort: favorites first
         if (a.isFavorite && !b.isFavorite) return -1;
@@ -593,20 +593,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                             <div className="p-1">
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <button className="w-full">
+                                        <button className="w-full" onClick={() => setDetailedChartAsset(asset)}>
                                              <FavoriteAssetChart asset={asset} />
                                         </button>
                                     </DialogTrigger>
-                                    <DialogContent className="max-w-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                {asset.name} ({asset.ticker})
-                                            </DialogTitle>
-                                        </DialogHeader>
-                                        <div className="h-96 w-full">
-                                            <DetailedAssetChart asset={asset} />
-                                        </div>
-                                    </DialogContent>
                                 </Dialog>
                             </div>
                         </CarouselItem>
@@ -913,3 +903,5 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
