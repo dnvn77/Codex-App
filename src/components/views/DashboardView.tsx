@@ -180,49 +180,43 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [isLocalCurrency, setIsLocalCurrency] = useState(false);
   const [browserLanguage, setBrowserLanguage] = useState<string | undefined>(undefined);
   const [currencyConversion, setCurrencyConversion] = useState<ConversionResult | null>(null);
-  const [isCurrencyConversionLoading, setIsCurrencyConversionLoading] = useState(false);
 
   useEffect(() => {
-    // This effect runs on the client side only
     if (typeof window !== 'undefined') {
       setBrowserLanguage(navigator.language);
     }
   }, []);
 
   const localCurrencyCode = useMemo(() => {
-    // Prefer Telegram's language code, fall back to browser's language
-    const lang = isReady ? user?.language_code : browserLanguage;
+    const lang = user?.language_code || browserLanguage;
     return getCurrencyFromLanguageCode(lang);
-  }, [user?.language_code, browserLanguage, isReady]);
+  }, [user?.language_code, browserLanguage]);
 
-  
   const userAssetSymbols = useMemo(() => {
-    // Always include ETH for gas calculations, even if balance is 0.
     const symbols = new Set(Object.keys(mockBalances));
     symbols.add('ETH');
     return Array.from(symbols);
   }, [mockBalances]);
-
- const updateAssetPrices = useCallback(async (useLocal: boolean) => {
+  
+  const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
-    setIsCurrencyConversionLoading(true);
     try {
       const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
       const currentFavorites = getFavoriteAssets();
       
-      let conversion: ConversionResult | null = null;
-      if (useLocal && localCurrencyCode !== 'USD') {
+      let conversionResult: ConversionResult | null = null;
+      if (isLocalCurrency && localCurrencyCode !== 'USD') {
         const pricesToConvert = priceData.map(p => p.priceUSD);
-        conversion = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
-        setCurrencyConversion(conversion);
+        conversionResult = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
+        setCurrencyConversion(conversionResult);
       } else {
         setCurrencyConversion(null);
       }
 
       const getConvertedPrice = (ticker: string, originalPrice: number) => {
-          if (!conversion) return originalPrice;
+          if (!conversionResult) return originalPrice;
           const priceIndex = priceData.findIndex(p => p.ticker === ticker);
-          return conversion.convertedValues[priceIndex] || originalPrice;
+          return conversionResult.convertedValues[priceIndex] || originalPrice;
       };
 
       const userAssets = priceData.map(asset => ({
@@ -230,7 +224,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         priceUSD: getConvertedPrice(asset.ticker, asset.priceUSD),
         balance: mockBalances[asset.ticker] || 0,
         isFavorite: currentFavorites.has(asset.ticker),
-        change24h: asset.change24h,
       })).sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;
@@ -249,15 +242,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
             variant: 'destructive',
         });
         setAssetStatus('error');
-    } finally {
-      setIsCurrencyConversionLoading(false);
     }
-  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, setCurrencyConversion]);
-  
-  useEffect(() => {
-    updateAssetPrices(isLocalCurrency);
-  }, [isLocalCurrency, updateAssetPrices]);
+  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, isLocalCurrency, setCurrencyConversion]);
 
+  useEffect(() => {
+    updateAssetPrices();
+  }, [updateAssetPrices]);
   
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
@@ -266,7 +256,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
   }, [assets, favoriteAssets]);
-
 
   const handleToggleFavorite = useCallback((ticker: string) => {
     const newFavorites = new Set(favoriteAssets);
@@ -277,8 +266,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
     setFavoriteAssets(Array.from(newFavorites));
     setFavoriteAssetsState(newFavorites);
-    updateAssetPrices(isLocalCurrency); 
-  }, [favoriteAssets, updateAssetPrices, isLocalCurrency]);
+    updateAssetPrices(); 
+  }, [favoriteAssets, updateAssetPrices]);
   
   const totalBalance = useMemo(() => {
     return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
@@ -291,16 +280,18 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
     
-    // Convert gasCost (in ETH) to the current display currency for comparison if needed, though max amount is in tokens.
-    // For simplicity, we'll keep the logic as is since gas is paid in ETH regardless of display.
     const ethAsset = assets.find(a => a.ticker === 'ETH');
     
     if (selectedAsset.ticker === 'ETH') {
+      const ethPriceInDisplayCurrency = ethAsset?.priceUSD || 0;
+      const gasCostInDisplayCurrency = (ethPriceInDisplayCurrency / (ethAsset?.priceUSD || 1)) * gasCost;
+
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
     }
     return selectedAsset.balance;
   }, [selectedAsset, gasCost, assets]);
+
 
   useEffect(() => {
     setIsCalculatingGas(true);
@@ -707,7 +698,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   showBalances={showBalances} 
                   hideZeroBalances={hideZeroBalances} 
                   t={t} 
-                  onRefresh={() => updateAssetPrices(isLocalCurrency)} 
+                  onRefresh={() => updateAssetPrices()} 
                   isRefreshing={assetStatus === 'loading'}
                   onToggleFavorite={handleToggleFavorite}
                   currencySymbol={currencySymbol}

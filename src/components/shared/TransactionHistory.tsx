@@ -6,7 +6,6 @@ import { fetchTransactionHistory, type TransactionHistoryOutput } from '@/ai/flo
 import { Loader2, ArrowUpRight, ArrowDownLeft, AlertTriangle, Info, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
