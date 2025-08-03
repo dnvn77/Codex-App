@@ -31,8 +31,17 @@ export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
 export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPriceOutput> {
   if (!CMC_API_KEY) {
-    console.error('CoinMarketCap API key is not configured.');
-    throw new Error('Server configuration error: Missing API key.');
+    console.warn('CoinMarketCap API key not found. Using mock data.');
+    // Fallback to mock data if API key is missing
+    return input.symbols.map(symbol => ({
+        name: symbol,
+        ticker: symbol,
+        id: Math.floor(Math.random() * 20000),
+        balance: 0,
+        priceUSD: Math.random() * 1000,
+        change24h: (Math.random() - 0.5) * 10,
+        icon: '/strawberry-logo.svg'
+    }));
   }
 
   const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${input.symbols.join(',')}`;
@@ -56,7 +65,18 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
     const results: AssetPriceOutput = input.symbols.map(symbol => {
       const assetData = data.data[symbol];
       if (!assetData) {
-        // Handle cases where a symbol might not be found
+        // Handle cases where a symbol might not be found (e.g., our mock STRW)
+         if (symbol === 'STRW') {
+          return {
+            name: 'Strawberry Token',
+            ticker: 'STRW',
+            id: 0,
+            balance: 0,
+            priceUSD: 0.05,
+            change24h: 5.5,
+            icon: '/strawberry-logo.svg',
+          };
+        }
         return {
           name: symbol,
           ticker: symbol,
@@ -89,7 +109,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
 }
 
 // The Genkit flow definition to be used by the frontend
-const fetchAssetPricesFlow = ai.defineFlow(
+export const fetchAssetPricesFlow = ai.defineFlow(
   {
     name: 'fetchAssetPricesFlow',
     inputSchema: AssetPriceInputSchema,

@@ -203,7 +203,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
 
-  const updateAssetPrices = useCallback(async (useLocal: boolean) => {
+ const updateAssetPrices = useCallback(async (useLocal: boolean) => {
     setAssetStatus('loading');
     setIsCurrencyConversionLoading(true);
     try {
@@ -219,15 +219,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         setCurrencyConversion(null);
       }
 
-      const getConvertedPrice = (ticker: string) => {
-          if (!conversion) return priceData.find(p => p.ticker === ticker)?.priceUSD || 0;
+      const getConvertedPrice = (ticker: string, originalPrice: number) => {
+          if (!conversion) return originalPrice;
           const priceIndex = priceData.findIndex(p => p.ticker === ticker);
-          return conversion.convertedValues[priceIndex] || 0;
+          return conversion.convertedValues[priceIndex] || originalPrice;
       };
 
       const userAssets = priceData.map(asset => ({
         ...asset,
-        priceUSD: getConvertedPrice(asset.ticker), // priceUSD now holds the converted value
+        priceUSD: getConvertedPrice(asset.ticker, asset.priceUSD),
         balance: mockBalances[asset.ticker] || 0,
         isFavorite: currentFavorites.has(asset.ticker),
         change24h: asset.change24h,
@@ -257,6 +257,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   useEffect(() => {
     updateAssetPrices(isLocalCurrency);
   }, [isLocalCurrency, updateAssetPrices]);
+
   
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());

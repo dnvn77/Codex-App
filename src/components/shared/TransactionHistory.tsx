@@ -60,17 +60,20 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     return (
       <button
         className={cn(
-          "w-full text-left p-3 rounded-lg border flex items-center justify-between gap-4 transition-colors border-primary/50",
+          "w-full text-left p-3 rounded-lg border flex items-center gap-4 transition-colors border-primary/50",
           isClickable ? "hover:bg-accent/50 cursor-pointer" : "bg-muted/30 cursor-not-allowed opacity-70"
         )}
         onClick={() => isClickable && setSelectedTx(tx)}
         disabled={!isClickable}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={cn("p-2 rounded-full bg-secondary flex-shrink-0", color)}>
+        <div className="grid grid-cols-[auto,1fr,auto] items-center w-full gap-3">
+          {/* Column 1: Icon */}
+          <div className={cn("p-2 rounded-full bg-secondary", color)}>
             <Icon className="h-5 w-5" />
           </div>
-          <div className="flex-grow min-w-0">
+
+          {/* Column 2: Details */}
+          <div className="min-w-0">
             <p className="font-semibold truncate">
               {tx.type === 'out' ? 'Sent' : 'Received'} {tx.ticker}
             </p>
@@ -78,14 +81,16 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
               {formatDistanceToNow(new Date(tx.timestamp), { addSuffix: true })}
             </p>
           </div>
-        </div>
-        <div className="text-right flex-shrink-0 min-w-0">
-          <p className={cn("font-mono font-semibold truncate", isPrivate && "italic text-muted-foreground")}>
-            {isPrivate ? 'Private' : `${tx.amount?.toLocaleString()} ${tx.ticker}`}
-          </p>
-          <p className="text-xs text-muted-foreground font-mono truncate">
-            To: {tx.address.slice(0, 6)}...{tx.address.slice(-4)}
-          </p>
+
+          {/* Column 3: Amount */}
+          <div className="text-right min-w-0">
+            <p className={cn("font-mono font-semibold truncate", isPrivate && "italic text-muted-foreground")}>
+              {isPrivate ? 'Private' : `${tx.amount?.toLocaleString()} ${tx.ticker}`}
+            </p>
+            <p className="text-xs text-muted-foreground font-mono truncate">
+              To: {tx.address.slice(0, 6)}...{tx.address.slice(-4)}
+            </p>
+          </div>
         </div>
       </button>
     );
@@ -112,7 +117,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
               <p>No transactions in the last month.</p>
             </div>
           ) : (
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 -mx-1">
               <div className="space-y-2 p-1">
                 {history.map(tx => (
                   <TransactionItem key={tx.txHash} tx={tx} />
