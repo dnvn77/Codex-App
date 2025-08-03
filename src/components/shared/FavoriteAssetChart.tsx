@@ -32,6 +32,11 @@ export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAsse
 
   useEffect(() => {
     const getHistory = async () => {
+      // Ensure we don't try to fetch history for an asset with a placeholder ID
+      if (asset.id === 0) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const historyData = await fetchAssetHistory({ id: asset.id });
@@ -41,6 +46,7 @@ export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAsse
         }
       } catch (error) {
         console.error(`Failed to fetch history for ${asset.ticker}:`, error);
+        setHistory(null); // Set history to null on error
       } finally {
         setIsLoading(false);
       }
@@ -63,7 +69,7 @@ export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAsse
   
   const colors = THEME_COLORS[theme as keyof typeof THEME_COLORS] || THEME_COLORS.light;
 
-  if (isLoading || !history) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -93,6 +99,7 @@ export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAsse
       </CardHeader>
       <CardContent>
         <div className="h-20">
+          {history && history.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={history}
@@ -112,12 +119,17 @@ export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAsse
                 <Area type="monotone" dataKey="price" stroke={colors.stroke} fillOpacity={1} fill={`url(#color${asset.ticker})`} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
+          ) : (
+             <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                No historical data
+             </div>
+          )}
         </div>
         <div className="mt-2 flex justify-between items-center">
           <p className="text-xl font-bold font-mono">
             {currencySymbol}{asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <ChangeIndicator value={change} />
+          {history && history.length > 0 && <ChangeIndicator value={change} />}
         </div>
       </CardContent>
     </Card>

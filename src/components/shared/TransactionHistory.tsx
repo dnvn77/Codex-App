@@ -59,19 +59,21 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     return (
       <button
         className={cn(
-          "w-full text-left p-3 rounded-lg border flex items-center gap-4 transition-colors border-primary/50",
+          "w-full text-left p-3 rounded-lg border flex items-center gap-4 transition-colors",
+          "border-primary/50", // Apply border color as requested
           isClickable ? "hover:bg-accent/50 cursor-pointer" : "bg-muted/30 cursor-not-allowed opacity-70"
         )}
         onClick={() => isClickable && setSelectedTx(tx)}
         disabled={!isClickable}
       >
+        {/* Using CSS Grid for robust layout control */}
         <div className="grid grid-cols-[auto,1fr,auto] items-center w-full gap-3">
-          {/* Column 1: Icon */}
+          {/* Column 1: Icon (fixed width) */}
           <div className={cn("p-2 rounded-full bg-secondary", color)}>
             <Icon className="h-5 w-5" />
           </div>
 
-          {/* Column 2: Details */}
+          {/* Column 2: Details (flexible width, will truncate) */}
           <div className="min-w-0">
             <p className="font-semibold truncate">
               {tx.type === 'out' ? 'Sent' : 'Received'} {tx.ticker}
@@ -81,7 +83,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
             </p>
           </div>
 
-          {/* Column 3: Amount */}
+          {/* Column 3: Amount (fixed width, will truncate) */}
           <div className="text-right min-w-0">
             <p className={cn("font-mono font-semibold truncate", isPrivate && "italic text-muted-foreground")}>
               {isPrivate ? 'Private' : `${tx.amount?.toLocaleString()} ${tx.ticker}`}
