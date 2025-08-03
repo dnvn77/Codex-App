@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteAssets, setFavoriteAssets } from '@/lib/wallet';
-import type { Wallet, Transaction, Asset } from '@/lib/types';
+import type { Wallet, Transaction, Asset, ConversionResult } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
+import { convertCurrencyFlow } from '@/ai/flows/currencyConversionFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -49,6 +50,7 @@ import {
 } from "@/components/ui/popover"
 import { QRScanner } from '@/components/shared/QRScanner';
 import { useTranslations } from '@/hooks/useTranslations';
+import { useTelegram } from '@/hooks/useTelegram';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
@@ -106,10 +108,29 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   );
 };
 
+const getCurrencyFromLanguageCode = (lang?: string): string => {
+    if (!lang) return 'USD';
+    const lowerLang = lang.toLowerCase();
+    if (lowerLang.startsWith('es')) return 'EUR'; // Spanish -> Euro
+    if (lowerLang.startsWith('zh')) return 'CNY'; // Chinese -> Yuan
+    if (lowerLang.startsWith('hi')) return 'INR'; // Hindi -> Rupee
+    if (lowerLang.startsWith('fr')) return 'EUR'; // French -> Euro
+    if (lowerLang.startsWith('ar')) return 'SAR'; // Arabic -> Riyal (fallback, not in mock)
+    if (lowerLang.startsWith('bn')) return 'BDT'; // Bengali -> Taka (fallback, not in mock)
+    if (lowerLang.startsWith('ru')) return 'RUB'; // Russian -> Ruble
+    if (lowerLang.startsWith('pt')) return 'BRL'; // Portuguese -> Real
+    if (lowerLang.startsWith('id')) return 'IDR'; // Indonesian -> Rupiah
+    if (lowerLang.startsWith('ja')) return 'JPY'; // Japanese -> Yen
+    if (lowerLang.startsWith('de')) return 'EUR'; // German -> Euro
+    return 'USD';
+};
+
 
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
+  const { user } = useTelegram();
+
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [selectedAssetTicker, setSelectedAssetTicker] = useState('ETH');
@@ -155,6 +176,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     'DAI': 1500.00,
     'STRW': 50000,
   });
+
+  const [isLocalCurrency, setIsLocalCurrency] = useState(false);
+  const [currencyConversion, setCurrencyConversion] = useState<ConversionResult | null>(null);
+  const localCurrencyCode = useMemo(() => getCurrencyFromLanguageCode(user?.language_code), [user?.language_code]);
+
   
   const userAssetSymbols = useMemo(() => {
     // Always include ETH for gas calculations, even if balance is 0.
@@ -163,24 +189,36 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
 
-  const updateAssetPrices = useCallback(async () => {
+  const updateAssetPrices = useCallback(async (useLocalCurrency: boolean) => {
     setAssetStatus('loading');
     try {
       const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
       const currentFavorites = getFavoriteAssets();
       
+      let conversion: ConversionResult | null = null;
+      if(useLocalCurrency && localCurrencyCode !== 'USD') {
+        const pricesToConvert = priceData.map(p => p.priceUSD);
+        conversion = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
+        setCurrencyConversion(conversion);
+      } else {
+        setCurrencyConversion(null);
+      }
+
+      const getConvertedPrice = (ticker: string) => {
+          if (!conversion) return priceData.find(p => p.ticker === ticker)?.priceUSD || 0;
+          const priceIndex = priceData.findIndex(p => p.ticker === ticker);
+          return conversion.convertedValues[priceIndex] || 0;
+      };
+
       const userAssets = priceData.map(asset => ({
         ...asset,
+        priceUSD: getConvertedPrice(asset.ticker), // priceUSD now holds the converted value
         balance: mockBalances[asset.ticker] || 0,
         isFavorite: currentFavorites.has(asset.ticker),
-        // This simulates a 5-minute price change for the table view
         change24h: asset.change24h,
       })).sort((a, b) => {
-        // Primary sort: favorites first
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;
-
-        // Secondary sort: by USD value
         const valueA = a.balance * a.priceUSD;
         const valueB = b.balance * a.priceUSD;
         return valueB - valueA;
@@ -197,12 +235,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [userAssetSymbols, mockBalances, toast, t]);
+  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode]);
   
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
-    updateAssetPrices();
-  }, [updateAssetPrices]);
+    updateAssetPrices(isLocalCurrency);
+  }, [updateAssetPrices, isLocalCurrency]);
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
@@ -218,10 +256,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
     setFavoriteAssets(Array.from(newFavorites));
     setFavoriteAssetsState(newFavorites);
-    updateAssetPrices();
-  }, [favoriteAssets, updateAssetPrices]);
+    updateAssetPrices(isLocalCurrency); 
+  }, [favoriteAssets, updateAssetPrices, isLocalCurrency]);
   
-  const totalBalanceUSD = useMemo(() => {
+  const totalBalance = useMemo(() => {
     return assets.reduce((total, asset) => total + (asset.balance * asset.priceUSD), 0);
   }, [assets]);
   
@@ -231,12 +269,19 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
+    
+    // Convert gasCost (in ETH) to the current display currency for comparison if needed, though max amount is in tokens.
+    // For simplicity, we'll keep the logic as is since gas is paid in ETH regardless of display.
+    const ethAsset = assets.find(a => a.ticker === 'ETH');
+    const originalEthPriceInUSD = (ethAsset?.priceUSD || 0) / (currencyConversion?.exchangeRate || 1);
+    const gasCostInDisplayCurrency = gasCost * (ethAsset?.priceUSD || 0);
+
     if (selectedAsset.ticker === 'ETH') {
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
     }
     return selectedAsset.balance;
-  }, [selectedAsset, gasCost]);
+  }, [selectedAsset, gasCost, assets, currencyConversion]);
 
   useEffect(() => {
     setIsCalculatingGas(true);
@@ -301,27 +346,21 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
+    
+    const numericAmount = parseFloat(newAmount);
+    const balance = selectedAsset?.balance || 0;
+    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
 
-    if (newAmount && selectedAsset) {
-      const numericAmount = parseFloat(newAmount);
-      const balance = selectedAsset.balance || 0;
-      const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-
-      if (isNaN(numericAmount)) {
+    if (isNaN(numericAmount) || numericAmount < 0) {
         setAmountError(t.invalidNumberError);
-      } else if (numericAmount < 0) {
-        setAmountError(t.negativeAmountError);
-      } else if (numericAmount > balance) {
-        setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
-      } else if (gasCost > ethBalance) {
+    } else if (numericAmount > balance) {
+        setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
+    } else if (gasCost > ethBalance) {
         setAmountError(t.insufficientGasError);
-      } else {
-        setAmountError('');
-      }
     } else {
-      setAmountError('');
+        setAmountError('');
     }
-  };
+};
 
   const handleSetMaxAmount = () => {
     if (!selectedAsset) return;
@@ -386,11 +425,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const handleSendClick = () => {
     const numericAmount = parseFloat(amount) || 0;
-    if (!selectedAsset || !selectedAsset.priceUSD) return;
-
-    const usdValue = numericAmount * selectedAsset.priceUSD;
+    if (!selectedAsset) return;
     
-    // Basic validation checks before showing any dialogs
+    // Always calculate USD value for confirmation logic, even if display is local
+    const originalPriceUSD = (selectedAsset.priceUSD || 0) / (currencyConversion?.exchangeRate || 1);
+    const usdValue = numericAmount * originalPriceUSD;
+
     const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
     if (numericAmount > (selectedAsset.balance || 0)) {
         setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
@@ -403,13 +443,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         return;
     }
 
-    // Amount-based confirmation logic
     if (usdValue >= 3000) {
         setPasswordConfirmOpen(true);
     } else if (usdValue >= 1000) {
         setAmountConfirmOpen(true);
     } else {
-        // High gas check for smaller amounts
         if (gasCost > averageGas) {
             setShowHighGasConfirm(true);
         } else {
@@ -423,7 +461,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setConfirmPasswordError('');
     try {
         await unlockWallet(confirmPassword);
-        // Password is correct, proceed with transaction
         setPasswordConfirmOpen(false);
         setConfirmPassword('');
         await executeSend();
@@ -486,6 +523,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid;
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
+  const currencySymbol = currencyConversion?.currencySymbol || '$';
+
   return (
     <>
       <Card className="w-full shadow-lg">
@@ -510,18 +549,27 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+                {localCurrencyCode !== 'USD' && (
+                  <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center space-x-2">
+                          <Label htmlFor="currency-switch" className="text-sm font-medium">USD</Label>
+                          <Switch id="currency-switch" checked={isLocalCurrency} onCheckedChange={setIsLocalCurrency} />
+                          <Label htmlFor="currency-switch" className="text-sm font-medium">{localCurrencyCode}</Label>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
+                        {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </Button>
+                  </div>
+                )}
                <div className='flex justify-between items-center'>
                 <div>
                   <Label>{t.totalBalanceLabel}</Label>
                    <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold">
-                       {showBalances ? `$${totalBalanceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                       {showBalances ? `${currencySymbol}${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
                     </p>
                   </div>
                 </div>
-                 <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
-                  {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </Button>
               </div>
 
                <div className="flex items-center justify-between">
@@ -594,7 +642,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <button className="w-full" onClick={() => setDetailedChartAsset(asset)}>
-                                             <FavoriteAssetChart asset={asset} />
+                                             <FavoriteAssetChart asset={asset} currencySymbol={currencySymbol} />
                                         </button>
                                     </DialogTrigger>
                                 </Dialog>
@@ -639,9 +687,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   showBalances={showBalances} 
                   hideZeroBalances={hideZeroBalances} 
                   t={t} 
-                  onRefresh={updateAssetPrices} 
+                  onRefresh={() => updateAssetPrices(isLocalCurrency)} 
                   isRefreshing={assetStatus === 'loading'}
                   onToggleFavorite={handleToggleFavorite}
+                  currencySymbol={currencySymbol}
                 />
               )}
             </div>
@@ -903,5 +952,3 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
-
-    

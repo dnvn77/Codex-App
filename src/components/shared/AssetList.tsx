@@ -16,9 +16,19 @@ interface AssetListProps {
   onRefresh: () => void;
   isRefreshing: boolean;
   onToggleFavorite: (ticker: string) => void;
+  currencySymbol?: string;
 }
 
-export function AssetList({ assets, showBalances, hideZeroBalances, t, onRefresh, isRefreshing, onToggleFavorite }: AssetListProps) {
+export function AssetList({ 
+  assets, 
+  showBalances, 
+  hideZeroBalances, 
+  t, 
+  onRefresh, 
+  isRefreshing, 
+  onToggleFavorite, 
+  currencySymbol = '$' 
+}: AssetListProps) {
   
   const filteredAssets = hideZeroBalances ? assets.filter(asset => asset.balance > 0) : assets;
 
@@ -80,7 +90,7 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t, onRefresh
               <TableCell className="text-right">
                 <div>
                    <p className="font-mono">
-                     ${asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                     {currencySymbol}{asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <ChangeIndicator value={asset.change24h} />
                 </div>
@@ -91,7 +101,7 @@ export function AssetList({ assets, showBalances, hideZeroBalances, t, onRefresh
                     {showBalances ? asset.balance.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '••••••'}
                     </p>
                     <p className="text-xs font-mono text-muted-foreground">
-                    {showBalances ? `$${(asset.balance * asset.priceUSD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                    {showBalances ? `${currencySymbol}${(asset.balance * asset.priceUSD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
                     </p>
                 </div>
               </TableCell>

@@ -3,3 +3,4 @@ import "./flows/chatbotFlow";
 import "./flows/assetPriceFlow";
 import "./flows/assetHistoryFlow";
 import "./flows/transactionHistoryFlow";
+import "./flows/currencyConversionFlow";

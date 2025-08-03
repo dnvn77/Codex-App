@@ -15,6 +15,7 @@ import { calculate7DayChange } from '@/lib/asset';
 
 interface FavoriteAssetChartProps {
   asset: Asset;
+  currencySymbol?: string;
 }
 
 const THEME_COLORS: Record<string, { stroke: string, fill: string }> = {
@@ -23,7 +24,7 @@ const THEME_COLORS: Record<string, { stroke: string, fill: string }> = {
   dim: { stroke: 'hsl(var(--primary))', fill: 'hsl(var(--primary) / 0.1))' },
 };
 
-export function FavoriteAssetChart({ asset }: FavoriteAssetChartProps) {
+export function FavoriteAssetChart({ asset, currencySymbol = '$' }: FavoriteAssetChartProps) {
   const [history, setHistory] = useState<AssetHistoryPoint[] | null>(null);
   const [change, setChange] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +115,7 @@ export function FavoriteAssetChart({ asset }: FavoriteAssetChartProps) {
         </div>
         <div className="mt-2 flex justify-between items-center">
           <p className="text-xl font-bold font-mono">
-            ${asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currencySymbol}{asset.priceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <ChangeIndicator value={change} />
         </div>
@@ -122,5 +123,3 @@ export function FavoriteAssetChart({ asset }: FavoriteAssetChartProps) {
     </Card>
   );
 }
-
-    
