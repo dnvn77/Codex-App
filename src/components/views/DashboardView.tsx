@@ -549,18 +549,18 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
-                {localCurrencyCode !== 'USD' && (
-                  <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2">
+                    {localCurrencyCode !== 'USD' ? (
                       <div className="flex items-center space-x-2">
                           <Label htmlFor="currency-switch" className="text-sm font-medium">USD</Label>
                           <Switch id="currency-switch" checked={isLocalCurrency} onCheckedChange={setIsLocalCurrency} />
                           <Label htmlFor="currency-switch" className="text-sm font-medium">{localCurrencyCode}</Label>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
-                        {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </Button>
-                  </div>
-                )}
+                    ) : <div />}
+                    <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
+                      {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </Button>
+                </div>
                <div className='flex justify-between items-center'>
                 <div>
                   <Label>{t.totalBalanceLabel}</Label>
