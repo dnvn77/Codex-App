@@ -938,10 +938,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
           <AlertDialogContent>
               <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
+                  <DialogTitle className="flex items-center gap-2">
                       <BellRing className="text-primary"/>
                       {t.getNotifiedTitle}
-                  </AlertDialogTitle>
+                  </DialogTitle>
                   <AlertDialogDescription>
                       {t.getNotifiedDesc}
                   </AlertDialogDescription>
@@ -971,7 +971,3 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
-
-    
-
-    

@@ -176,5 +176,3 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     </div>
   );
 }
-
-    
