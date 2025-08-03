@@ -66,12 +66,12 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
         onClick={() => isClickable && setSelectedTx(tx)}
         disabled={!isClickable}
       >
-        <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-full bg-secondary", color)}>
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className={cn("p-2 rounded-full bg-secondary flex-shrink-0", color)}>
             <Icon className="h-5 w-5" />
           </div>
-          <div>
-            <p className="font-semibold">
+          <div className="flex-grow overflow-hidden">
+            <p className="font-semibold truncate">
               {tx.type === 'out' ? 'Sent' : 'Received'} {tx.ticker}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -79,11 +79,11 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
             </p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <p className={cn("font-mono font-semibold", isPrivate && "italic text-muted-foreground")}>
             {isPrivate ? 'Private' : `${tx.amount?.toLocaleString()} ${tx.ticker}`}
           </p>
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-xs text-muted-foreground font-mono truncate">
             To: {tx.address.slice(0, 6)}...{tx.address.slice(-4)}
           </p>
         </div>

@@ -129,7 +129,7 @@ const getCurrencyFromLanguageCode = (lang?: string): string => {
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
-  const { user } = useTelegram();
+  const { user, isReady } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -178,8 +178,17 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   });
 
   const [isLocalCurrency, setIsLocalCurrency] = useState(false);
-  const [currencyConversion, setCurrencyConversion] = useState<ConversionResult | null>(null);
-  const localCurrencyCode = useMemo(() => getCurrencyFromLanguageCode(user?.language_code), [user?.language_code]);
+  const [browserLanguage, setBrowserLanguage] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // This effect runs on the client side only
+    setBrowserLanguage(navigator.language);
+  }, []);
+
+  const localCurrencyCode = useMemo(() => {
+    const lang = user?.language_code || browserLanguage;
+    return getCurrencyFromLanguageCode(lang);
+  }, [user?.language_code, browserLanguage]);
 
   
   const userAssetSymbols = useMemo(() => {
