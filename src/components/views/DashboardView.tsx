@@ -255,14 +255,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, setCurrencyConversion]);
   
   useEffect(() => {
-    setFavoriteAssetsState(getFavoriteAssets());
-    updateAssetPrices(isLocalCurrency);
-  }, []);
-  
-  useEffect(() => {
     updateAssetPrices(isLocalCurrency);
   }, [isLocalCurrency, updateAssetPrices]);
-
+  
+  useEffect(() => {
+    setFavoriteAssetsState(getFavoriteAssets());
+  }, []);
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
@@ -973,5 +971,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
 
     

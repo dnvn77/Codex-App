@@ -60,27 +60,27 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     return (
       <button
         className={cn(
-          "w-full text-left p-3 rounded-lg border flex items-center justify-between gap-4 transition-colors",
+          "w-full text-left p-3 rounded-lg border flex items-center justify-between gap-4 transition-colors border-primary/50",
           isClickable ? "hover:bg-accent/50 cursor-pointer" : "bg-muted/30 cursor-not-allowed opacity-70"
         )}
         onClick={() => isClickable && setSelectedTx(tx)}
         disabled={!isClickable}
       >
-        <div className="flex items-center gap-3 overflow-hidden">
+        <div className="flex items-center gap-3 min-w-0">
           <div className={cn("p-2 rounded-full bg-secondary flex-shrink-0", color)}>
             <Icon className="h-5 w-5" />
           </div>
-          <div className="flex-grow overflow-hidden">
+          <div className="flex-grow min-w-0">
             <p className="font-semibold truncate">
               {tx.type === 'out' ? 'Sent' : 'Received'} {tx.ticker}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {formatDistanceToNow(new Date(tx.timestamp), { addSuffix: true })}
             </p>
           </div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <p className={cn("font-mono font-semibold", isPrivate && "italic text-muted-foreground")}>
+        <div className="text-right flex-shrink-0 min-w-0">
+          <p className={cn("font-mono font-semibold truncate", isPrivate && "italic text-muted-foreground")}>
             {isPrivate ? 'Private' : `${tx.amount?.toLocaleString()} ${tx.ticker}`}
           </p>
           <p className="text-xs text-muted-foreground font-mono truncate">
@@ -176,3 +176,5 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     </div>
   );
 }
+
+    
