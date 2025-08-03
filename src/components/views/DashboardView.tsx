@@ -179,6 +179,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const [isLocalCurrency, setIsLocalCurrency] = useState(false);
   const [browserLanguage, setBrowserLanguage] = useState<string | undefined>(undefined);
+  const [currencyConversion, setCurrencyConversion] = useState<ConversionResult | null>(null);
+  const [isCurrencyConversionLoading, setIsCurrencyConversionLoading] = useState(false);
 
   useEffect(() => {
     // This effect runs on the client side only
@@ -206,6 +208,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       
       let conversion: ConversionResult | null = null;
       if(useLocalCurrency && localCurrencyCode !== 'USD') {
+        setIsCurrencyConversionLoading(true);
         const pricesToConvert = priceData.map(p => p.priceUSD);
         conversion = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
         setCurrencyConversion(conversion);
@@ -243,6 +246,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
             variant: 'destructive',
         });
         setAssetStatus('error');
+    } finally {
+      setIsCurrencyConversionLoading(false);
     }
   }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode]);
   
@@ -559,7 +564,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
                 <div className="flex justify-between items-center mb-2">
-                    {localCurrencyCode !== 'USD' ? (
+                    {(localCurrencyCode !== 'USD' && isReady) ? (
                       <div className="flex items-center space-x-2">
                           <Label htmlFor="currency-switch" className="text-sm font-medium">USD</Label>
                           <Switch id="currency-switch" checked={isLocalCurrency} onCheckedChange={setIsLocalCurrency} />
@@ -961,3 +966,5 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
