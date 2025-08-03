@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteAssets, setFavoriteAssets } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices } from '@/ai/flows/assetPriceFlow';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -52,6 +52,10 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { FavoriteAssetChart } from '../shared/FavoriteAssetChart';
+import { DetailedAssetChart } from '../shared/DetailedAssetChart';
+import { TransactionHistory } from '../shared/TransactionHistory';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -137,6 +141,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [isPasswordConfirmOpen, setPasswordConfirmOpen] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  
+  const [detailedChartAsset, setDetailedChartAsset] = useState<Asset | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
@@ -156,10 +163,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
 
-  useEffect(() => {
-    setFavoriteAssetsState(getFavoriteAssets());
-  }, []);
-
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
@@ -169,7 +172,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       const userAssets = priceData.map(asset => ({
         ...asset,
         balance: mockBalances[asset.ticker] || 0,
-        isFavorite: currentFavorites.has(asset.ticker)
+        isFavorite: currentFavorites.has(asset.ticker),
+        // This simulates a 5-minute price change for the table view
+        change24h: asset.change24h * (1 + (Math.random() - 0.5) * 0.01),
       })).sort((a, b) => {
         // Primary sort: favorites first
         if (a.isFavorite && !b.isFavorite) return -1;
@@ -177,7 +182,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
         // Secondary sort: by USD value
         const valueA = a.balance * a.priceUSD;
-        const valueB = b.balance * b.priceUSD;
+        const valueB = b.balance * a.priceUSD;
         return valueB - valueA;
       });
 
@@ -193,10 +198,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         setAssetStatus('error');
     }
   }, [userAssetSymbols, mockBalances, toast, t]);
-
+  
   useEffect(() => {
+    setFavoriteAssetsState(getFavoriteAssets());
     updateAssetPrices();
   }, [updateAssetPrices]);
+  
+  const assetsForCarousel = useMemo(() => {
+    return assets.filter(a => favoriteAssets.has(a.ticker));
+  }, [assets, favoriteAssets]);
+
 
   const handleToggleFavorite = useCallback((ticker: string) => {
     const newFavorites = new Set(favoriteAssets);
@@ -551,6 +562,60 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               </div>
               <p className="text-sm font-mono text-primary text-right">{truncatedAddress}</p>
             </div>
+             <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                        <History className="mr-2 h-4 w-4" />
+                        Transaction History
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Transaction History</DialogTitle>
+                        <DialogDescription>
+                            Your recent transaction activity from the network.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <TransactionHistory walletAddress={wallet.address} />
+                </DialogContent>
+            </Dialog>
+
+            {assetsForCarousel.length > 0 && (
+                <Carousel
+                    opts={{
+                    align: "start",
+                    }}
+                    className="w-full"
+                >
+                    <CarouselContent>
+                    {assetsForCarousel.map((asset, index) => (
+                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <button className="w-full">
+                                             <FavoriteAssetChart asset={asset} />
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                {asset.name} ({asset.ticker})
+                                            </DialogTitle>
+                                        </DialogHeader>
+                                        <div className="h-96 w-full">
+                                            <DetailedAssetChart asset={asset} />
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                    </CarouselContent>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                </Carousel>
+            )}
             
             <Separator />
             
@@ -832,6 +897,19 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           </AlertDialogContent>
         </AlertDialog>
       </Card>
+      
+       <Dialog open={!!detailedChartAsset} onOpenChange={() => setDetailedChartAsset(null)}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>
+                    {detailedChartAsset?.name} ({detailedChartAsset?.ticker})
+                </DialogTitle>
+            </DialogHeader>
+            <div className="h-96 w-full">
+                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
+            </div>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }

@@ -44,4 +44,16 @@ export interface Asset {
   isFavorite: boolean;
 }
 
+export interface TransactionHistoryItem {
+    txHash: string;
+    timestamp: string; // ISO 8601 string
+    address: string;
+    amount: number | null; // Null for private ZKP transactions
+    ticker: string;
+    type: 'in' | 'out';
+    origin: 'strawberry' | 'other'; // Where the tx was initiated
+    blockNumber: number;
+    status: 'confirmed' | 'pending' | 'failed';
+}
+
     
