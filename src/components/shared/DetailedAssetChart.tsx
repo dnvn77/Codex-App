@@ -109,5 +109,3 @@ export function DetailedAssetChart({ asset }: DetailedAssetChartProps) {
     </ResponsiveContainer>
   );
 }
-
-    

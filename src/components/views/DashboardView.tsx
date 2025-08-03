@@ -243,7 +243,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, isLocalCurrency, setCurrencyConversion]);
+  }, [userAssetSymbols, mockBalances, toast, t, localCurrencyCode, isLocalCurrency]);
 
   useEffect(() => {
     updateAssetPrices();
