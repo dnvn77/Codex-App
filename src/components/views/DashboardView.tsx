@@ -129,7 +129,7 @@ const getCurrencyFromLanguageCode = (lang?: string): string => {
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
-  const { user } = useTelegram();
+  const { user, isReady } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -190,9 +190,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, []);
 
   const localCurrencyCode = useMemo(() => {
-    const lang = user?.language_code || browserLanguage;
+    // Prefer Telegram's language code, fall back to browser's language
+    const lang = isReady ? user?.language_code : browserLanguage;
     return getCurrencyFromLanguageCode(lang);
-  }, [user?.language_code, browserLanguage]);
+  }, [user?.language_code, browserLanguage, isReady]);
 
   
   const userAssetSymbols = useMemo(() => {
@@ -202,15 +203,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
 
-  const updateAssetPrices = useCallback(async (useLocalCurrency: boolean) => {
+  const updateAssetPrices = useCallback(async (useLocal: boolean) => {
     setAssetStatus('loading');
+    setIsCurrencyConversionLoading(true);
     try {
       const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
       const currentFavorites = getFavoriteAssets();
       
       let conversion: ConversionResult | null = null;
-      if(useLocalCurrency && localCurrencyCode !== 'USD') {
-        setIsCurrencyConversionLoading(true);
+      if (useLocal && localCurrencyCode !== 'USD') {
         const pricesToConvert = priceData.map(p => p.priceUSD);
         conversion = await convertCurrencyFlow({ values: pricesToConvert, targetCurrency: localCurrencyCode });
         setCurrencyConversion(conversion);
@@ -234,7 +235,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;
         const valueA = a.balance * a.priceUSD;
-        const valueB = b.balance * a.priceUSD;
+        const valueB = b.balance * b.priceUSD;
         return valueB - valueA;
       });
 
@@ -256,7 +257,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
     updateAssetPrices(isLocalCurrency);
-  }, [updateAssetPrices, isLocalCurrency]);
+  }, []);
+  
+  useEffect(() => {
+    updateAssetPrices(isLocalCurrency);
+  }, [isLocalCurrency, updateAssetPrices]);
+
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
@@ -289,15 +295,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     // Convert gasCost (in ETH) to the current display currency for comparison if needed, though max amount is in tokens.
     // For simplicity, we'll keep the logic as is since gas is paid in ETH regardless of display.
     const ethAsset = assets.find(a => a.ticker === 'ETH');
-    const originalEthPriceInUSD = (ethAsset?.priceUSD || 0) / (currencyConversion?.exchangeRate || 1);
-    const gasCostInDisplayCurrency = gasCost * (ethAsset?.priceUSD || 0);
-
+    
     if (selectedAsset.ticker === 'ETH') {
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
     }
     return selectedAsset.balance;
-  }, [selectedAsset, gasCost, assets, currencyConversion]);
+  }, [selectedAsset, gasCost, assets]);
 
   useEffect(() => {
     setIsCalculatingGas(true);
