@@ -5,7 +5,7 @@ import { useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Transaction } from '@/lib/types';
-import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2, Info } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Hash, Landmark, Box, Copy, Share2, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import { ShortenedLink } from '@/components/shared/ShortenedLink';
@@ -79,7 +79,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         buttons.forEach(btn => (btn as HTMLElement).style.display = '');
 
         const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
+        const file = new File([blob], 'violet-receipt.png', { type: blob.type });
 
         const shareData = {
             title: t.shareTxTitle,
@@ -144,6 +144,12 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
               </div>
               <span className="font-mono font-medium">{transaction.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })} {transaction.ticker}</span>
             </div>
+          </div>
+          <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md w-full">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-500" />
+              <p>
+                Este es un recibo simulado. La transacción no se ha enviado realmente a la red de Sepolia.
+              </p>
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-3">
