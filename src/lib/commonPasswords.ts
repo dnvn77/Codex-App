@@ -91,11 +91,12 @@ export const commonPasswords = new Set([
   'example',
   'demo',
   'sample',
-  'strawberry',
+  'violet',
   'vault',
   'aztec',
   'sepolia',
   'telegram',
   'private',
-  'straw',
 ]);
+
+    

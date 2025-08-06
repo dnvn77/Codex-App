@@ -5,7 +5,7 @@ export const supportedLanguages: Language[] = ['en', 'es', 'zh', 'hi', 'fr', 'ar
 
 export const translations = {
   en: {
-    mainTitle: 'Strawberry Wallet',
+    mainTitle: 'Violet Vault',
     mainDescription: 'Your private, self-custody wallet for the Aztec Network on Telegram.',
     createWalletButton: 'Create New Wallet',
     importWalletButton: 'Import Wallet',
@@ -91,9 +91,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `We'll notify you when it's cheaper to send ${amount} ${ticker} to ${address.slice(0, 6)}...`,
     txSentTitle: 'Transaction Sent',
     txSentDesc: 'Your private transaction has been confirmed on Sepolia.',
-    txHashLabel: 'Transaction Hash',
+    txHashLabel: 'L1 Transaction Hash',
     toLabel: 'To',
-    blockNumberLabel: 'Block Number',
+    blockNumberLabel: 'L1 Settlement Block',
     viewOnEtherscanButton: 'View on Etherscan',
     backToWalletButton: 'Back to Wallet',
     shareButton: 'Share',
@@ -125,7 +125,7 @@ export const translations = {
     
     // Lock screen fields
     unlockWalletTitle: 'Unlock Your Wallet',
-    unlockWalletDesc: 'Enter your password to access your Strawberry Wallet.',
+    unlockWalletDesc: 'Enter your password to access your Violet Vault.',
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
@@ -159,12 +159,12 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'Select asset',
-    tokenPortalInfo: 'This token will be sent through a secure Aztec Portal contract.',
+    tokenPortalInfo: 'This token is sent via a secure Portal. The transaction details on Etherscan reflect the L1 settlement, and some data is kept private due to ZKP nature.',
     searchAssetPlaceholder: 'Search for an asset...',
     noAssetFound: 'No asset found.',
   },
   es: {
-    mainTitle: 'Strawberry Wallet',
+    mainTitle: 'Violet Vault',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Aztec en Telegram.',
     createWalletButton: 'Crear Nueva Billetera',
     importWalletButton: 'Importar Billetera',
@@ -250,9 +250,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `Te notificaremos cuando sea más barato enviar ${amount} ${ticker} a ${address.slice(0, 6)}...`,
     txSentTitle: 'Transacción Enviada',
     txSentDesc: 'Tu transacción privada ha sido confirmada en Sepolia.',
-    txHashLabel: 'Hash de Transacción',
+    txHashLabel: 'Hash de Transacción L1',
     toLabel: 'Para',
-    blockNumberLabel: 'Número de Bloque',
+    blockNumberLabel: 'Bloque de Liquidación L1',
     viewOnEtherscanButton: 'Ver en Etherscan',
     backToWalletButton: 'Volver a la Billetera',
     shareButton: 'Compartir',
@@ -284,7 +284,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear tu Billetera',
-    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Strawberry Wallet.',
+    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Violet Vault.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
@@ -318,12 +318,12 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'Seleccionar activo',
-    tokenPortalInfo: 'Este token se enviará a través de un contrato Portal de Aztec seguro.',
+    tokenPortalInfo: 'Este token se envía a través de un Portal seguro. Los detalles de la transacción en Etherscan reflejan la liquidación en L1, y algunos datos se mantienen privados por la naturaleza ZKP.',
     searchAssetPlaceholder: 'Buscar un activo...',
     noAssetFound: 'No se encontró ningún activo.',
   },
   zh: {
-    mainTitle: '草莓钱包',
+    mainTitle: '紫罗兰金库',
     mainDescription: '您在Telegram上用于Aztec网络的私人自托管钱包。',
     createWalletButton: '创建新钱包',
     importWalletButton: '导入钱包',
@@ -409,9 +409,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `当发送 ${amount} ${ticker} 到 ${address.slice(0, 6)}... 更便宜时，我们会通知您。`,
     txSentTitle: '交易已发送',
     txSentDesc: '您的私人交易已在Sepolia上确认。',
-    txHashLabel: '交易哈希',
+    txHashLabel: 'L1 交易哈希',
     toLabel: '到',
-    blockNumberLabel: '区块号',
+    blockNumberLabel: 'L1 结算区块',
     viewOnEtherscanButton: '在Etherscan上查看',
     backToWalletButton: '返回钱包',
     shareButton: '分享',
@@ -443,7 +443,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: '解锁您的钱包',
-    unlockWalletDesc: '输入您的密码以访问您的草莓钱包。',
+    unlockWalletDesc: '输入您的密码以访问您的紫罗兰金库。',
     unlockButton: '解锁',
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
@@ -477,12 +477,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: '选择资产',
-    tokenPortalInfo: '此代币将通过安全的 Aztec Portal 合约发送。',
+    tokenPortalInfo: '此代币通过安全的门户发送。Etherscan 上的交易详情反映了 L1 结算，并且由于 ZKP 的性质，某些数据是保密的。',
     searchAssetPlaceholder: '搜索资产...',
     noAssetFound: '未找到资产。',
   },
   hi: {
-    mainTitle: 'स्ट्रॉबेरी वॉलेट',
+    mainTitle: 'वायलेट वॉल्ट',
     mainDescription: 'टेलीग्राम पर एज़्टेक नेटवर्क के लिए आपका निजी, स्व-हिरासत वाला वॉलेट।',
     createWalletButton: 'नया वॉलेट बनाएं',
     importWalletButton: 'वॉलेट आयात करें',
@@ -568,9 +568,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `जब ${address.slice(0, 6)}... को ${amount} ${ticker} भेजना सस्ता होगा तो हम आपको सूचित करेंगे।`,
     txSentTitle: 'लेनदेन भेजा गया',
     txSentDesc: 'आपका निजी लेनदेन सेपोलिया पर पुष्टि हो गया है।',
-    txHashLabel: 'लेनदेन हैश',
+    txHashLabel: 'L1 लेनदेन हैश',
     toLabel: 'को',
-    blockNumberLabel: 'ब्लॉक संख्या',
+    blockNumberLabel: 'L1 निपटान ब्लॉक',
     viewOnEtherscanButton: 'ईथरस्कैन पर देखें',
     backToWalletButton: 'वॉलेट पर वापस',
     shareButton: 'शेयर करें',
@@ -602,7 +602,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'अपना वॉलेट अनलॉक करें',
-    unlockWalletDesc: 'अपने स्ट्रॉबेरी वॉलेट तक पहुंचने के लिए अपना पासवर्ड दर्ज करें।',
+    unlockWalletDesc: 'अपने वायलेट वॉल्ट तक पहुंचने के लिए अपना पासवर्ड दर्ज करें।',
     unlockButton: 'अनलॉक करें',
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
@@ -636,12 +636,12 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'संपत्ति चुनें',
-    tokenPortalInfo: 'यह टोकन एक सुरक्षित एज़्टेक पोर्टल अनुबंध के माध्यम से भेजा जाएगा।',
+    tokenPortalInfo: 'यह टोकन एक सुरक्षित पोर्टल के माध्यम से भेजा जाता है। ईथरस्कैन पर लेनदेन विवरण L1 निपटान को दर्शाते हैं, और ZKP प्रकृति के कारण कुछ डेटा निजी रखा जाता है।',
     searchAssetPlaceholder: 'एक संपत्ति खोजें...',
     noAssetFound: 'कोई संपत्ति नहीं मिली।',
   },
   fr: {
-    mainTitle: 'Strawberry Wallet',
+    mainTitle: 'Violet Vault',
     mainDescription: 'Votre portefeuille privé et auto-dépositaire pour le réseau Aztec sur Telegram.',
     createWalletButton: 'Créer un nouveau portefeuille',
     importWalletButton: 'Importer un portefeuille',
@@ -727,9 +727,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `Nous vous informerons quand il sera moins cher d'envoyer ${amount} ${ticker} à ${address.slice(0, 6)}...`,
     txSentTitle: 'Transaction envoyée',
     txSentDesc: 'Votre transaction privée a été confirmée sur Sepolia.',
-    txHashLabel: 'Hachage de transaction',
+    txHashLabel: 'Hachage de transaction L1',
     toLabel: 'À',
-    blockNumberLabel: 'Numéro de bloc',
+    blockNumberLabel: 'Bloc de règlement L1',
     viewOnEtherscanButton: 'Voir sur Etherscan',
     backToWalletButton: 'Retour au portefeuille',
     shareButton: 'Partager',
@@ -761,7 +761,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Déverrouiller votre portefeuille',
-    unlockWalletDesc: 'Entrez votre mot de passe pour accéder à votre Strawberry Wallet.',
+    unlockWalletDesc: 'Entrez votre mot de passe pour accéder à votre Violet Vault.',
     unlockButton: 'Déverrouiller',
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
@@ -795,12 +795,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Sélectionner l\'actif',
-    tokenPortalInfo: 'Ce jeton sera envoyé via un contrat sécurisé Aztec Portal.',
+    tokenPortalInfo: 'Ce jeton est envoyé via un portail sécurisé. Les détails de la transaction sur Etherscan reflètent le règlement L1, et certaines données restent privées en raison de la nature ZKP.',
     searchAssetPlaceholder: 'Rechercher un actif...',
     noAssetFound: 'Aucun actif trouvé.',
   },
   ar: {
-    mainTitle: 'محفظة الفراولة',
+    mainTitle: 'خزنة البنفسج',
     mainDescription: 'محفظتك الخاصة ذاتية الحضانة لشبكة Aztec على تيليجرام.',
     createWalletButton: 'إنشاء محفظة جديدة',
     importWalletButton: 'استيراد محفظة',
@@ -886,9 +886,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `سنعلمك عندما يكون إرسال ${amount} ${ticker} إلى ${address.slice(0, 6)}... أرخص.`,
     txSentTitle: 'تم إرسال المعاملة',
     txSentDesc: 'تم تأكيد معاملتك الخاصة على سيبوليا.',
-    txHashLabel: 'تجزئة المعاملة',
+    txHashLabel: 'تجزئة المعاملة L1',
     toLabel: 'إلى',
-    blockNumberLabel: 'رقم الكتلة',
+    blockNumberLabel: 'كتلة التسوية L1',
     viewOnEtherscanButton: 'عرض على Etherscan',
     backToWalletButton: 'العودة إلى المحفظة',
     shareButton: 'مشاركة',
@@ -920,7 +920,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'افتح محفظتك',
-    unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى محفظة الفراولة الخاصة بك.',
+    unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى خزنة البنفسج الخاصة بك.',
     unlockButton: 'فتح',
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
@@ -954,12 +954,12 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'اختر الأصل',
-    tokenPortalInfo: 'سيتم إرسال هذا الرمز عبر عقد Aztec Portal آمن.',
+    tokenPortalInfo: 'يتم إرسال هذا الرمز عبر بوابة آمنة. تعكس تفاصيل المعاملة على Etherscan تسوية L1 ، ويتم الاحتفاظ ببعض البيانات خاصة بسبب طبيعة ZKP.',
     searchAssetPlaceholder: 'ابحث عن أصل...',
     noAssetFound: 'لم يتم العثور على أي أصل.',
   },
   bn: {
-    mainTitle: 'স্ট্রবেরি ওয়ালেট',
+    mainTitle: 'ভায়োলেট ভল্ট',
     mainDescription: 'টেলিগ্রামে অ্যাজটেক নেটওয়ার্কের জন্য আপনার ব্যক্তিগত, স্ব-হেফাজত ওয়ালেট।',
     createWalletButton: 'নতুন ওয়ালেট তৈরি করুন',
     importWalletButton: 'ওয়ালেট আমদানি করুন',
@@ -1045,9 +1045,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `যখন ${address.slice(0, 6)}... এ ${amount} ${ticker} পাঠানো সস্তা হবে তখন আমরা আপনাকে অবহিত করব।`,
     txSentTitle: 'লেনদেন পাঠানো হয়েছে',
     txSentDesc: 'আপনার ব্যক্তিগত লেনদেন সেপোলিয়াতে নিশ্চিত করা হয়েছে।',
-    txHashLabel: 'লেনদেন হ্যাশ',
+    txHashLabel: 'L1 লেনদেন হ্যাশ',
     toLabel: 'প্রতি',
-    blockNumberLabel: 'ব্লক নম্বর',
+    blockNumberLabel: 'L1 সেটেলমেন্ট ব্লক',
     viewOnEtherscanButton: 'ইথারস্ক্যানে দেখুন',
     backToWalletButton: 'ওয়ালেটে ফিরে যান',
     shareButton: 'শেয়ার করুন',
@@ -1079,7 +1079,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'আপনার ওয়ালেট আনলক করুন',
-    unlockWalletDesc: 'আপনার স্ট্রবেরি ওয়ালেট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
+    unlockWalletDesc: 'আপনার ভায়োলেট ভল্ট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
     unlockButton: 'আনলক করুন',
     unlockingButton: 'আনলক করা হচ্ছে...',
     wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
@@ -1113,12 +1113,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'সম্পদ নির্বাচন করুন',
-    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত অ্যাজটেক পোর্টাল চুক্তির মাধ্যমে পাঠানো হবে।',
+    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত পোর্টালের মাধ্যমে পাঠানো হয়। ইথারস্ক্যানে লেনদেনের বিবরণ L1 সেটেলমেন্টকে প্রতিফলিত করে, এবং ZKP প্রকৃতির কারণে কিছু ডেটা ব্যক্তিগত রাখা হয়।',
     searchAssetPlaceholder: 'একটি সম্পদ খুঁজুন...',
     noAssetFound: 'কোন সম্পদ পাওয়া যায়নি।',
   },
   ru: {
-    mainTitle: 'Клубничный кошелек',
+    mainTitle: 'Фиолетовое Хранилище',
     mainDescription: 'Ваш личный кошелек с самообслуживанием для сети Aztec в Telegram.',
     createWalletButton: 'Создать новый кошелек',
     importWalletButton: 'Импортировать кошелек',
@@ -1204,9 +1204,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `Мы сообщим вам, когда будет дешевле отправить ${amount} ${ticker} на ${address.slice(0, 6)}...`,
     txSentTitle: 'Транзакция отправлена',
     txSentDesc: 'Ваша частная транзакция подтверждена в Sepolia.',
-    txHashLabel: 'Хэш транзакции',
+    txHashLabel: 'Хэш транзакции L1',
     toLabel: 'Кому',
-    blockNumberLabel: 'Номер блока',
+    blockNumberLabel: 'Блок расчета L1',
     viewOnEtherscanButton: 'Посмотреть на Etherscan',
     backToWalletButton: 'Вернуться в кошелек',
     shareButton: 'Поделиться',
@@ -1238,7 +1238,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Разблокировать ваш кошелек',
-    unlockWalletDesc: 'Введите пароль для доступа к вашему Клубничному кошельку.',
+    unlockWalletDesc: 'Введите пароль для доступа к вашему Фиолетовому Хранилищу.',
     unlockButton: 'Разблокировать',
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
@@ -1272,12 +1272,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Выберите актив',
-    tokenPortalInfo: 'Этот токен будет отправлен через безопасный контракт Aztec Portal.',
+    tokenPortalInfo: 'Этот токен отправляется через безопасный портал. Детали транзакции на Etherscan отражают расчет L1, и некоторые данные остаются конфиденциальными из-за природы ZKP.',
     searchAssetPlaceholder: 'Поиск актива...',
     noAssetFound: 'Актив не найден.',
   },
   pt: {
-    mainTitle: 'Carteira de Morango',
+    mainTitle: 'Cofre Violeta',
     mainDescription: 'Sua carteira privada e de auto-custódia para a Rede Aztec no Telegram.',
     createWalletButton: 'Criar Nova Carteira',
     importWalletButton: 'Importar Carteira',
@@ -1363,9 +1363,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `Nós o notificaremos quando for mais barato enviar ${amount} ${ticker} para ${address.slice(0, 6)}...`,
     txSentTitle: 'Transação Enviada',
     txSentDesc: 'Sua transação privada foi confirmada na Sepolia.',
-    txHashLabel: 'Hash da Transação',
+    txHashLabel: 'Hash da Transação L1',
     toLabel: 'Para',
-    blockNumberLabel: 'Número do Bloco',
+    blockNumberLabel: 'Bloco de Liquidação L1',
     viewOnEtherscanButton: 'Ver no Etherscan',
     backToWalletButton: 'Voltar para a Carteira',
     shareButton: 'Compartilhar',
@@ -1397,7 +1397,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear sua Carteira',
-    unlockWalletDesc: 'Insira sua senha para acessar sua Carteira de Morango.',
+    unlockWalletDesc: 'Insira sua senha para acessar sua Cofre Violeta.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
@@ -1431,12 +1431,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Selecione o ativo',
-    tokenPortalInfo: 'Este token será enviado através de um contrato seguro do Portal Aztec.',
+    tokenPortalInfo: 'Este token é enviado através de um portal seguro. Os detalhes da transação no Etherscan refletem a liquidação L1, e alguns dados são mantidos privados devido à natureza ZKP.',
     searchAssetPlaceholder: 'Buscar um ativo...',
     noAssetFound: 'Nenhum ativo encontrado.',
   },
   id: {
-    mainTitle: 'Dompet Stroberi',
+    mainTitle: 'Kubah Ungu',
     mainDescription: 'Dompet kustodian mandiri pribadi Anda untuk Jaringan Aztec di Telegram.',
     createWalletButton: 'Buat Dompet Baru',
     importWalletButton: 'Impor Dompet',
@@ -1522,9 +1522,9 @@ export const translations = {
     gasAlertSetDesc: (amount: string, ticker: string, address: string) => `Kami akan memberi tahu Anda ketika lebih murah untuk mengirim ${amount} ${ticker} ke ${address.slice(0, 6)}...`,
     txSentTitle: 'Transaksi Terkirim',
     txSentDesc: 'Transaksi pribadi Anda telah dikonfirmasi di Sepolia.',
-    txHashLabel: 'Hash Transaksi',
+    txHashLabel: 'Hash Transaksi L1',
     toLabel: 'Ke',
-    blockNumberLabel: 'Nomor Blok',
+    blockNumberLabel: 'Blok Penyelesaian L1',
     viewOnEtherscanButton: 'Lihat di Etherscan',
     backToWalletButton: 'Kembali ke Dompet',
     shareButton: 'Bagikan',
@@ -1556,7 +1556,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Buka Kunci Dompet Anda',
-    unlockWalletDesc: 'Masukkan kata sandi Anda untuk mengakses Dompet Stroberi Anda.',
+    unlockWalletDesc: 'Masukkan kata sandi Anda untuk mengakses Kubah Ungu Anda.',
     unlockButton: 'Buka kunci',
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
@@ -1590,8 +1590,10 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Pilih aset',
-    tokenPortalInfo: 'Token ini akan dikirim melalui kontrak Portal Aztec yang aman.',
+    tokenPortalInfo: 'Token ini dikirim melalui Portal yang aman. Detail transaksi di Etherscan mencerminkan penyelesaian L1, dan beberapa data dijaga kerahasiaannya karena sifat ZKP.',
     searchAssetPlaceholder: 'Cari aset...',
     noAssetFound: 'Aset tidak ditemukan.',
   },
 };
+
+    

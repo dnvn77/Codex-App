@@ -27,8 +27,8 @@ const AppFooter = () => (
         </a>
       </Button>
       <Button variant="ghost" size="icon" asChild>
-        <a href="https://twitter.com/your_twitter_contact" target="_blank" rel="noopener noreferrer">
-          <Twitter />
+        <a href="https://x.com/your_x_contact" target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </a>
       </Button>
       <Button variant="ghost" size="icon" asChild>
@@ -127,9 +127,9 @@ export function AppContainer() {
 
   if (status === 'validating') {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 text-center h-[100dvh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Initializing Strawberry Wallet...</p>
+        <p className="text-muted-foreground">Initializing Violet Vault...</p>
       </div>
     );
   }
@@ -175,3 +175,5 @@ export function AppContainer() {
     </>
   );
 }
+
+    

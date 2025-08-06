@@ -199,16 +199,6 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
       setIsLoading(false);
     }
   };
-
-  const handlePasswordReset = (wallet: Wallet) => {
-    handleCloseRecovery();
-    // After reset, we need to treat it as a fresh unlock
-    unlockWallet(password).then(unlockedWallet => {
-      if(unlockedWallet) {
-        onWalletUnlocked(password);
-      }
-    });
-  }
   
   const handleSeedLengthChange = (value: string) => {
     const length = parseInt(value, 10) as SeedLength;
@@ -363,3 +353,5 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     </>
   );
 }
+
+    

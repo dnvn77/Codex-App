@@ -270,8 +270,8 @@ export const bip39Wordlist: string[] = [
 // A real implementation would use a proper HD wallet library like ethers.js or viem,
 // and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
 
-const STORAGE_KEY = 'strawberry_wallet';
-const FAVORITES_KEY = 'strawberry_wallet_favorites';
+const STORAGE_KEY = 'violet_vault_wallet';
+const FAVORITES_KEY = 'violet_vault_wallet_favorites';
 
 function generateRandomString(length: number, chars: string): string {
   let result = '';
@@ -630,7 +630,7 @@ export function getFavoriteAssets(): Set<string> {
       return new Set();
     }
   }
-  return new Set();
+  return new Set(['ETH', 'USDC', 'WBTC']);
 }
 
 export function setFavoriteAssets(favorites: string[]): void {
