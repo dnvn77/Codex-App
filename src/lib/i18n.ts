@@ -159,7 +159,7 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'Select asset',
-    tokenPortalInfo: 'This token is sent via a secure Portal. The transaction details on Etherscan reflect the L1 settlement, and some data is kept private due to ZKP nature.',
+    tokenPortalInfo: 'This token is sent via a secure Aztec Portal. This bundles your transaction with others for privacy. The details on Etherscan reflect the L1 settlement of this bundle.',
     searchAssetPlaceholder: 'Search for an asset...',
     noAssetFound: 'No asset found.',
   },
@@ -318,7 +318,7 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'Seleccionar activo',
-    tokenPortalInfo: 'Este token se envía a través de un Portal seguro. Los detalles de la transacción en Etherscan reflejan la liquidación en L1, y algunos datos se mantienen privados por la naturaleza ZKP.',
+    tokenPortalInfo: 'Este token se envía a través de un Portal de Aztec seguro. Esto agrupa tu transacción con otras para mayor privacidad. Los detalles en Etherscan reflejan la liquidación L1 de este paquete.',
     searchAssetPlaceholder: 'Buscar un activo...',
     noAssetFound: 'No se encontró ningún activo.',
   },
@@ -477,7 +477,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: '选择资产',
-    tokenPortalInfo: '此代币通过安全的门户发送。Etherscan 上的交易详情反映了 L1 结算，并且由于 ZKP 的性质，某些数据是保密的。',
+    tokenPortalInfo: '此代币通过安全的Aztec门户发送。这将您的交易与其他交易捆绑以保护隐私。Etherscan上的详细信息反映了此捆绑包的L1结算。',
     searchAssetPlaceholder: '搜索资产...',
     noAssetFound: '未找到资产。',
   },
@@ -636,7 +636,7 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'संपत्ति चुनें',
-    tokenPortalInfo: 'यह टोकन एक सुरक्षित पोर्टल के माध्यम से भेजा जाता है। ईथरस्कैन पर लेनदेन विवरण L1 निपटान को दर्शाते हैं, और ZKP प्रकृति के कारण कुछ डेटा निजी रखा जाता है।',
+    tokenPortalInfo: 'यह टोकन एक सुरक्षित एज़्टेक पोर्टल के माध्यम से भेजा जाता है। यह गोपनीयता के लिए आपके लेनदेन को दूसरों के साथ बंडल करता है। ईथरस्कैन पर विवरण इस बंडल के L1 निपटान को दर्शाते हैं।',
     searchAssetPlaceholder: 'एक संपत्ति खोजें...',
     noAssetFound: 'कोई संपत्ति नहीं मिली।',
   },
@@ -795,7 +795,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Sélectionner l\'actif',
-    tokenPortalInfo: 'Ce jeton est envoyé via un portail sécurisé. Les détails de la transaction sur Etherscan reflètent le règlement L1, et certaines données restent privées en raison de la nature ZKP.',
+    tokenPortalInfo: 'Ce jeton est envoyé via un portail Aztec sécurisé. Cela regroupe votre transaction avec d\'autres pour la confidentialité. Les détails sur Etherscan reflètent le règlement L1 de ce lot.',
     searchAssetPlaceholder: 'Rechercher un actif...',
     noAssetFound: 'Aucun actif trouvé.',
   },
@@ -954,7 +954,7 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'اختر الأصل',
-    tokenPortalInfo: 'يتم إرسال هذا الرمز عبر بوابة آمنة. تعكس تفاصيل المعاملة على Etherscan تسوية L1 ، ويتم الاحتفاظ ببعض البيانات خاصة بسبب طبيعة ZKP.',
+    tokenPortalInfo: 'يتم إرسال هذا الرمز عبر بوابة Aztec آمنة. هذا يجمع معاملتك مع الآخرين من أجل الخصوصية. تعكس التفاصيل الموجودة على Etherscan تسوية L1 لهذه الحزمة.',
     searchAssetPlaceholder: 'ابحث عن أصل...',
     noAssetFound: 'لم يتم العثور على أي أصل.',
   },
@@ -1113,7 +1113,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'সম্পদ নির্বাচন করুন',
-    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত পোর্টালের মাধ্যমে পাঠানো হয়। ইথারস্ক্যানে লেনদেনের বিবরণ L1 সেটেলমেন্টকে প্রতিফলিত করে, এবং ZKP প্রকৃতির কারণে কিছু ডেটা ব্যক্তিগত রাখা হয়।',
+    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত অ্যাজটেক পোর্টালের মাধ্যমে পাঠানো হয়। এটি গোপনীয়তার জন্য আপনার লেনদেনকে অন্যদের সাথে একত্রিত করে। ইথারস্ক্যানের বিবরণ এই বান্ডেলের L1 সেটেলমেন্টকে প্রতিফলিত করে।',
     searchAssetPlaceholder: 'একটি সম্পদ খুঁজুন...',
     noAssetFound: 'কোন সম্পদ পাওয়া যায়নি।',
   },
@@ -1272,7 +1272,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Выберите актив',
-    tokenPortalInfo: 'Этот токен отправляется через безопасный портал. Детали транзакции на Etherscan отражают расчет L1, и некоторые данные остаются конфиденциальными из-за природы ZKP.',
+    tokenPortalInfo: 'Этот токен отправляется через безопасный портал Aztec. Это объединяет вашу транзакцию с другими для обеспечения конфиденциальности. Детали на Etherscan отражают расчет L1 этого пакета.',
     searchAssetPlaceholder: 'Поиск актива...',
     noAssetFound: 'Актив не найден.',
   },
@@ -1431,7 +1431,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Selecione o ativo',
-    tokenPortalInfo: 'Este token é enviado através de um portal seguro. Os detalhes da transação no Etherscan refletem a liquidação L1, e alguns dados são mantidos privados devido à natureza ZKP.',
+    tokenPortalInfo: 'Este token é enviado através de um Portal Aztec seguro. Isso agrupa sua transação com outras para privacidade. Os detalhes no Etherscan refletem a liquidação L1 deste pacote.',
     searchAssetPlaceholder: 'Buscar um ativo...',
     noAssetFound: 'Nenhum ativo encontrado.',
   },
@@ -1590,10 +1590,8 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Pilih aset',
-    tokenPortalInfo: 'Token ini dikirim melalui Portal yang aman. Detail transaksi di Etherscan mencerminkan penyelesaian L1, dan beberapa data dijaga kerahasiaannya karena sifat ZKP.',
+    tokenPortalInfo: 'Token ini dikirim melalui Portal Aztec yang aman. Ini menggabungkan transaksi Anda dengan yang lain untuk privasi. Detail di Etherscan mencerminkan penyelesaian L1 dari bundel ini.',
     searchAssetPlaceholder: 'Cari aset...',
     noAssetFound: 'Aset tidak ditemukan.',
   },
 };
-
-    

@@ -162,39 +162,40 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
   
-  useEffect(() => {
-    const updateAssetPrices = async () => {
-        setAssetStatus('loading');
-        try {
-            const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
-            const currentFavorites = getFavoriteAssets();
-            
-            const finalAssets = priceData.map(asset => ({
-                ...asset,
-                balance: mockBalances[asset.ticker] || 0,
-                isFavorite: currentFavorites.has(asset.ticker),
-            })).sort((a, b) => {
-                if (a.isFavorite && !b.isFavorite) return -1;
-                if (!a.isFavorite && b.isFavorite) return 1;
-                const valueA = a.balance * a.priceUSD;
-                const valueB = b.balance * b.priceUSD;
-                return valueB - valueA;
-            });
+  const updateAssetPrices = useCallback(async () => {
+    setAssetStatus('loading');
+    try {
+        const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
+        const currentFavorites = getFavoriteAssets();
+        
+        const finalAssets = priceData.map(asset => ({
+            ...asset,
+            balance: mockBalances[asset.ticker] || 0,
+            isFavorite: currentFavorites.has(asset.ticker),
+        })).sort((a, b) => {
+            if (a.isFavorite && !b.isFavorite) return -1;
+            if (!a.isFavorite && b.isFavorite) return 1;
+            const valueA = a.balance * a.priceUSD;
+            const valueB = b.balance * b.priceUSD;
+            return valueB - valueA;
+        });
 
-            setAssets(finalAssets);
-            setAssetStatus('success');
-        } catch (error) {
-            console.error("Failed to fetch asset prices:", error);
-            toast({
-                title: t.error,
-                description: 'Could not load asset prices. Please try again later.',
-                variant: 'destructive',
-            });
-            setAssetStatus('error');
-        }
-    };
-    updateAssetPrices();
+        setAssets(finalAssets);
+        setAssetStatus('success');
+    } catch (error) {
+        console.error("Failed to fetch asset prices:", error);
+        toast({
+            title: t.error,
+            description: 'Could not load asset prices. Please try again later.',
+            variant: 'destructive',
+        });
+        setAssetStatus('error');
+    }
   }, [userAssetSymbols, toast, t, mockBalances]);
+
+  useEffect(() => {
+    updateAssetPrices();
+  }, [updateAssetPrices]);
 
   useEffect(() => {
     setFavoriteAssetsState(getFavoriteAssets());
@@ -213,6 +214,20 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
     setFavoriteAssets(Array.from(newFavorites));
     setFavoriteAssetsState(newFavorites);
+    
+    // Re-sort assets to reflect new favorite status
+    setAssets(prevAssets => {
+      return [...prevAssets].sort((a, b) => {
+        const aIsFav = newFavorites.has(a.ticker);
+        const bIsFav = newFavorites.has(b.ticker);
+        if (aIsFav && !bIsFav) return -1;
+        if (!aIsFav && bIsFav) return 1;
+        const valueA = a.balance * a.priceUSD;
+        const valueB = b.balance * b.priceUSD;
+        return valueB - valueA;
+      });
+    });
+
   }, [favoriteAssets]);
   
   const totalBalanceUSD = useMemo(() => {
@@ -631,7 +646,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   showBalances={showBalances} 
                   hideZeroBalances={hideZeroBalances} 
                   t={t} 
-                  onRefresh={() => { /* This will be handled by the main fetch effect */ }} 
+                  onRefresh={updateAssetPrices} 
                   isRefreshing={assetStatus === 'loading'}
                   onToggleFavorite={handleToggleFavorite}
                 />
@@ -756,8 +771,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               <div>
                 {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
                 {selectedAssetTicker !== 'ETH' && (
-                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md">
-                        <Info className="h-4 w-4 flex-shrink-0" />
+                    <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
+                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
                         <p>{t.tokenPortalInfo}</p>
                     </div>
                 )}
