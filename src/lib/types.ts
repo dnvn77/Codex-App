@@ -55,9 +55,3 @@ export interface TransactionHistoryItem {
     blockNumber: number;
     status: 'confirmed' | 'pending' | 'failed';
 }
-
-export interface ConversionResult {
-  exchangeRate: number;
-  convertedValues: number[];
-  currencySymbol: string;
-}

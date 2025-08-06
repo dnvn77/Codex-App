@@ -12,7 +12,6 @@ import type { Wallet, StoredWallet, Transaction } from '@/lib/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
-import { Chatbot } from '@/components/shared/Chatbot';
 import { Button } from './ui/button';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
@@ -173,7 +172,6 @@ export function AppContainer() {
         )}
       </div>
       {showFooter && <AppFooter />}
-      {status === 'ready' && (view === 'dashboard' || view === 'receipt' || view === 'credits') && <Chatbot />}
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { AppContainer } from '@/components/AppContainer';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Chatbot } from '@/components/shared/Chatbot';
 
 export default function Home() {
   return (
@@ -12,7 +11,6 @@ export default function Home() {
         <div className="w-full max-w-md mx-auto">
           <AppContainer />
         </div>
-        <Chatbot />
       </main>
     </>
   );
