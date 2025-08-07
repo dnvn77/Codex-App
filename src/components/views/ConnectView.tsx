@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -414,7 +414,7 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-            <Image src="/violet-logo.svg" alt="Violet Vault Logo" width={40} height={40} className="h-10 w-10 text-primary" data-ai-hint="shield elegant"/>
+            <Shield className="h-10 w-10 text-primary" data-ai-hint="shield elegant"/>
           </div>
           <CardTitle className="font-sans text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>
@@ -608,5 +608,3 @@ export function ConnectView({
     </>
   );
 }
-
-    

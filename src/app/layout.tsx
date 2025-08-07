@@ -24,7 +24,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link rel="icon" href="/violet-logo.svg" type="image/svg+xml" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-background`}>
         <ThemeProvider
@@ -40,5 +39,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
