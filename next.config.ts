@@ -30,6 +30,13 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  devIndicators: {
+    buildActivity: false,
+  },
+  // Add the following to fix the cross-origin error in dev environments
+  experimental: {
+    allowedDevOrigins: ['*'],
+  }
 };
 
 export default nextConfig;
