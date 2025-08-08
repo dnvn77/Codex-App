@@ -97,6 +97,5 @@ export const commonPasswords = new Set([
   'sepolia',
   'telegram',
   'private',
+  'strawberry',
 ]);
-
-    

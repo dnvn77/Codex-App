@@ -429,7 +429,7 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-            <Shield className="h-10 w-10 text-primary" data-ai-hint="shield elegant"/>
+             <Image src="/strawberry-logo.svg" alt="Strawberry Wallet Logo" width={40} height={40} className="text-primary" data-ai-hint="strawberry logo"/>
           </div>
           <CardTitle className="font-sans text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>

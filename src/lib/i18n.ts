@@ -5,7 +5,7 @@ export const supportedLanguages: Language[] = ['en', 'es', 'zh', 'hi', 'fr', 'ar
 
 export const translations = {
   en: {
-    mainTitle: 'Violet Vault',
+    mainTitle: 'Strawberry Wallet',
     mainDescription: 'Your private, self-custody wallet for the Aztec Network on Telegram.',
     createWalletButton: 'Create New Wallet',
     importWalletButton: 'Import Wallet',
@@ -125,7 +125,7 @@ export const translations = {
     
     // Lock screen fields
     unlockWalletTitle: 'Unlock Your Wallet',
-    unlockWalletDesc: 'Enter your password to access your Violet Vault.',
+    unlockWalletDesc: 'Enter your password to access your Strawberry Wallet.',
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
@@ -164,7 +164,7 @@ export const translations = {
     noAssetFound: 'No asset found.',
   },
   es: {
-    mainTitle: 'Violet Vault',
+    mainTitle: 'Strawberry Wallet',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Aztec en Telegram.',
     createWalletButton: 'Crear Nueva Billetera',
     importWalletButton: 'Importar Billetera',
@@ -284,7 +284,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear tu Billetera',
-    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Violet Vault.',
+    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Strawberry Wallet.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
@@ -323,7 +323,7 @@ export const translations = {
     noAssetFound: 'No se encontró ningún activo.',
   },
   zh: {
-    mainTitle: '紫罗兰金库',
+    mainTitle: '草莓钱包',
     mainDescription: '您在Telegram上用于Aztec网络的私人自托管钱包。',
     createWalletButton: '创建新钱包',
     importWalletButton: '导入钱包',
@@ -443,7 +443,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: '解锁您的钱包',
-    unlockWalletDesc: '输入您的密码以访问您的紫罗兰金库。',
+    unlockWalletDesc: '输入您的密码以访问您的草莓钱包。',
     unlockButton: '解锁',
     unlockingButton: '解锁中...',
     wrongPasswordError: '密码错误。请重试。',
@@ -482,7 +482,7 @@ export const translations = {
     noAssetFound: '未找到资产。',
   },
   hi: {
-    mainTitle: 'वायलेट वॉल्ट',
+    mainTitle: 'स्ट्रॉबेरी वॉलेट',
     mainDescription: 'टेलीग्राम पर एज़्टेक नेटवर्क के लिए आपका निजी, स्व-हिरासत वाला वॉलेट।',
     createWalletButton: 'नया वॉलेट बनाएं',
     importWalletButton: 'वॉलेट आयात करें',
@@ -602,7 +602,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'अपना वॉलेट अनलॉक करें',
-    unlockWalletDesc: 'अपने वायलेट वॉल्ट तक पहुंचने के लिए अपना पासवर्ड दर्ज करें।',
+    unlockWalletDesc: 'अपने स्ट्रॉबेरी वॉलेट तक पहुंचने के लिए अपना पासवर्ड दर्ज करें।',
     unlockButton: 'अनलॉक करें',
     unlockingButton: 'अनलॉक हो रहा है...',
     wrongPasswordError: 'गलत पासवर्ड। कृपया पुन: प्रयास करें।',
@@ -641,7 +641,7 @@ export const translations = {
     noAssetFound: 'कोई संपत्ति नहीं मिली।',
   },
   fr: {
-    mainTitle: 'Violet Vault',
+    mainTitle: 'Strawberry Wallet',
     mainDescription: 'Votre portefeuille privé et auto-dépositaire pour le réseau Aztec sur Telegram.',
     createWalletButton: 'Créer un nouveau portefeuille',
     importWalletButton: 'Importer un portefeuille',
@@ -761,7 +761,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Déverrouiller votre portefeuille',
-    unlockWalletDesc: 'Entrez votre mot de passe pour accéder à votre Violet Vault.',
+    unlockWalletDesc: 'Entrez votre mot de passe pour accéder à votre Strawberry Wallet.',
     unlockButton: 'Déverrouiller',
     unlockingButton: 'Déverrouillage...',
     wrongPasswordError: 'Mauvais mot de passe. Veuillez réessayer.',
@@ -800,7 +800,7 @@ export const translations = {
     noAssetFound: 'Aucun actif trouvé.',
   },
   ar: {
-    mainTitle: 'خزنة البنفسج',
+    mainTitle: 'محفظة الفراولة',
     mainDescription: 'محفظتك الخاصة ذاتية الحضانة لشبكة Aztec على تيليجرام.',
     createWalletButton: 'إنشاء محفظة جديدة',
     importWalletButton: 'استيراد محفظة',
@@ -920,7 +920,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'افتح محفظتك',
-    unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى خزنة البنفسج الخاصة بك.',
+    unlockWalletDesc: 'أدخل كلمة المرور للوصول إلى محفظة الفراولة الخاصة بك.',
     unlockButton: 'فتح',
     unlockingButton: 'جارٍ الفتح...',
     wrongPasswordError: 'كلمة مرور خاطئة. حاول مرة اخرى.',
@@ -959,7 +959,7 @@ export const translations = {
     noAssetFound: 'لم يتم العثور على أي أصل.',
   },
   bn: {
-    mainTitle: 'ভায়োলেট ভল্ট',
+    mainTitle: 'স্ট্রবেরি ওয়ালেট',
     mainDescription: 'টেলিগ্রামে অ্যাজটেক নেটওয়ার্কের জন্য আপনার ব্যক্তিগত, স্ব-হেফাজত ওয়ালেট।',
     createWalletButton: 'নতুন ওয়ালেট তৈরি করুন',
     importWalletButton: 'ওয়ালেট আমদানি করুন',
@@ -1079,7 +1079,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'আপনার ওয়ালেট আনলক করুন',
-    unlockWalletDesc: 'আপনার ভায়োলেট ভল্ট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
+    unlockWalletDesc: 'আপনার স্ট্রবেরি ওয়ালেট অ্যাক্সেস করতে আপনার পাসওয়ার্ড লিখুন।',
     unlockButton: 'আনলক করুন',
     unlockingButton: 'আনলক করা হচ্ছে...',
     wrongPasswordError: 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।',
@@ -1118,7 +1118,7 @@ export const translations = {
     noAssetFound: 'কোন সম্পদ পাওয়া যায়নি।',
   },
   ru: {
-    mainTitle: 'Фиолетовое Хранилище',
+    mainTitle: 'Клубничный кошелек',
     mainDescription: 'Ваш личный кошелек с самообслуживанием для сети Aztec в Telegram.',
     createWalletButton: 'Создать новый кошелек',
     importWalletButton: 'Импортировать кошелек',
@@ -1238,7 +1238,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Разблокировать ваш кошелек',
-    unlockWalletDesc: 'Введите пароль для доступа к вашему Фиолетовому Хранилищу.',
+    unlockWalletDesc: 'Введите пароль для доступа к вашему Клубничному кошельку.',
     unlockButton: 'Разблокировать',
     unlockingButton: 'Разблокировка...',
     wrongPasswordError: 'Неверный пароль. Пожалуйста, попробуйте еще раз.',
@@ -1277,7 +1277,7 @@ export const translations = {
     noAssetFound: 'Актив не найден.',
   },
   pt: {
-    mainTitle: 'Cofre Violeta',
+    mainTitle: 'Carteira de Morango',
     mainDescription: 'Sua carteira privada e de auto-custódia para a Rede Aztec no Telegram.',
     createWalletButton: 'Criar Nova Carteira',
     importWalletButton: 'Importar Carteira',
@@ -1397,7 +1397,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear sua Carteira',
-    unlockWalletDesc: 'Insira sua senha para acessar sua Cofre Violeta.',
+    unlockWalletDesc: 'Insira sua senha para acessar sua Carteira de Morango.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Senha incorreta. Por favor, tente novamente.',
@@ -1431,12 +1431,12 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Selecione o ativo',
-    tokenPortalInfo: 'Este token é enviado através de um Portal Aztec seguro. Isso agrupa sua transação com outras para privacidade. Os detalhes no Etherscan refletem a liquidação L1 deste pacote.',
+    tokenPortalInfo: 'Este token é enviado através de um portal Aztec seguro. Isso agrupa sua transação com outras para privacidade. Os detalhes no Etherscan refletem a liquidação L1 deste pacote.',
     searchAssetPlaceholder: 'Buscar um ativo...',
     noAssetFound: 'Nenhum ativo encontrado.',
   },
   id: {
-    mainTitle: 'Kubah Ungu',
+    mainTitle: 'Dompet Stroberi',
     mainDescription: 'Dompet kustodian mandiri pribadi Anda untuk Jaringan Aztec di Telegram.',
     createWalletButton: 'Buat Dompet Baru',
     importWalletButton: 'Impor Dompet',
@@ -1556,7 +1556,7 @@ export const translations = {
 
     // Lock screen fields
     unlockWalletTitle: 'Buka Kunci Dompet Anda',
-    unlockWalletDesc: 'Masukkan kata sandi Anda untuk mengakses Kubah Ungu Anda.',
+    unlockWalletDesc: 'Masukkan kata sandi Anda untuk mengakses Dompet Stroberi Anda.',
     unlockButton: 'Buka kunci',
     unlockingButton: 'Membuka kunci...',
     wrongPasswordError: 'Kata sandi salah. Silakan coba lagi.',
