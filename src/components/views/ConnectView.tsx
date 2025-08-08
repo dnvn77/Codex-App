@@ -31,6 +31,7 @@ import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import Image from 'next/image';
+import { logEvent } from '@/lib/analytics';
 
 
 interface ConnectViewProps {
@@ -150,6 +151,7 @@ export function ConnectView({
   }
 
   const handleCreateWallet = () => {
+    logEvent('create_wallet_start');
     // Only generate a new wallet if one doesn't already exist for this session
     if (!newWallet) {
         const wallet = createWallet();
@@ -179,6 +181,7 @@ export function ConnectView({
         return;
     }
     if (newWallet?.seedPhrase) {
+      logEvent('create_wallet_seed_confirmed');
       setRandomWordIndices(generateRandomIndices(newWallet.seedPhrase));
       setCreationStep('confirmSeed');
     }
@@ -200,7 +203,10 @@ export function ConnectView({
       setConfirmationErrors(newErrors);
 
       if (allCorrect) {
+        logEvent('create_wallet_seed_verified');
         setCreationStep('setPassword');
+      } else {
+        logEvent('create_wallet_seed_verification_failed');
       }
     }
   };
@@ -209,11 +215,13 @@ export function ConnectView({
     const validation = validatePassword(password);
     if (!Object.values(validation).every(v => v)) {
         setPasswordError(t.passwordDoesNotMeetRequirements);
+        logEvent('create_wallet_password_fail', { reason: 'requirements_not_met' });
         return;
     }
 
     if (password !== confirmPassword) {
       setPasswordError(t.passwordsDoNotMatch);
+      logEvent('create_wallet_password_fail', { reason: 'passwords_do_not_match' });
       return;
     }
     
@@ -232,8 +240,10 @@ export function ConnectView({
       await storeWallet(walletToSave, password);
       
       if (isRecoveryMode && onPasswordReset) {
+        logEvent('password_reset_success');
         onPasswordReset(walletToSave);
       } else {
+        logEvent('create_wallet_success');
         onWalletConnected(walletToSave);
       }
       
@@ -319,10 +329,12 @@ export function ConnectView({
       // Validate phrase before setting wallet state
       const wallet = await importWalletFromSeed(importSeedPhrase);
       setNewWallet(wallet); 
+      logEvent('import_wallet_seed_verified');
       setCreationStep('setPassword'); 
       setImportDialogOpen(false); 
       setCreateDialogOpen(true); 
     } catch (error) {
+      logEvent('import_wallet_fail', { reason: (error as Error).message });
       toast({
         title: t.importErrorTitle,
         description: (error as Error).message || t.importErrorDesc,
@@ -332,6 +344,9 @@ export function ConnectView({
   };
   
   const handleCloseCreateDialog = () => {
+    if (creationStep !== 'setPassword') {
+        logEvent('create_wallet_abandoned', { step: creationStep });
+    }
     setCreateDialogOpen(false);
     setTimeout(() => {
         // Reset all creation-related state
@@ -424,7 +439,7 @@ export function ConnectView({
             <PlusCircle />
             {t.createWalletButton}
           </Button>
-          <Button size="lg" variant="secondary" onClick={() => setImportDialogOpen(true)}>
+          <Button size="lg" variant="secondary" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
             <KeyRound />
             {t.importWalletButton}
           </Button>

@@ -56,6 +56,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { FavoriteAssetChart } from '@/components/shared/FavoriteAssetChart';
 import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
 import { TransactionHistory } from '@/components/shared/TransactionHistory';
+import { logEvent } from '@/lib/analytics';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -176,7 +177,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
             if (a.isFavorite && !b.isFavorite) return -1;
             if (!a.isFavorite && b.isFavorite) return 1;
             const valueA = a.balance * a.priceUSD;
-            const valueB = b.balance * b.priceUSD;
+            const valueB = b.balance * a.priceUSD;
             return valueB - valueA;
         });
 
@@ -209,8 +210,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const newFavorites = new Set(favoriteAssets);
     if (newFavorites.has(ticker)) {
       newFavorites.delete(ticker);
+      logEvent('favorite_asset_removed', { ticker });
     } else {
       newFavorites.add(ticker);
+      logEvent('favorite_asset_added', { ticker });
     }
     setFavoriteAssets(Array.from(newFavorites));
     setFavoriteAssetsState(newFavorites);
@@ -356,6 +359,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
 
     setIsSending(true);
+    logEvent('send_transaction_start', {
+      asset: selectedAsset.ticker,
+      amount: parseFloat(amount),
+      gas_cost_eth: gasCost,
+      is_ens: ensResolution.status === 'success',
+    });
+
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
@@ -382,10 +392,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           return newBalances;
       });
 
+      logEvent('send_transaction_success', { tx_hash: tx.txHash });
       setToAddress('');
       setAmount('');
     } catch (error) {
       const err = error as Error;
+      logEvent('send_transaction_fail', { error_message: err.message });
       toast({ title: t.txFailedTitle, description: err.message, variant: 'destructive' });
     } finally {
       setIsSending(false);
@@ -411,11 +423,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
 
     if (usdValue >= 3000) {
+        logEvent('send_tx_password_required_prompt', { amount_usd: usdValue });
         setPasswordConfirmOpen(true);
     } else if (usdValue >= 1000) {
+        logEvent('send_tx_amount_confirm_prompt', { amount_usd: usdValue });
         setAmountConfirmOpen(true);
     } else {
         if (gasCost > averageGas) {
+            logEvent('send_tx_high_gas_prompt');
             setShowHighGasConfirm(true);
         } else {
             executeSend();
@@ -448,6 +463,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSetupGasNotification = () => {
+    logEvent('gas_notification_setup');
     toast({
         title: t.gasAlertSetTitle,
         description: t.gasAlertSetDesc(notificationAmount, selectedAssetTicker, notificationAddress),
@@ -459,6 +475,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const handleQrScan = (data: string | null) => {
     if (data) {
+        logEvent('qr_code_scanned');
         setScannerOpen(false);
         let address = data;
         if (address.startsWith('ethereum:')) {
@@ -471,6 +488,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 description: t.addressScannedDesc,
             });
         } else {
+            logEvent('qr_code_scan_fail', { reason: 'invalid_address' });
             toast({
                 title: t.invalidQrTitle,
                 description: t.invalidQrDesc,
@@ -516,7 +534,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
             <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
                 <div className="flex justify-between items-center mb-2">
                     <div />
-                    <Button variant="ghost" size="icon" onClick={() => setShowBalances(!showBalances)} className="h-8 w-8">
+                    <Button variant="ghost" size="icon" onClick={() => { logEvent('balance_visibility_toggled', { visible: !showBalances }); setShowBalances(!showBalances); }} className="h-8 w-8">
                       {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </Button>
                 </div>
@@ -536,7 +554,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 <div className="flex items-center">
                   <Dialog>
                     <DialogTrigger asChild>
-                       <Button variant="ghost" size="icon" className="h-8 w-8">
+                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => logEvent('show_qr_code_clicked')}>
                          <QrCode className="h-5 w-5" />
                        </Button>
                     </DialogTrigger>
@@ -571,7 +589,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
             </div>
              <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
                         <History className="mr-2 h-4 w-4" />
                         Transaction History
                     </Button>
@@ -624,7 +642,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   <Switch
                     id="hide-zero"
                     checked={hideZeroBalances}
-                    onCheckedChange={setHideZeroBalances}
+                    onCheckedChange={(checked) => { logEvent('hide_zero_balances_toggled', { enabled: checked }); setHideZeroBalances(checked); }}
                   />
                 </div>
               </div>
@@ -673,7 +691,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                     />
                     <Dialog open={isScannerOpen} onOpenChange={setScannerOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="icon" disabled={isSending}>
+                        <Button variant="outline" size="icon" disabled={isSending} onClick={() => logEvent('qr_scanner_opened')}>
                           <QrCode className="h-5 w-5" />
                         </Button>
                       </DialogTrigger>
@@ -745,6 +763,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                                     key={asset.ticker}
                                     value={asset.name}
                                     onSelect={() => {
+                                        logEvent('asset_selected_for_send', { asset: asset.ticker });
                                         setSelectedAssetTicker(asset.ticker);
                                         setAssetSelectorOpen(false);
                                     }}

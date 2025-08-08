@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from "@/hooks/use-toast";
+import { logEvent } from '@/lib/analytics';
 
 interface LockViewProps {
   storedWallet: StoredWallet;
@@ -119,12 +120,15 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
 
     setIsLoading(true);
     setError('');
+    logEvent('unlock_attempt');
 
     try {
         await new Promise(resolve => setTimeout(resolve, 500));
         await onWalletUnlocked(password);
+        logEvent('unlock_success');
     } catch {
       setError(t.wrongPasswordError);
+      logEvent('unlock_fail');
     } finally {
         setIsLoading(false);
     }
@@ -180,9 +184,11 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     try {
       const isValid = await verifySeedPhrase(phrase, storedWallet.address);
       if (isValid) {
+        logEvent('password_recovery_seed_verified');
         setFullSeedForReset(phrase);
         setRecoveryStep('resetPassword');
       } else {
+        logEvent('password_recovery_seed_fail');
         toast({
           title: t.importErrorTitle,
           description: t.seedPhraseMismatch,
@@ -207,6 +213,9 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
   };
 
   const handleCloseRecovery = () => {
+    if (recoveryStep === 'enterSeed') {
+        logEvent('password_recovery_abandoned');
+    }
     setRecoveryOpen(false);
      setTimeout(() => {
         setRecoveryStep('enterSeed');
@@ -256,7 +265,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
             </div>
              <button 
                 type="button" 
-                onClick={() => setRecoveryOpen(true)}
+                onClick={() => { logEvent('password_recovery_start'); setRecoveryOpen(true); }}
                 className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline" 
               >
                 {t.forgotPasswordLink}
@@ -353,5 +362,3 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
     </>
   );
 }
-
-    

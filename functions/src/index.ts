@@ -23,10 +23,36 @@ const authenticate = (req: express.Request, res: express.Response, next: express
     next();
 };
 
-app.use(authenticate);
-
-
 // --- RUTAS DEL BACKEND ---
+
+// Endpoint para registrar eventos anónimos (público, sin autenticación de API Key)
+app.post("/log-event", (req, res) => {
+    const eventData = req.body;
+
+    // Validación básica
+    if (!eventData.session_id || !eventData.event_type) {
+        return res.status(400).send({ error: "Missing required event data: session_id and event_type are required." });
+    }
+
+    // Asegurarse de que no se estén registrando datos personales
+    const forbiddenKeys = ['walletAddress', 'ip', 'email', 'password', 'seedPhrase'];
+    for (const key of forbiddenKeys) {
+        if (eventData[key]) {
+            console.warn(`Attempted to log forbidden key: ${key}`);
+            delete eventData[key]; // Eliminar la clave prohibida
+        }
+    }
+
+    // En un entorno de producción, aquí guardarías el evento en tu base de datos (ej. Supabase)
+    // TODO: Implement Supabase client to save eventData
+    console.log("Anonymous event logged:", JSON.stringify(eventData, null, 2));
+
+
+    res.status(200).send({ success: true, message: "Event logged successfully." });
+});
+
+
+app.use(authenticate); // Aplicar autenticación solo a las rutas que lo necesiten
 
 /**
  * Endpoint para crear una nueva wallet de Aztec.

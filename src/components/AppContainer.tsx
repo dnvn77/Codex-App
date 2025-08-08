@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ConnectView } from '@/components/views/ConnectView';
 import { DashboardView } from '@/components/views/DashboardView';
 import { ReceiptView } from '@/components/views/ReceiptView';
@@ -13,6 +13,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
 import { Button } from './ui/button';
+import { logEvent } from '@/lib/analytics';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
 type Status = 'validating' | 'ready' | 'error';
@@ -47,15 +48,26 @@ export function AppContainer() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  
+  const screenTimeStartRef = useRef<number>(Date.now());
 
   const { isReady, initData } = useTelegram();
 
   const handleLock = () => {
     if (view !== 'lock' && view !== 'connect') {
+      const screenTimeSeconds = (Date.now() - screenTimeStartRef.current) / 1000;
+      logEvent('lock_screen_activated', { current_screen: view, screen_time_seconds: parseFloat(screenTimeSeconds.toFixed(2)) });
       setWallet(null); // Clear active wallet state
       setView('lock');
     }
   };
+  
+  const handleViewChange = (newView: View) => {
+    const screenTimeSeconds = (Date.now() - screenTimeStartRef.current) / 1000;
+    logEvent('view_changed', { previous_screen: view, new_screen: newView, screen_time_seconds: parseFloat(screenTimeSeconds.toFixed(2)) });
+    screenTimeStartRef.current = Date.now();
+    setView(newView);
+  }
 
   useInactivityTimeout(handleLock);
 
@@ -76,10 +88,12 @@ export function AppContainer() {
         const storedWallet = getStoredWallet();
         setStoredWalletInfo(storedWallet);
         if (storedWallet) {
-          setView('lock');
+          handleViewChange('lock');
         } else {
-          setView('connect');
+          handleViewChange('connect');
         }
+        
+        logEvent('app_loaded', { initial_view: storedWallet ? 'lock' : 'connect' });
 
         setStatus('ready');
       }, 1000);
@@ -90,14 +104,14 @@ export function AppContainer() {
     setWallet(newWallet);
     const storedInfo = getStoredWallet();
     setStoredWalletInfo(storedInfo);
-    setView('dashboard');
+    handleViewChange('dashboard');
   };
 
   const handleWalletUnlocked = async (password: string) => {
     const unlockedWallet = await unlockWallet(password);
     if(unlockedWallet) {
         setWallet(unlockedWallet);
-        setView('dashboard');
+        handleViewChange('dashboard');
     }
   }
 
@@ -106,23 +120,24 @@ export function AppContainer() {
       setWallet(sentTransaction.wallet);
     }
     setTransaction(sentTransaction);
-    setView('receipt');
+    handleViewChange('receipt');
   };
 
   const handleBackToDashboard = () => {
     setTransaction(null);
-    setView('dashboard');
+    handleViewChange('dashboard');
   };
   
   const handleShowCredits = () => {
-    setView('credits');
+    handleViewChange('credits');
   }
 
   const handleDisconnect = () => {
+    logEvent('wallet_disconnected');
     setWallet(null);
     setStoredWalletInfo(null);
     clearStoredWallet();
-    setView('connect');
+    handleViewChange('connect');
   };
 
   if (status === 'validating') {
@@ -175,5 +190,3 @@ export function AppContainer() {
     </>
   );
 }
-
-    
