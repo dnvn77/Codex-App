@@ -636,7 +636,7 @@ export const translations = {
 
     // Send Flow
     selectAssetLabel: 'संपत्ति चुनें',
-    tokenPortalInfo: 'यह टोकन एक सुरक्षित एज़्टेक पोर्टल के माध्यम से भेजा जाता है। यह गोपनीयता के लिए आपके लेनदेन को दूसरों के साथ बंडल करता है। ईथरस्कैन पर विवरण इस बंडल के L1 निपटान को दर्शाते हैं।',
+    tokenPortalInfo: 'यह टोकन एक सुरक्षित Aztec पोर्टल के माध्यम से भेजा जाता है। यह गोपनीयता के लिए आपके लेनदेन को दूसरों के साथ बंडल करता है। ईथरस्कैन पर विवरण इस बंडल के L1 निपटान को दर्शाते हैं।',
     searchAssetPlaceholder: 'एक संपत्ति खोजें...',
     noAssetFound: 'कोई संपत्ति नहीं मिली।',
   },
@@ -1113,7 +1113,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'সম্পদ নির্বাচন করুন',
-    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত অ্যাজটেক পোর্টালের মাধ্যমে পাঠানো হয়। এটি গোপনীয়তার জন্য আপনার লেনদেনকে অন্যদের সাথে একত্রিত করে। ইথারস্ক্যানের বিবরণ এই বান্ডেলের L1 সেটেলমেন্টকে প্রতিফলিত করে।',
+    tokenPortalInfo: 'এই টোকেনটি একটি সুরক্ষিত Aztec পোর্টালের মাধ্যমে পাঠানো হয়। এটি গোপনীয়তার জন্য আপনার লেনদেনকে অন্যদের সাথে একত্রিত করে। ইথারস্ক্যানের বিবরণ এই বান্ডেলের L1 সেটেলমেন্টকে প্রতিফলিত করে।',
     searchAssetPlaceholder: 'একটি সম্পদ খুঁজুন...',
     noAssetFound: 'কোন সম্পদ পাওয়া যায়নি।',
   },
@@ -1590,7 +1590,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Pilih aset',
-    tokenPortalInfo: 'Token ini dikirim melalui Portal Aztec yang aman. Ini menggabungkan transaksi Anda dengan yang lain untuk privasi. Detail di Etherscan mencerminkan penyelesaian L1 dari bundel ini.',
+    tokenPortalInfo: 'Token ini dikirim melalui Aztec Portal yang aman. Ini menggabungkan transaksi Anda dengan yang lain untuk privasi. Detail di Etherscan mencerminkan penyelesaian L1 dari bundel ini.',
     searchAssetPlaceholder: 'Cari aset...',
     noAssetFound: 'Aset tidak ditemukan.',
   },
