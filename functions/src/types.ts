@@ -1,0 +1,53 @@
+/**
+ * @fileoverview Define los esquemas de validación de Zod y los tipos de TypeScript.
+ * Centraliza las definiciones de datos para mantener la consistencia en toda la aplicación.
+ *
+ * Documentación de Zod: https://zod.dev/
+ */
+
+import { z } from 'zod';
+
+// Expresión regular para validar direcciones de Ethereum.
+const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+
+// Esquema para validar una dirección de Ethereum.
+export const EthAddressSchema = z.string().regex(ethAddressRegex, {
+  message: 'La dirección proporcionada no es una dirección de Ethereum válida.',
+});
+
+// Esquema para validar un número como string y positivo.
+export const PositiveNumberStringSchema = z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+    message: 'El valor debe ser un número positivo.',
+});
+
+// --- Esquemas para las Peticiones de los Endpoints ---
+
+// POST /wallet/create
+export const CreateWalletRequestSchema = z.object({
+  userId: z.string().min(1, 'El campo userId es requerido.'),
+});
+export type CreateWalletRequest = z.infer<typeof CreateWalletRequestSchema>;
+
+
+// POST /wallet/balance
+export const GetBalanceRequestSchema = z.object({
+  address: EthAddressSchema,
+});
+export type GetBalanceRequest = z.infer<typeof GetBalanceRequestSchema>;
+
+
+// POST /tx/send
+export const SendTransactionRequestSchema = z.object({
+  fromUserId: z.string().min(1, 'El campo fromUserId es requerido.'),
+  to: EthAddressSchema,
+  amountEth: PositiveNumberStringSchema,
+});
+export type SendTransactionRequest = z.infer<typeof SendTransactionRequestSchema>;
+
+
+// POST /zk/verify
+export const VerifyProofRequestSchema = z.object({
+  proof: z.object({}).nonstrict(), // Placeholder, ajustar según la estructura real de la prueba
+  publicSignals: z.array(z.any()), // Placeholder, ajustar según los signals reales
+});
+export type VerifyProofRequest = z.infer<typeof VerifyProofRequestSchema>;
