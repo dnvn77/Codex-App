@@ -165,23 +165,15 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t.backToWalletButton}
             </Button>
-            {isMobile && navigator.share && (
-              <Button onClick={handleShare} className="w-full">
-                <Share2 className="mr-2 h-4 w-4" />
-                {t.shareButton}
-              </Button>
-            )}
+            <div className="w-full share-button-wrapper">
+                <Button onClick={handleShare} className="w-full">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    {t.shareButton}
+                </Button>
+            </div>
           </div>
         </CardFooter>
       </Card>
-      {!isMobile && (
-         <div className="mt-4 flex justify-center">
-           <Button onClick={handleShare}>
-              <Share2 className="mr-2 h-4 w-4" />
-              {t.shareButton}
-            </Button>
-         </div>
-      )}
     </>
   );
 }

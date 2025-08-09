@@ -73,6 +73,36 @@ body {
     --input: 276 15% 25%;
     --ring: 282 60% 86%;
   }
+
+  .dim {
+    --background: 260 20% 12%; /* Darker, less saturated blue-purple */
+    --foreground: 260 10% 90%;
+
+    --card: 260 20% 15%;
+    --card-foreground: 260 10% 90%;
+
+    --popover: 260 20% 12%;
+    --popover-foreground: 260 10% 90%;
+
+    --primary: 282 60% 86%; /* Keep primary from dark theme for consistency */
+    --primary-foreground: 260 20% 10%;
+
+    --secondary: 260 20% 22%;
+    --secondary-foreground: 260 10% 90%;
+
+    --muted: 260 20% 22%;
+    --muted-foreground: 260 10% 75%;
+    
+    --accent: 260 20% 28%;
+    --accent-foreground: 260 10% 90%;
+
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 260 20% 28%;
+    --input: 260 20% 28%;
+    --ring: 282 60% 86%;
+  }
 }
 
 @layer base {
@@ -84,4 +114,10 @@ body {
   }
 }
 
+/* Hide Share button on non-mobile devices */
+@media (min-width: 768px) {
+    .share-button-wrapper {
+        display: none;
+    }
+}
     

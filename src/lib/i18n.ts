@@ -1272,7 +1272,7 @@ export const translations = {
     
     // Send Flow
     selectAssetLabel: 'Выберите актив',
-    tokenPortalInfo: 'Этот токен отправляется через безопасный портал Aztec. Это объединяет вашу транзакцию с другими для обеспечения конфиденциальности. Детали на Etherscan отражают расчет L1 этого пакета.',
+    tokenPortalInfo: 'Этот токен отправляется через безопасный Aztec портал. Это объединяет вашу транзакцию с другими для обеспечения конфиденциальности. Детали на Etherscan отражают расчет L1 этого пакета.',
     searchAssetPlaceholder: 'Поиск актива...',
     noAssetFound: 'Актив не найден.',
   },
@@ -1288,7 +1288,7 @@ export const translations = {
     cancelButton: 'Cancelar',
     continueButton: 'Continuar',
     confirmPhraseTitle: 'Confirme Sua Frase',
-    confirmPhraseDesc: 'Para garantir que a salvou corretamente, por favor, insira as seguintes palavras da sua frase.',
+    confirmPhraseDesc: 'Para garantir que a salvou correctly, por favor, insira as seguintes palavras da sua frase.',
     enterWordLabel: (n: number) => `Insira a palavra #${n}`,
     backButton: 'Voltar',
     confirmAndCreateButton: 'Confirmar e Criar',
