@@ -6,7 +6,7 @@ export const supportedLanguages: Language[] = ['en', 'es', 'zh', 'hi', 'fr', 'ar
 export const translations = {
   en: {
     mainTitle: 'Strawberry Wallet',
-    mainDescription: 'Your private, self-custody wallet for the Aztec Network on Telegram.',
+    mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
     createWalletButton: 'Create New Wallet',
     importWalletButton: 'Import Wallet',
     testnetDisclaimer: 'Transactions are on the Sepolia Testnet.',
@@ -165,7 +165,7 @@ export const translations = {
   },
   es: {
     mainTitle: 'Strawberry Wallet',
-    mainDescription: 'Tu billetera privada y de autocustodia para la red Aztec en Telegram.',
+    mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
     createWalletButton: 'Crear Nueva Billetera',
     importWalletButton: 'Importar Billetera',
     testnetDisclaimer: 'Las transacciones se realizan en la Testnet de Sepolia.',
@@ -324,7 +324,7 @@ export const translations = {
   },
   zh: {
     mainTitle: '草莓钱包',
-    mainDescription: '您在Telegram上用于Aztec网络的私人自托管钱包。',
+    mainDescription: '您在Telegram上用于Scroll网络的私人自托管钱包。',
     createWalletButton: '创建新钱包',
     importWalletButton: '导入钱包',
     testnetDisclaimer: '交易在Sepolia测试网上进行。',
@@ -483,7 +483,7 @@ export const translations = {
   },
   hi: {
     mainTitle: 'स्ट्रॉबेरी वॉलेट',
-    mainDescription: 'टेलीग्राम पर एज़्टेक नेटवर्क के लिए आपका निजी, स्व-हिरासत वाला वॉलेट।',
+    mainDescription: 'टेलीग्राम पर स्क्रॉल नेटवर्क के लिए आपका निजी, स्व-हिरासत वाला वॉलेट।',
     createWalletButton: 'नया वॉलेट बनाएं',
     importWalletButton: 'वॉलेट आयात करें',
     testnetDisclaimer: 'लेन-देन सेपोलिया टेस्टनेट पर होते हैं।',
@@ -642,7 +642,7 @@ export const translations = {
   },
   fr: {
     mainTitle: 'Strawberry Wallet',
-    mainDescription: 'Votre portefeuille privé et auto-dépositaire pour le réseau Aztec sur Telegram.',
+    mainDescription: 'Votre portefeuille privé et auto-dépositaire pour le réseau Scroll sur Telegram.',
     createWalletButton: 'Créer un nouveau portefeuille',
     importWalletButton: 'Importer un portefeuille',
     testnetDisclaimer: 'Les transactions sont sur le Testnet Sepolia.',
@@ -801,7 +801,7 @@ export const translations = {
   },
   ar: {
     mainTitle: 'محفظة الفراولة',
-    mainDescription: 'محفظتك الخاصة ذاتية الحضانة لشبكة Aztec على تيليجرام.',
+    mainDescription: 'محفظتك الخاصة ذاتية الحضانة لشبكة Scroll على تيليجرام.',
     createWalletButton: 'إنشاء محفظة جديدة',
     importWalletButton: 'استيراد محفظة',
     testnetDisclaimer: 'تتم المعاملات على شبكة سيبوليا التجريبية.',
@@ -960,7 +960,7 @@ export const translations = {
   },
   bn: {
     mainTitle: 'স্ট্রবেরি ওয়ালেট',
-    mainDescription: 'টেলিগ্রামে অ্যাজটেক নেটওয়ার্কের জন্য আপনার ব্যক্তিগত, স্ব-হেফাজত ওয়ালেট।',
+    mainDescription: 'টেলিগ্রামে স্ক্রোল নেটওয়ার্কের জন্য আপনার ব্যক্তিগত, স্ব-হেফাজত ওয়ালেট।',
     createWalletButton: 'নতুন ওয়ালেট তৈরি করুন',
     importWalletButton: 'ওয়ালেট আমদানি করুন',
     testnetDisclaimer: 'লেনদেনগুলি সেপোলিয়া টেস্টনেটে হয়।',
@@ -1119,7 +1119,7 @@ export const translations = {
   },
   ru: {
     mainTitle: 'Клубничный кошелек',
-    mainDescription: 'Ваш личный кошелек с самообслуживанием для сети Aztec в Telegram.',
+    mainDescription: 'Ваш личный кошелек с самообслуживанием для сети Scroll в Telegram.',
     createWalletButton: 'Создать новый кошелек',
     importWalletButton: 'Импортировать кошелек',
     testnetDisclaimer: 'Транзакции проводятся в тестовой сети Sepolia.',
@@ -1278,7 +1278,7 @@ export const translations = {
   },
   pt: {
     mainTitle: 'Carteira de Morango',
-    mainDescription: 'Sua carteira privada e de auto-custódia para a Rede Aztec no Telegram.',
+    mainDescription: 'Sua carteira privada e de auto-custódia para a Rede Scroll no Telegram.',
     createWalletButton: 'Criar Nova Carteira',
     importWalletButton: 'Importar Carteira',
     testnetDisclaimer: 'As transações são na Testnet Sepolia.',
@@ -1288,7 +1288,7 @@ export const translations = {
     cancelButton: 'Cancelar',
     continueButton: 'Continuar',
     confirmPhraseTitle: 'Confirme Sua Frase',
-    confirmPhraseDesc: 'Para garantir que a salvou correctly, por favor, insira as seguintes palavras da sua frase.',
+    confirmPhraseDesc: 'Para garantir que a salvou corretamente, por favor, insira as seguintes palavras da sua frase.',
     enterWordLabel: (n: number) => `Insira a palavra #${n}`,
     backButton: 'Voltar',
     confirmAndCreateButton: 'Confirmar e Criar',
@@ -1437,7 +1437,7 @@ export const translations = {
   },
   id: {
     mainTitle: 'Dompet Stroberi',
-    mainDescription: 'Dompet kustodian mandiri pribadi Anda untuk Jaringan Aztec di Telegram.',
+    mainDescription: 'Dompet kustodian mandiri pribadi Anda untuk Jaringan Scroll di Telegram.',
     createWalletButton: 'Buat Dompet Baru',
     importWalletButton: 'Impor Dompet',
     testnetDisclaimer: 'Transaksi dilakukan di Testnet Sepolia.',
