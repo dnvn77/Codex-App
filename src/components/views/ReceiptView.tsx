@@ -48,7 +48,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const etherscanUrl = `https://sepolia.etherscan.io/tx/${transaction.txHash}`;
+  const etherscanUrl = `https://sepolia.scrollscan.com/tx/${transaction.txHash}`;
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const handleShare = useCallback(async () => {
@@ -79,7 +79,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         buttons.forEach(btn => (btn as HTMLElement).style.display = '');
 
         const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'violet-receipt.png', { type: blob.type });
+        const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
 
         const shareData = {
             title: t.shareTxTitle,
@@ -153,7 +153,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-3">
-          <ShortenedLink fullUrl={etherscanUrl} displayPrefix="sepolia.etherscan.io/tx/" t={t} />
+          <ShortenedLink fullUrl={etherscanUrl} displayPrefix="sepolia.scrollscan.com/tx/" t={t} />
           {transaction.ticker !== 'ETH' && (
               <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md w-full">
                   <Info className="h-4 w-4 flex-shrink-0" />
