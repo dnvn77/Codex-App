@@ -38,7 +38,6 @@ const feedbackClient = {
 
   shouldAskThisSession: (): boolean => {
     if (typeof window === 'undefined') return false;
-    // Para depuración, podemos permitir preguntar siempre.
     if (process.env.NODE_ENV === 'development') return true;
     const asked = sessionStorage.getItem(SESSION_ASKED_KEY);
     return asked !== 'true';
@@ -65,7 +64,6 @@ const feedbackClient = {
       client_timestamp: new Date().toISOString(),
     };
     
-    // --- Validaciones Frontend ---
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fullPayload.session_id)) {
         console.error("Feedback Error: Invalid session_id format.");
         return;
@@ -79,21 +77,22 @@ const feedbackClient = {
         console.error("Feedback Error: Payload exceeds 2KB limit.");
         return;
     }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Feedback event sent to Supabase:', fullPayload);
-    }
+    
+    // Log the event being sent for debugging purposes
+    console.log('Logging feedback to Supabase:', fullPayload);
 
     try {
-      const { error } = await supabase.from('feedback_events').insert([fullPayload]);
+      const { data, error } = await supabase.from('feedback_events').insert([fullPayload]).select();
+
       if (error) {
-        console.error('Error logging feedback to Supabase:', error);
-      }
-    } catch (error) {
-      console.error('Failed to log feedback:', error);
-    } finally {
+        console.error('Supabase feedback insert error:', error);
+      } else {
+        console.log('Supabase feedback insert success:', data);
         feedbackClient.markSessionAsAsked();
         screenTimeStart = Date.now();
+      }
+    } catch (error) {
+      console.error('FATAL: Exception during Supabase feedback insert:', error);
     }
   },
 };

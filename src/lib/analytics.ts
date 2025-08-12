@@ -47,7 +47,8 @@ export function hasMadeConsentChoice(): boolean {
 
 export async function logEvent(eventType: string, payload: EventPayload = {}) {
   if (typeof window === 'undefined' || !hasConsent()) {
-    return; // No registrar eventos si no hay consentimiento o es del lado del servidor
+    if (!hasConsent()) console.log('Analytics consent not given. Skipping event logging.');
+    return;
   }
   
   const language = navigator.language;
@@ -66,16 +67,18 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
     ...payload,
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Analytic event sent to Supabase:', eventData);
-  }
+  // Log the event being sent for debugging purposes
+  console.log('Logging analytic event to Supabase:', eventData);
 
   try {
-    const { error } = await supabase.from('event_logs').insert([eventData]);
+    const { data, error } = await supabase.from('event_logs').insert([eventData]).select();
+    
     if (error) {
-      console.error('Error logging event to Supabase:', error);
+      console.error('Supabase analytics insert error:', error);
+    } else {
+      console.log('Supabase analytics insert success:', data);
     }
   } catch (error) {
-    console.error('Error logging event:', error);
+    console.error('FATAL: Exception during Supabase analytics insert:', error);
   }
 }
