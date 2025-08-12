@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useTelegram, type ClientType } from "@/hooks/useTelegram";
-import { useTheme } from "next-themes";
+import type { ClientType } from "@/hooks/useTelegram";
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
@@ -24,6 +23,8 @@ export function getSessionId(): string {
 }
 
 interface EventPayload {
+  screen_time_seconds?: number;
+  error_code?: string;
   [key: string]: any;
 }
 
@@ -49,14 +50,14 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   }
   
   const language = navigator.language;
-  const theme = localStorage.getItem('theme') || 'system';
+  const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   const clientType: ClientType = (window as any).Telegram?.WebApp?.initData ? 'telegram_webapp' : 'browser';
   const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 
   const eventData = {
     session_id: getSessionId(),
     event_type: eventType,
-    timestamp: new Date().toISOString(),
+    client_timestamp: new Date().toISOString(),
     screen: window.location.pathname,
     device_type: clientType === 'telegram_webapp' ? 'telegram_webapp' : deviceType,
     language,
@@ -65,7 +66,7 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   };
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('Evento registrado (con consentimiento):', eventData);
+    console.log('Analytic event sent:', eventData);
   }
 
   try {
@@ -75,6 +76,7 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
         return;
     }
     
+    // El endpoint ya debería ser la URL completa a /api/events/log
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {

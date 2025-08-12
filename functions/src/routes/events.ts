@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Rutas de Express para la recolección de eventos de analítica.
  * Este endpoint es público y no requiere autenticación por API Key.
@@ -11,15 +12,18 @@ import { supabase } from '../services/supabase';
 const router = Router();
 
 // Define el esquema de validación para los eventos usando Zod.
+// Coincide con la tabla `event_logs` de Supabase.
 const eventSchema = z.object({
   session_id: z.string().uuid('session_id debe ser un UUID válido.'),
   event_type: z.string().min(1, 'event_type es requerido.'),
-  timestamp: z.string().datetime('timestamp debe ser una fecha y hora ISO 8601 válida.'),
+  client_timestamp: z.string().datetime('client_timestamp debe ser una fecha y hora ISO 8601 válida.'),
   screen: z.string().min(1, 'screen es requerido.'),
   device_type: z.string().min(1, 'device_type es requerido.'),
   language: z.string().min(1, 'language es requerido.'),
   ui_theme: z.string().min(1, 'ui_theme es requerido.'),
-}).nonstrict(); // Permite campos adicionales en el payload
+  screen_time_seconds: z.number().optional(),
+  error_code: z.string().optional(),
+}).strict(); // Rechaza campos no definidos
 
 /**
  * @route   POST /events/log

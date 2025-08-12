@@ -7,6 +7,7 @@ const SESSION_ID_KEY = "feedback_session_id";
 const SESSION_ASKED_KEY = "feedback_session_asked";
 const ENDPOINT = "/api/feedback/log"; // Endpoint en nuestro propio backend de Firebase
 
+// Este tipo debe coincidir con el esquema de Zod en el backend
 export interface FeedbackPayload {
   session_id: string;
   event_type: string;
@@ -36,6 +37,8 @@ const feedbackClient = {
 
   shouldAskThisSession: (): boolean => {
     if (typeof window === 'undefined') return false;
+    // Para depuración, podemos permitir preguntar siempre.
+    // if (process.env.NODE_ENV === 'development') return true;
     const asked = sessionStorage.getItem(SESSION_ASKED_KEY);
     return asked !== 'true';
   },
@@ -66,7 +69,7 @@ const feedbackClient = {
         console.error("Feedback Error: Invalid session_id format.");
         return;
     }
-    if (!fullPayload.response_choice && !fullPayload.rating) {
+    if (fullPayload.response_choice === undefined && fullPayload.rating === undefined) {
         console.error("Feedback Error: Either 'response_choice' or 'rating' must be provided.");
         return;
     }
@@ -77,27 +80,25 @@ const feedbackClient = {
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('Feedback event:', fullPayload);
+      console.log('Feedback event sent:', fullPayload);
     }
 
     try {
-      await fetch(ENDPOINT, {
+      // Usamos una URL relativa que el proxy de Next.js redirigirá
+      await fetch('/api/feedback/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payloadString,
       });
     } catch (error) {
       console.error('Failed to log feedback:', error);
-      // Opcional: implementar un reintento suave aquí.
     } finally {
         feedbackClient.markSessionAsAsked();
-        // Reset timer for next event
         screenTimeStart = Date.now();
     }
   },
 };
 
-// Asegurarse de que el session_id se genere al cargar el script.
 feedbackClient.ensureSessionId();
 
 export { feedbackClient };

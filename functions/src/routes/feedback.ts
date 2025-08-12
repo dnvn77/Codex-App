@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Rutas de Express para la recolección de feedback de micro-encuestas.
  * Este endpoint es público y no requiere autenticación por API Key.

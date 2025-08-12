@@ -57,6 +57,7 @@ import { FavoriteAssetChart } from '@/components/shared/FavoriteAssetChart';
 import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
 import { TransactionHistory } from '@/components/shared/TransactionHistory';
 import { logEvent } from '@/lib/analytics';
+import { useFeedback } from '@/hooks/useFeedback';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -110,6 +111,7 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
 export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowCredits }: DashboardViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
+  const { triggerFeedbackEvent } = useFeedback();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -359,6 +361,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
 
     setIsSending(true);
+    const txSentFirstTime = !localStorage.getItem('has_sent_tx');
+
     logEvent('send_transaction_start', {
       asset: selectedAsset.ticker,
       amount: parseFloat(amount),
@@ -392,12 +396,17 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           return newBalances;
       });
 
+      if (txSentFirstTime) {
+        localStorage.setItem('has_sent_tx', 'true');
+        triggerFeedbackEvent('tx_sent_first_time');
+      }
+
       logEvent('send_transaction_success', { tx_hash: tx.txHash });
       setToAddress('');
       setAmount('');
     } catch (error) {
       const err = error as Error;
-      logEvent('send_transaction_fail', { error_message: err.message });
+      logEvent('send_transaction_fail', { error_message: err.message, error_code: 'tx_failed' });
       toast({ title: t.txFailedTitle, description: err.message, variant: 'destructive' });
     } finally {
       setIsSending(false);
@@ -488,7 +497,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 description: t.addressScannedDesc,
             });
         } else {
-            logEvent('qr_code_scan_fail', { reason: 'invalid_address' });
+            logEvent('qr_code_scan_fail', { reason: 'invalid_address', error_code: 'invalid_qr' });
             toast({
                 title: t.invalidQrTitle,
                 description: t.invalidQrDesc,

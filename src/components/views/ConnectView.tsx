@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
 import Image from 'next/image';
 import { logEvent } from '@/lib/analytics';
+import { useFeedback } from '@/hooks/useFeedback';
 
 
 interface ConnectViewProps {
@@ -142,6 +143,7 @@ export function ConnectView({
 
   const { toast } = useToast();
   const t = useTranslations();
+  const { triggerFeedbackEvent } = useFeedback();
 
   const handlePasswordChange = (pass: string) => {
     setPassword(pass);
@@ -204,9 +206,10 @@ export function ConnectView({
 
       if (allCorrect) {
         logEvent('create_wallet_seed_verified');
+        triggerFeedbackEvent('seed_confirmed');
         setCreationStep('setPassword');
       } else {
-        logEvent('create_wallet_seed_verification_failed');
+        logEvent('create_wallet_seed_verification_failed', { error_code: 'seed_verification_failed' });
       }
     }
   };
@@ -334,7 +337,7 @@ export function ConnectView({
       setImportDialogOpen(false); 
       setCreateDialogOpen(true); 
     } catch (error) {
-      logEvent('import_wallet_fail', { reason: (error as Error).message });
+      logEvent('import_wallet_fail', { reason: (error as Error).message, error_code: 'invalid_seed' });
       toast({
         title: t.importErrorTitle,
         description: (error as Error).message || t.importErrorDesc,

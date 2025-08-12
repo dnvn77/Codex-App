@@ -60,6 +60,7 @@ export function AppContainer() {
     if (view !== 'lock' && view !== 'connect') {
       const screenTimeSeconds = (Date.now() - screenTimeStartRef.current) / 1000;
       logEvent('lock_screen_activated', { current_screen: view, screen_time_seconds: parseFloat(screenTimeSeconds.toFixed(2)) });
+      screenTimeStartRef.current = Date.now();
       setWallet(null); // Clear active wallet state
       setView('lock');
     }
@@ -95,14 +96,13 @@ export function AppContainer() {
 
         const storedWallet = getStoredWallet();
         setStoredWalletInfo(storedWallet);
-        if (storedWallet) {
-          handleViewChange('lock');
-        } else {
-          handleViewChange('connect');
-        }
+        const initialView = storedWallet ? 'lock' : 'connect';
         
-        logEvent('app_loaded', { initial_view: storedWallet ? 'lock' : 'connect' });
-
+        logEvent('app_loaded', { initial_view: initialView });
+        
+        screenTimeStartRef.current = Date.now();
+        setView(initialView);
+        
         setStatus('ready');
       }, 1000);
     }
@@ -196,7 +196,7 @@ export function AppContainer() {
       </div>
       {showFooter && <AppFooter />}
       {showConsentBanner && <ConsentBanner onChoiceMade={() => setShowConsentBanner(false)} />}
-      <FeedbackOrchestrator />
+      <FeedbackOrchestrator currentView={view} />
     </>
   );
 }
