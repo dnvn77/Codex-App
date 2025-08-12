@@ -13,7 +13,8 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
 import { Button } from './ui/button';
-import { logEvent } from '@/lib/analytics';
+import { logEvent, hasMadeConsentChoice } from '@/lib/analytics';
+import { ConsentBanner } from './shared/ConsentBanner';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
 type Status = 'validating' | 'ready' | 'error';
@@ -48,6 +49,7 @@ export function AppContainer() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [showConsentBanner, setShowConsentBanner] = useState(false);
   
   const screenTimeStartRef = useRef<number>(Date.now());
 
@@ -77,6 +79,11 @@ export function AppContainer() {
     // In a real app, you would send `initData` to your backend for secure verification.
     if (isReady) {
       console.log('Telegram Web App is ready.');
+
+      if (!hasMadeConsentChoice()) {
+        setShowConsentBanner(true);
+      }
+
       // Simulate validation delay
       setTimeout(() => {
         if (initData) {
@@ -187,6 +194,7 @@ export function AppContainer() {
         )}
       </div>
       {showFooter && <AppFooter />}
+      {showConsentBanner && <ConsentBanner onChoiceMade={() => setShowConsentBanner(false)} />}
     </>
   );
 }

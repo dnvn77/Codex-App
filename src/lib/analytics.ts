@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
+const CONSENT_STORAGE_KEY = 'user_analytics_consent';
 
 export function getSessionId(): string {
   if (typeof window === 'undefined') {
@@ -26,15 +27,29 @@ interface EventPayload {
   [key: string]: any;
 }
 
+export function hasConsent(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(CONSENT_STORAGE_KEY) === 'true';
+}
+
+export function setConsent(consent: boolean) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(CONSENT_STORAGE_KEY, String(consent));
+}
+
+export function hasMadeConsentChoice(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(CONSENT_STORAGE_KEY) !== null;
+}
+
+
 export async function logEvent(eventType: string, payload: EventPayload = {}) {
-  if (typeof window === 'undefined') {
-    return; // No registrar eventos en el lado del servidor
+  if (typeof window === 'undefined' || !hasConsent()) {
+    return; // No registrar eventos si no hay consentimiento o es del lado del servidor
   }
   
-  // No uses hooks directamente aquí, obtén los valores de otra manera si es necesario o pásalos como parámetros.
-  // Para este caso, podemos obtener los valores necesarios sin hooks.
   const language = navigator.language;
-  const theme = localStorage.getItem('theme') || 'system'; // Obtiene el tema de ShadCN
+  const theme = localStorage.getItem('theme') || 'system';
   const clientType: ClientType = (window as any).Telegram?.WebApp?.initData ? 'telegram_webapp' : 'browser';
   const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
 
@@ -50,13 +65,15 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   };
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('Evento registrado:', eventData);
+    console.log('Evento registrado (con consentimiento):', eventData);
   }
 
   try {
-    // La URL debe apuntar a tu backend de Firebase Functions.
-    // Asegúrate de que esta URL sea la correcta para tu entorno.
-    const endpoint = `${process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT}/events/log`;
+    const endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT;
+    if (!endpoint) {
+        console.error('Analytics endpoint is not configured.');
+        return;
+    }
     
     const response = await fetch(endpoint, {
       method: 'POST',
