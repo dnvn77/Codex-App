@@ -63,7 +63,7 @@ export const FeedbackChoiceModal: React.FC<FeedbackChoiceModalProps> = ({
               <Button
                 key={option.value}
                 variant={selected === option.value ? "default" : "secondary"}
-                className="w-full justify-center" // Centered text
+                className="w-full justify-center flex-1"
                 onClick={() => handleSubmit(option.value)}
               >
                 {option.icon && <span className="mr-2">{option.icon}</span>}
@@ -79,3 +79,5 @@ export const FeedbackChoiceModal: React.FC<FeedbackChoiceModalProps> = ({
     </div>
   );
 };
+
+    

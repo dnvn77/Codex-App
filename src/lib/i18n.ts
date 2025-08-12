@@ -189,36 +189,32 @@ const translationsData = {
 
         // Options
         options: {
-            // receive_flow_ease
             receiveFlowEase: [
-                { value: 'super_facil', labelKey: 'super_easy' },
-                { value: 'bien_mejorable', labelKey: 'good_improvable' },
-                { value: 'dificil', labelKey: 'difficult' },
+                { value: 'super_easy', labelKey: 'super_easy_label' },
+                { value: 'good_improvable', labelKey: 'good_improvable_label' },
+                { value: 'difficult', labelKey: 'difficult_label' },
             ],
-            // send_flow_feeling
             sendFlowFeeling: [
-                { value: 'claro_confiado', labelKey: 'clear_confident' },
-                { value: 'dude_en_algunos_pasos', labelKey: 'had_doubts' },
-                { value: 'confuso', labelKey: 'confusing' },
+                { value: 'clear_confident', labelKey: 'clear_confident_label' },
+                { value: 'had_doubts', labelKey: 'had_doubts_label' },
+                { value: 'confusing', labelKey: 'confusing_label' },
             ],
-            // seed_clarity
             seedClarity: [
-                { value: 'muy_claro', labelKey: 'very_clear' },
-                { value: 'entendi_pero_dificil', labelKey: 'understood_but_difficult' },
-                { value: 'no_entendi_bien', labelKey: 'did_not_understand_well' },
+                { value: 'very_clear', labelKey: 'very_clear_label' },
+                { value: 'understood_but_difficult', labelKey: 'understood_but_difficult_label' },
+                { value: 'did_not_understand_well', labelKey: 'did_not_understand_well_label' },
             ],
 
             // Option labels
-            super_easy: "Super easy",
-            good_improvable: "Good, but improvable",
-            difficult: "It was difficult",
-            clear_confident: "Clear and confident",
-
-            had_doubts: "I had doubts on some steps",
-            confusing: "It was confusing",
-            very_clear: "Yes, very clear",
-            understood_but_difficult: "I understood, but it was difficult",
-            did_not_understand_well: "I did not understand it well"
+            super_easy_label: "Super easy",
+            good_improvable_label: "Good, but improvable",
+            difficult_label: "It was difficult",
+            clear_confident_label: "Clear and confident",
+            had_doubts_label: "I had doubts on some steps",
+            confusing_label: "It was confusing",
+            very_clear_label: "Yes, very clear",
+            understood_but_difficult_label: "I understood, but it was difficult",
+            did_not_understand_well_label: "I did not understand it well"
         }
     }
   },
@@ -407,35 +403,33 @@ const translationsData = {
 
         // Options
         options: {
-            // receive_flow_ease
+            // These keys are used to look up the translated text below
             receiveFlowEase: [
-                { value: 'super_facil', labelKey: 'super_easy' },
-                { value: 'bien_mejorable', labelKey: 'good_improvable' },
-                { value: 'dificil', labelKey: 'difficult' },
+                { value: 'super_easy', labelKey: 'super_easy_label' },
+                { value: 'good_improvable', labelKey: 'good_improvable_label' },
+                { value: 'difficult', labelKey: 'difficult_label' },
             ],
-            // send_flow_feeling
             sendFlowFeeling: [
-                { value: 'claro_confiado', labelKey: 'clear_confident' },
-                { value: 'dude_en_algunos_pasos', labelKey: 'had_doubts' },
-                { value: 'confuso', labelKey: 'confusing' },
+                { value: 'clear_confident', labelKey: 'clear_confident_label' },
+                { value: 'had_doubts', labelKey: 'had_doubts_label' },
+                { value: 'confusing', labelKey: 'confusing_label' },
             ],
-            // seed_clarity
             seedClarity: [
-                { value: 'muy_claro', labelKey: 'very_clear' },
-                { value: 'entendi_pero_dificil', labelKey: 'understood_but_difficult' },
-                { value: 'no_entendi_bien', labelKey: 'did_not_understand_well' },
+                { value: 'very_clear', labelKey: 'very_clear_label' },
+                { value: 'understood_but_difficult', labelKey: 'understood_but_difficult_label' },
+                { value: 'did_not_understand_well', labelKey: 'did_not_understand_well_label' },
             ],
 
-            // Option labels
-            super_easy: "Súper fácil",
-            good_improvable: "Bien, pero mejorable",
-            difficult: "Fue difícil",
-            clear_confident: "Claro y con confianza",
-            had_doubts: "Tuve dudas en algunos pasos",
-            confusing: "Fue confuso",
-            very_clear: "Sí, muy claro",
-            understood_but_difficult: "Entendí, pero fue difícil",
-            did_not_understand_well: "No lo entendí bien"
+            // Option labels (the translated text)
+            super_easy_label: "Súper fácil",
+            good_improvable_label: "Bien, pero mejorable",
+            difficult_label: "Fue difícil",
+            clear_confident_label: "Claro y con confianza",
+            had_doubts_label: "Tuve dudas en algunos pasos",
+            confusing_label: "Fue confuso",
+            very_clear_label: "Sí, muy claro",
+            understood_but_difficult_label: "Entendí, pero fue difícil",
+            did_not_understand_well_label: "No lo entendí bien"
         }
     }
   },
@@ -465,3 +459,5 @@ export const translations = supportedLanguages.reduce((acc, lang) => {
     acc[lang] = getTranslatedStrings(lang);
     return acc;
 }, {} as Record<Language, typeof translationsData.en>);
+
+    
