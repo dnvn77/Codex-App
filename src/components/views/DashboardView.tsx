@@ -66,22 +66,22 @@ interface DashboardViewProps {
   onShowCredits: () => void;
 }
 
-const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'isFavorite'>[] = [
-    { name: 'Ethereum', ticker: 'ETH', id: 1027, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png` },
-    { name: 'USD Coin', ticker: 'USDC', id: 3408, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png` },
-    { name: 'Tether', ticker: 'USDT', id: 825, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/825.png` },
-    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/3717.png` },
-    { name: 'Chainlink', ticker: 'LINK', id: 1975, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1975.png` },
-    { name: 'Uniswap', ticker: 'UNI', id: 7083, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/7083.png` },
-    { name: 'Dai', ticker: 'DAI', id: 4943, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png` },
-    { name: 'Lido DAO', ticker: 'LDO', id: 22353, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/22353.png` },
-    { name: 'Arbitrum', ticker: 'ARB', id: 25163, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/25163.png` },
-    { name: 'Optimism', ticker: 'OP', id: 22312, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/22312.png` },
-    { name: 'Aave', ticker: 'AAVE', id: 7278, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/7278.png` },
-    { name: 'Maker', ticker: 'MKR', id: 1518, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1518.png` },
-    { name: 'The Sandbox', ticker: 'SAND', id: 6210, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/6210.png` },
-    { name: 'Decentraland', ticker: 'MANA', id: 1966, icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/1966.png` },
-    { name: 'Strawberry Token', ticker: 'STRW', id: 0, icon: '/strawberry-logo.svg' }
+const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'isFavorite' | 'icon'>[] = [
+    { name: 'Ethereum', ticker: 'ETH', id: 1027 },
+    { name: 'USD Coin', ticker: 'USDC', id: 3408 },
+    { name: 'Tether', ticker: 'USDT', id: 825 },
+    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717 },
+    { name: 'Chainlink', ticker: 'LINK', id: 1975 },
+    { name: 'Uniswap', ticker: 'UNI', id: 7083 },
+    { name: 'Dai', ticker: 'DAI', id: 4943 },
+    { name: 'Lido DAO', ticker: 'LDO', id: 22353 },
+    { name: 'Arbitrum', ticker: 'ARB', id: 25163 },
+    { name: 'Optimism', ticker: 'OP', id: 22312 },
+    { name: 'Aave', ticker: 'AAVE', id: 7278 },
+    { name: 'Maker', ticker: 'MKR', id: 1518 },
+    { name: 'The Sandbox', ticker: 'SAND', id: 6210 },
+    { name: 'Decentraland', ticker: 'MANA', id: 1966 },
+    { name: 'Strawberry Token', ticker: 'STRW', id: 0 }
 ];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
@@ -517,6 +517,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid;
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
 
+  const allAssetsWithIcons = useMemo(() => {
+    return ALL_EVM_ASSETS.map(asset => ({
+        ...asset,
+        icon: `/icons/${asset.ticker.toLowerCase()}.svg`
+    }));
+  }, []);
+
   return (
     <>
       <Card className="w-full shadow-lg">
@@ -767,7 +774,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                             <CommandList>
                                 <CommandEmpty>{t.noAssetFound}</CommandEmpty>
                                 <CommandGroup>
-                                {ALL_EVM_ASSETS.map((asset) => (
+                                {allAssetsWithIcons.map((asset) => (
                                     <CommandItem
                                     key={asset.ticker}
                                     value={asset.name}

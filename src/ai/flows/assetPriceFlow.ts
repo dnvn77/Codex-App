@@ -29,6 +29,32 @@ const AssetPriceOutputSchema = z.array(
 );
 export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
+const getIconPath = (ticker: string): string => {
+    const basePath = '/icons/';
+    const defaultIcon = '/strawberry-logo.svg';
+    const tickerMap: { [key: string]: string } = {
+        ETH: 'eth.svg',
+        USDC: 'usdc.svg',
+        USDT: 'usdt.svg',
+        WBTC: 'wbtc.svg',
+        LINK: 'link.svg',
+        UNI: 'uni.svg',
+        DAI: 'dai.svg',
+        LDO: 'ldo.svg',
+        ARB: 'arb.svg',
+        OP: 'op.svg',
+        AAVE: 'aave.svg',
+        MKR: 'mkr.svg',
+        SAND: 'sand.svg',
+        MANA: 'mana.svg',
+        STRW: defaultIcon
+    };
+
+    const iconFile = tickerMap[ticker.toUpperCase()];
+    return iconFile ? `${basePath}${iconFile}` : defaultIcon;
+}
+
+
 export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPriceOutput> {
   if (!CMC_API_KEY) {
     console.warn('CoinMarketCap API key not found. Using mock data.');
@@ -40,7 +66,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
         balance: 0,
         priceUSD: Math.random() * 1000,
         change24h: (Math.random() - 0.5) * 10,
-        icon: '/strawberry-logo.svg'
+        icon: getIconPath(symbol)
     }));
   }
 
@@ -84,7 +110,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
           balance: 0,
           priceUSD: 0,
           change24h: 0,
-          icon: '/strawberry-logo.svg', // Default icon
+          icon: getIconPath(symbol), // Default icon
         };
       }
       
@@ -97,7 +123,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
         balance: 0, // Client will add this
         priceUSD: quote.price,
         change24h: quote.percent_change_24h,
-        icon: `https://s2.coinmarketcap.com/static/img/coins/64x64/${assetData.id}.png`,
+        icon: getIconPath(assetData.symbol),
       };
     });
 
