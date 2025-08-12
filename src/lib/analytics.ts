@@ -2,6 +2,7 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
+import { supabase } from '@/lib/supabase';
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
@@ -66,29 +67,13 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   };
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('Analytic event sent:', eventData);
+    console.log('Analytic event sent to Supabase:', eventData);
   }
 
   try {
-    const endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT;
-    if (!endpoint) {
-        console.error('Analytics endpoint is not configured.');
-        return;
-    }
-    
-    // El endpoint ya debería ser la URL completa a /api/events/log
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventData),
-      mode: 'cors'
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Failed to log event:', response.status, errorBody);
+    const { error } = await supabase.from('event_logs').insert([eventData]);
+    if (error) {
+      console.error('Error logging event to Supabase:', error);
     }
   } catch (error) {
     console.error('Error logging event:', error);

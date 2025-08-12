@@ -2,10 +2,11 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
+import { supabase } from '@/lib/supabase';
+
 
 const SESSION_ID_KEY = "feedback_session_id";
 const SESSION_ASKED_KEY = "feedback_session_asked";
-const ENDPOINT = "/api/feedback/log"; // Endpoint en nuestro propio backend de Firebase
 
 // Este tipo debe coincidir con el esquema de Zod en el backend
 export interface FeedbackPayload {
@@ -38,7 +39,7 @@ const feedbackClient = {
   shouldAskThisSession: (): boolean => {
     if (typeof window === 'undefined') return false;
     // Para depuración, podemos permitir preguntar siempre.
-    // if (process.env.NODE_ENV === 'development') return true;
+    if (process.env.NODE_ENV === 'development') return true;
     const asked = sessionStorage.getItem(SESSION_ASKED_KEY);
     return asked !== 'true';
   },
@@ -80,16 +81,14 @@ const feedbackClient = {
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('Feedback event sent:', fullPayload);
+      console.log('Feedback event sent to Supabase:', fullPayload);
     }
 
     try {
-      // Usamos una URL relativa que el proxy de Next.js redirigirá
-      await fetch('/api/feedback/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payloadString,
-      });
+      const { error } = await supabase.from('feedback_events').insert([fullPayload]);
+      if (error) {
+        console.error('Error logging feedback to Supabase:', error);
+      }
     } catch (error) {
       console.error('Failed to log feedback:', error);
     } finally {
