@@ -50,7 +50,13 @@ const getIconPath = (ticker: string): string => {
         STRW: defaultIcon
     };
 
-    const iconFile = tickerMap[ticker.toUpperCase()];
+    const upperTicker = ticker.toUpperCase();
+    const iconFile = tickerMap[upperTicker];
+
+    if (upperTicker === 'STRW') {
+        return iconFile;
+    }
+    
     return iconFile ? `${basePath}${iconFile}` : defaultIcon;
 }
 
@@ -100,7 +106,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
             balance: 0,
             priceUSD: 0.05,
             change24h: 5.5,
-            icon: '/strawberry-logo.svg',
+            icon: getIconPath('STRW'),
           };
         }
         return {
