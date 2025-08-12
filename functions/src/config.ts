@@ -17,6 +17,11 @@ const envSchema = z.object({
   API_KEY_BACKEND: z.string().min(1, 'API_KEY_BACKEND es requerida.'),
   ZERODEV_PROJECT_ID: z.string().uuid('ZERODEV_PROJECT_ID debe ser un UUID válido.'),
   SCROLL_SEPOLIA_RPC: z.string().url('SCROLL_SEPOLIA_RPC debe ser una URL válida.'),
+  
+  // Variables de Supabase
+  SUPABASE_URL: z.string().url('SUPABASE_URL es requerida y debe ser una URL válida.'),
+  SUPABASE_ANON_KEY: z.string().min(1, 'SUPABASE_ANON_KEY es requerida.'),
+  
   // ZK_VERIFIER_ADDRESS es opcional
   ZK_VERIFIER_ADDRESS: z.string().optional(),
 });

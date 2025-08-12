@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validateRequest';
+import { supabase } from '../services/supabase';
 
 const router = Router();
 
@@ -22,31 +23,32 @@ const eventSchema = z.object({
 
 /**
  * @route   POST /events/log
- * @desc    Registra un evento de analítica del frontend.
+ * @desc    Registra un evento de analítica del frontend en Supabase.
  * @access  Público
  */
 router.post('/log', validateRequest({ body: eventSchema }), async (req, res, next) => {
   try {
     const validatedEvent = req.body;
     
-    // Aquí es donde se debe guardar el evento en la base de datos (ej. Supabase).
-    // Por ahora, solo lo logueamos en la consola del servidor.
-    console.log('Evento de analítica recibido:', validatedEvent);
+    // Guarda el evento en la base de datos de Supabase.
+    // La tabla se llama 'event_logs'.
+    const { error } = await supabase
+      .from('event_logs')
+      .insert([validatedEvent]);
 
-    // TODO: Implementar cliente de Supabase para guardar `validatedEvent`.
-    // Ejemplo:
-    // const { data, error } = await supabase
-    //   .from('event_logs')
-    //   .insert([validatedEvent]);
-    // if (error) throw error;
+    if (error) {
+      console.error('Error guardando evento en Supabase:', error);
+      // Lanza el error para que sea manejado por el errorHandler central.
+      throw new Error(`No se pudo guardar el evento: ${error.message}`);
+    }
 
     // Se responde con 202 Accepted para indicar que la petición ha sido recibida
-    // pero el procesamiento (guardado en DB) es asíncrono.
-    res.status(202).json({ message: 'Event received' });
+    // y procesada correctamente.
+    res.status(202).json({ message: 'Event received and stored' });
 
   } catch (error) {
     // Los errores de validación de Zod ya son manejados por el middleware `validateRequest`.
-    // Pasamos cualquier otro error al manejador central.
+    // Pasamos cualquier otro error (como el de Supabase) al manejador central.
     next(error);
   }
 });

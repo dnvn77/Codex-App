@@ -12,6 +12,7 @@
     "logs": "firebase functions:log"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.44.4",
     "@zerodev/sdk": "^4.2.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
