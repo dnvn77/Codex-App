@@ -56,7 +56,7 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   try {
     // La URL debe apuntar a tu backend de Firebase Functions.
     // Asegúrate de que esta URL sea la correcta para tu entorno.
-    const endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || 'http://127.0.0.1:5001/violet-vault-dev/us-central1/api/log-event';
+    const endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || 'http://127.0.0.1:5001/strawberry-scroll/us-central1/api/events/log';
     
     const response = await fetch(endpoint, {
       method: 'POST',
