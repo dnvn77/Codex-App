@@ -7,6 +7,8 @@ import { useFeedback } from "@/hooks/useFeedback";
 import { Star, X } from "lucide-react";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/hooks/useTranslations";
+
 
 interface FeedbackRatingModalProps {
   questionId: string;
@@ -26,6 +28,8 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
   const { submitFeedback, dismissFeedback } = useFeedback();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const t = useTranslations();
+
 
   const handleSubmit = () => {
     if (rating > 0) {
@@ -48,7 +52,7 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
           onClick={dismissFeedback}
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Cerrar</span>
+          <span className="sr-only">{t.closeButtonLabel}</span>
         </Button>
         <CardHeader>
           <CardTitle className="text-lg">{title}</CardTitle>
@@ -76,10 +80,10 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
             onClick={handleSubmit}
             disabled={rating === 0}
           >
-            Enviar Calificación
+            {t.submitRatingButton}
           </Button>
           <p className="text-xs text-muted-foreground mt-4 text-center">
-            Tu respuesta es anónima y solo se usa para mejorar la app.
+            {t.feedback.anonymousDisclaimer}
           </p>
         </CardContent>
       </Card>

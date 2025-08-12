@@ -6,26 +6,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useFeedback } from "@/hooks/useFeedback";
 import { X } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface FeedbackChoiceModalProps {
   questionId: string;
   eventType: string;
   screen: string;
-  title: string;
-  question: string;
-  options: { value: string; label: string; icon?: string }[];
+  titleKey: string;
+  questionKey: string;
+  options: { value: string; labelKey: string; icon?: string }[];
 }
 
 export const FeedbackChoiceModal: React.FC<FeedbackChoiceModalProps> = ({
   questionId,
   eventType,
   screen,
-  title,
-  question,
+  titleKey,
+  questionKey,
   options,
 }) => {
   const { submitFeedback, dismissFeedback } = useFeedback();
   const [selected, setSelected] = useState<string | null>(null);
+  const t = useTranslations();
 
   const handleSubmit = (choice: string) => {
     setSelected(choice);
@@ -49,11 +51,11 @@ export const FeedbackChoiceModal: React.FC<FeedbackChoiceModalProps> = ({
           onClick={dismissFeedback}
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Cerrar</span>
+          <span className="sr-only">{t.closeButtonLabel}</span>
         </Button>
         <CardHeader>
-          <CardTitle className="text-lg">{title}</CardTitle>
-          <CardDescription>{question}</CardDescription>
+          <CardTitle className="text-lg">{(t.feedback as any)[titleKey]}</CardTitle>
+          <CardDescription>{(t.feedback as any)[questionKey]}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -61,16 +63,16 @@ export const FeedbackChoiceModal: React.FC<FeedbackChoiceModalProps> = ({
               <Button
                 key={option.value}
                 variant={selected === option.value ? "default" : "secondary"}
-                className="w-full justify-start sm:justify-center"
+                className="w-full justify-center" // Centered text
                 onClick={() => handleSubmit(option.value)}
               >
                 {option.icon && <span className="mr-2">{option.icon}</span>}
-                {option.label}
+                {(t.feedback.options as any)[option.labelKey]}
               </Button>
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-4 text-center">
-            Tu respuesta es anónima y solo se usa para mejorar la app.
+            {t.feedback.anonymousDisclaimer}
           </p>
         </CardContent>
       </Card>

@@ -25,13 +25,6 @@ const useFeedbackStore = create<FeedbackState>((set, get) => ({
           questionId: 'seed_clarity',
           eventType: 'seed_confirmed',
           screen: 'seed_confirm_done',
-          title: "🔐 One last step",
-          question: "You just confirmed your security phrase. Was this step clear?",
-          options: [
-            { value: 'muy_claro', label: 'Yes, very clear' },
-            { value: 'entendi_pero_dificil', label: 'I understood, but it was difficult' },
-            { value: 'no_entendi_bien', label: 'I did not understand it well' },
-          ],
         }}});
         break;
       case 'tx_sent_first_time':
@@ -39,13 +32,6 @@ const useFeedbackStore = create<FeedbackState>((set, get) => ({
           questionId: 'send_flow_feeling',
           eventType: 'tx_sent_first_time',
           screen: 'receipt_sent',
-          title: "💸 Your transaction is on its way!",
-          question: "How did you feel about the sending process?",
-          options: [
-            { value: 'claro_confiado', label: 'Clear and confident' },
-            { value: 'dude_en_algunos_pasos', label: 'I had doubts on some steps' },
-            { value: 'confuso', label: 'It was confusing' },
-          ],
         }}});
         break;
       case 'funds_received_first_time':
@@ -53,22 +39,14 @@ const useFeedbackStore = create<FeedbackState>((set, get) => ({
             questionId: 'receive_flow_ease',
             eventType: 'funds_received_first_time',
             screen: 'receipt_received',
-            title: "🎉 You received your first transfer!",
-            question: "How easy was it to receive it?",
-            options: [
-                { value: 'super_facil', label: 'Super easy' },
-                { value: 'bien_mejorable', label: 'Good, but could be better' },
-                { value: 'dificil', label: 'It was difficult' },
-            ],
          }}});
          break;
       case 'repeated_usage_n':
+        const usageCount = parseInt(localStorage.getItem('usage_count') || '3', 10);
         set({ currentFeedback: { type: 'rating', props: {
             questionId: 'overall_csat',
-            eventType: `repeated_usage_${localStorage.getItem('usage_count') || 3}`,
+            eventType: `repeated_usage_${usageCount}`,
             screen: 'dashboard',
-            title: "🍓 You've used Violet Vault a few times.",
-            question: "How would you rate your overall experience?",
         }}});
         break;
     }
