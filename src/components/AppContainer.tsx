@@ -15,6 +15,7 @@ import { getStoredWallet, clearStoredWallet, unlockWallet } from '@/lib/wallet';
 import { Button } from './ui/button';
 import { logEvent, hasMadeConsentChoice } from '@/lib/analytics';
 import { ConsentBanner } from './shared/ConsentBanner';
+import { FeedbackOrchestrator } from './feedback/FeedbackOrchestrator';
 
 type View = 'connect' | 'dashboard' | 'receipt' | 'lock' | 'credits';
 type Status = 'validating' | 'ready' | 'error';
@@ -195,6 +196,7 @@ export function AppContainer() {
       </div>
       {showFooter && <AppFooter />}
       {showConsentBanner && <ConsentBanner onChoiceMade={() => setShowConsentBanner(false)} />}
+      <FeedbackOrchestrator />
     </>
   );
 }
