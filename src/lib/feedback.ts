@@ -2,11 +2,11 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
-import { supabase } from '@/lib/supabase';
-
 
 const SESSION_ID_KEY = "feedback_session_id";
 const SESSION_ASKED_KEY = "feedback_session_asked";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+
 
 // Este tipo debe coincidir con el esquema de Zod en el backend
 export interface FeedbackPayload {
@@ -64,35 +64,28 @@ const feedbackClient = {
       client_timestamp: new Date().toISOString(),
     };
     
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fullPayload.session_id)) {
-        console.error("Feedback Error: Invalid session_id format.");
-        return;
-    }
-    if (fullPayload.response_choice === undefined && fullPayload.rating === undefined) {
-        console.error("Feedback Error: Either 'response_choice' or 'rating' must be provided.");
-        return;
-    }
-    const payloadString = JSON.stringify(fullPayload);
-    if (new Blob([payloadString]).size > 2048) {
-        console.error("Feedback Error: Payload exceeds 2KB limit.");
-        return;
-    }
-    
     // Log the event being sent for debugging purposes
-    console.log('Logging feedback to Supabase:', fullPayload);
+    console.log('Logging feedback via API:', fullPayload);
 
     try {
-      const { data, error } = await supabase.from('feedback_events').insert([fullPayload]).select();
+      const response = await fetch(`${API_BASE_URL}/feedback/log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fullPayload),
+      });
 
-      if (error) {
-        console.error('Supabase feedback insert error:', error);
+      if (!response.ok) {
+        const errorBody = await response.json();
+        console.error('API Error logging feedback:', errorBody);
       } else {
-        console.log('Supabase feedback insert success:', data);
+        console.log('Feedback event successfully queued via API.');
         feedbackClient.markSessionAsAsked();
         screenTimeStart = Date.now();
       }
     } catch (error) {
-      console.error('FATAL: Exception during Supabase feedback insert:', error);
+      console.error('FATAL: Exception during feedback API call:', error);
     }
   },
 };

@@ -2,11 +2,15 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
-import { supabase } from '@/lib/supabase';
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
 const CONSENT_STORAGE_KEY = 'user_analytics_consent';
+
+// Determina la URL base de la API. En desarrollo, podría ser localhost.
+// Asegúrate de que tu emulador de functions esté corriendo o usa la URL de producción.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+
 
 export function getSessionId(): string {
   if (typeof window === 'undefined') {
@@ -24,8 +28,6 @@ export function getSessionId(): string {
 }
 
 interface EventPayload {
-  screen_time_seconds?: number;
-  error_code?: string;
   [key: string]: any;
 }
 
@@ -68,17 +70,24 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
   };
 
   // Log the event being sent for debugging purposes
-  console.log('Logging analytic event to Supabase:', eventData);
+  console.log('Logging analytic event via API:', eventData);
 
   try {
-    const { data, error } = await supabase.from('event_logs').insert([eventData]).select();
-    
-    if (error) {
-      console.error('Supabase analytics insert error:', error);
+    const response = await fetch(`${API_BASE_URL}/events/log`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        console.error('API Error logging event:', errorBody);
     } else {
-      console.log('Supabase analytics insert success:', data);
+        console.log('Analytics event successfully queued via API.');
     }
   } catch (error) {
-    console.error('FATAL: Exception during Supabase analytics insert:', error);
+    console.error('FATAL: Exception during analytics API call:', error);
   }
 }

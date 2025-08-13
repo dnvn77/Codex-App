@@ -39,19 +39,12 @@ const feedbackSchema = z.object({
 router.post('/log', validateRequest({ body: feedbackSchema }), async (req, res, next) => {
   try {
     const validatedFeedback = req.body;
-
-    // Renombra 'client_timestamp' para que coincida con la columna de la base de datos
-    const { client_timestamp, ...restOfFeedback } = validatedFeedback;
-    const feedbackToInsert = {
-        ...restOfFeedback,
-        client_timestamp: client_timestamp,
-    };
     
     // Guarda el evento en la tabla 'feedback_events' usando el cliente de admin
     // para saltarse las políticas de RLS.
     const { error } = await supabaseAdmin
       .from('feedback_events')
-      .insert([feedbackToInsert]);
+      .insert([validatedFeedback]);
 
     if (error) {
       console.error('Error guardando feedback en Supabase:', error);

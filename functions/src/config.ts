@@ -20,6 +20,10 @@ const envSchema = z.object({
   
   // ZK_VERIFIER_ADDRESS es opcional
   ZK_VERIFIER_ADDRESS: z.string().optional(),
+
+  // Variables para Supabase (usadas en el backend con la service role key)
+  SUPABASE_URL: z.string().url('SUPABASE_URL debe ser una URL válida.'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY es requerida.'),
 });
 
 // Valida las variables de entorno al cargar el módulo

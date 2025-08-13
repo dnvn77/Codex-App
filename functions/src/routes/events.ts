@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validateRequest';
-import { supabase } from '../services/supabase';
+import { supabaseAdmin } from '../services/supabase';
 
 const router = Router();
 
@@ -36,7 +36,7 @@ router.post('/log', validateRequest({ body: eventSchema }), async (req, res, nex
     
     // Guarda el evento en la base de datos de Supabase.
     // La tabla se llama 'event_logs'.
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('event_logs')
       .insert([validatedEvent]);
 
