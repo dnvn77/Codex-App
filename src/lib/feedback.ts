@@ -2,11 +2,10 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
+import { supabase } from "./supabase";
 
 const SESSION_ID_KEY = "feedback_session_id";
 const SESSION_ASKED_KEY = "feedback_session_asked";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
-
 
 // Este tipo debe coincidir con el esquema de Zod en el backend
 export interface FeedbackPayload {
@@ -54,7 +53,7 @@ const feedbackClient = {
     const sessionId = feedbackClient.ensureSessionId();
     const screenTimeSeconds = Math.round((Date.now() - screenTimeStart) / 1000);
     
-    const fullPayload: FeedbackPayload = {
+    const fullPayload: Omit<FeedbackPayload, 'id' | 'server_received_at'> = {
       ...payload,
       session_id: sessionId,
       screen_time_seconds: screenTimeSeconds,
@@ -64,28 +63,16 @@ const feedbackClient = {
       client_timestamp: new Date().toISOString(),
     };
     
-    // Log the event being sent for debugging purposes
-    console.log('Logging feedback via API:', fullPayload);
+    console.log('Logging feedback to Supabase:', fullPayload);
+    
+    const { error } = await supabase.from('feedback_events').insert(fullPayload);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/feedback/log`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(fullPayload),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json();
-        console.error('API Error logging feedback:', errorBody);
-      } else {
-        console.log('Feedback event successfully queued via API.');
+    if (error) {
+      console.error('Supabase feedback insert error:', error);
+    } else {
+        console.log('Feedback event successfully logged to Supabase.');
         feedbackClient.markSessionAsAsked();
-        screenTimeStart = Date.now();
-      }
-    } catch (error) {
-      console.error('FATAL: Exception during feedback API call:', error);
+        screenTimeStart = Date.now(); // Reset timer after successful feedback
     }
   },
 };

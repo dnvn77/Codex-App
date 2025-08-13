@@ -13,8 +13,6 @@ import walletRoutes from './routes/wallet';
 import txRoutes from './routes/tx';
 import zkRoutes from './routes/zk';
 import { errorHandler } from './middleware/errorHandler';
-import eventRoutes from './routes/events';
-import feedbackRoutes from './routes/feedback';
 
 
 // Inicializar la aplicación Express
@@ -28,15 +26,6 @@ app.use(cors({ origin: true }));
 // Parsear cuerpos de request JSON. Límite de 4KB para el cuerpo.
 app.use(express.json({ limit: '4kb' }));
 
-// Rate limiter para endpoints públicos de analítica/feedback
-const publicApiLimiter = rateLimit({
-	windowMs: 60 * 1000, // 1 minuto
-	max: 10,
-	standardHeaders: true,
-	legacyHeaders: false,
-	message: { error: { code: 'TOO_MANY_REQUESTS', message: 'Demasiadas peticiones, por favor intente más tarde.' } },
-});
-
 // 60 peticiones por minuto por IP para el resto de la API.
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
@@ -47,10 +36,6 @@ const apiLimiter = rateLimit({
 });
 
 // --- Rutas de la API ---
-
-// Las rutas públicas no requieren API key
-app.use('/events', publicApiLimiter, eventRoutes);
-app.use('/feedback', publicApiLimiter, feedbackRoutes);
 
 // Las rutas de wallet, tx y zk requieren autenticación por API Key
 app.use('/wallet', apiLimiter, authenticateApiKey, walletRoutes);
