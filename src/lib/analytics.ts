@@ -1,8 +1,7 @@
-
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
@@ -66,6 +65,7 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
 
   console.log('Logging analytic event to Supabase:', eventData);
 
+  const supabase = getSupabase();
   const { error } = await supabase.from('event_logs').insert(eventData);
 
   if (error) {

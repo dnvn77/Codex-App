@@ -777,7 +777,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                <div className="grid grid-cols-5 gap-2 items-end pt-2">
                 <div className="col-span-3 space-y-1">
                     <div className="flex justify-between items-end h-6 mb-1">
-                        <Label htmlFor="amount">{t.amountLabel} (USD)</Label>
+                        <Label htmlFor="amount">{t.amountLabel}</Label>
                          <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
                           {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
                         </button>
@@ -1002,3 +1002,5 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    

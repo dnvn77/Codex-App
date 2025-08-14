@@ -1,8 +1,7 @@
-
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 
 const SESSION_ID_KEY = "feedback_session_id";
 const SESSION_ASKED_KEY = "feedback_session_asked";
@@ -65,6 +64,7 @@ const feedbackClient = {
     
     console.log('Logging feedback to Supabase:', fullPayload);
     
+    const supabase = getSupabase();
     const { error } = await supabase.from('feedback_events').insert(fullPayload);
 
     if (error) {
