@@ -5,7 +5,6 @@
  */
 
 import { Router } from 'express';
-import { getSmartAccountAddress } from '../services/zerodev';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
 import {CreateWalletRequestSchema, GetBalanceRequestSchema} from '../types'

@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { ethers } from 'ethers';
-import { getZeroDevSigner, getSmartAccountAddress } from '../services/zerodev';
+import { getZeroDevSigner } from '../services/zerodev';
 import { getExplorerUrl } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
 import { SendTransactionRequestSchema, LogTransactionRequestSchema } from '../types';

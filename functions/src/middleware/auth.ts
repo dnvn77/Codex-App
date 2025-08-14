@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Middleware de autenticación para proteger los endpoints.
  * Verifica la presencia y validez de una API key en las cabeceras de la petición.

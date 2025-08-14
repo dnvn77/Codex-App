@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Middleware centralizado para manejar errores.
  */
