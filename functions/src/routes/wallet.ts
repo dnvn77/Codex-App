@@ -37,15 +37,15 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
 });
 
 /**
- * @route   POST /wallet/balance
+ * @route   GET /wallet/balance/:address
  * @desc    Consulta el balance de una dirección en Scroll Sepolia.
  * @access  Privado (requiere API Key)
  *
  * Documentación de ethers.js: https://docs.ethers.org/v6/
  */
-router.post('/balance', validateRequest({body: GetBalanceRequestSchema}), async (req, res, next) => {
+router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema}), async (req, res, next) => {
   try {
-    const { address } = req.body;
+    const { address } = req.params;
 
     const balance = await getBalance(address);
     const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;

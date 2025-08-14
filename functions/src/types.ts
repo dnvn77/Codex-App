@@ -31,7 +31,7 @@ export const CreateWalletRequestSchema = z.object({
 export type CreateWalletRequest = z.infer<typeof CreateWalletRequestSchema>;
 
 
-// POST /wallet/balance
+// GET /wallet/balance/:address
 export const GetBalanceRequestSchema = z.object({
   address: EthAddressSchema,
 });
