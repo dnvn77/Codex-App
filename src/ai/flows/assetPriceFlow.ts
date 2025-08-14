@@ -31,7 +31,7 @@ export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
 const getIconPath = (ticker: string): string => {
     const basePath = '/icons/';
-    const defaultIcon = '/strawberry-logo.svg';
+    const defaultIcon = 'strawberry-logo.svg';
     const tickerMap: { [key: string]: string } = {
         ETH: 'eth.svg',
         USDC: 'usdc.svg',
@@ -53,11 +53,7 @@ const getIconPath = (ticker: string): string => {
     const upperTicker = ticker.toUpperCase();
     const iconFile = tickerMap[upperTicker];
 
-    if (upperTicker === 'STRW') {
-        return iconFile;
-    }
-    
-    return iconFile ? `${basePath}${iconFile}` : defaultIcon;
+    return `${basePath}${iconFile || defaultIcon}`;
 }
 
 
