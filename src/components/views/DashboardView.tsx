@@ -148,15 +148,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [detailedChartAsset, setDetailedChartAsset] = useState<Asset | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
+  // Mock balances for demonstration. In a real app, this data would come from an on-chain query.
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
-    'USDC': 2500.50,
-    'WBTC': 0.05,
-    'USDT': 1234.56,
-    'LINK': 350.75,
-    'UNI': 500.00,
-    'DAI': 1500.00,
-    'STRW': 50000,
+    'USDC': 1520.75,
+    'WBTC': 0.03,
+    'STRW': 12500,
+    'LINK': 150.2,
+    'UNI': 300,
   });
   
   const ethPrice = useMemo(() => {
@@ -165,14 +164,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const userAssetSymbols = useMemo(() => {
     const symbols = new Set(Object.keys(mockBalances));
-    symbols.add('ETH');
+    symbols.add('ETH'); // Ensure ETH is always included
     return Array.from(symbols);
   }, [mockBalances]);
   
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
-        const priceData = await fetchAssetPrices({ symbols: userAssetSymbols });
+        const priceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
         const currentFavorites = getFavoriteAssets();
         
         const finalAssets = priceData.map(asset => ({
@@ -198,7 +197,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [userAssetSymbols, toast, t, mockBalances]);
+  }, [toast, t, mockBalances]);
 
   useEffect(() => {
     updateAssetPrices();
@@ -995,7 +994,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </DialogTitle>
             </DialogHeader>
             <div className="h-96 w-full">
-                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
+                {detailedChartAsset && <DetailedChartAsset asset={detailedChartAsset} />}
             </div>
         </DialogContent>
     </Dialog>
