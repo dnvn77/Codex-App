@@ -37,6 +37,12 @@ export const GetBalanceRequestSchema = z.object({
 });
 export type GetBalanceRequest = z.infer<typeof GetBalanceRequestSchema>;
 
+// POST /wallet/balance
+export const GetBalanceBodySchema = z.object({
+  address: EthAddressSchema,
+});
+export type GetBalanceBodyRequest = z.infer<typeof GetBalanceBodySchema>;
+
 
 // POST /tx/send
 export const SendTransactionRequestSchema = z.object({

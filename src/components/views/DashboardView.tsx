@@ -158,6 +158,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     'DAI': 1500.00,
     'STRW': 50000,
   });
+  
+  const ethPrice = useMemo(() => {
+    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500; // Fallback price
+  }, [assets]);
 
   const userAssetSymbols = useMemo(() => {
     const symbols = new Set(Object.keys(mockBalances));
@@ -321,15 +325,22 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const newAmount = e.target.value;
     setAmount(newAmount);
     
-    const numericAmount = parseFloat(newAmount);
+    // Only ETH is supported for sending for now
+    if (selectedAssetTicker !== 'ETH') {
+        setAmountError('Sending non-ETH assets is not yet supported.');
+        return;
+    }
+    
+    const numericAmountUSD = parseFloat(newAmount);
+    const amountInEth = numericAmountUSD / ethPrice;
+    
     const balance = selectedAsset?.balance || 0;
-    const ethBalance = mockBalances['ETH'] || 0;
-
-    if (isNaN(numericAmount) || numericAmount < 0) {
+    
+    if (isNaN(numericAmountUSD) || numericAmountUSD < 0) {
         setAmountError(t.invalidNumberError);
-    } else if (numericAmount > balance) {
+    } else if (amountInEth > balance) {
         setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-    } else if (gasCost > ethBalance) {
+    } else if (gasCost > balance) {
         setAmountError(t.insufficientGasError);
     } else {
         setAmountError('');
@@ -337,8 +348,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 };
 
   const handleSetMaxAmount = () => {
-    if (!selectedAsset) return;
-    const maxAmountStr = maxSendableAmount.toFixed(8).replace(/\.?0+$/, '');
+    if (!selectedAsset || selectedAssetTicker !== 'ETH') return;
+    const maxEth = maxSendableAmount;
+    const maxUsd = maxEth * ethPrice;
+    const maxAmountStr = maxUsd.toFixed(2);
     setAmount(maxAmountStr);
     handleAmountChange({ target: { value: maxAmountStr } } as React.ChangeEvent<HTMLInputElement>);
   };
@@ -363,6 +376,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
   };
 
+  const amountInEth = useMemo(() => {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || ethPrice === 0) return 0;
+    return numericAmount / ethPrice;
+  }, [amount, ethPrice]);
 
   const executeSend = async () => {
     setAmountConfirmOpen(false);
@@ -370,8 +388,13 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setShowHighGasConfirm(false);
 
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
+    
+    if (selectedAssetTicker !== 'ETH') {
+        toast({ title: "Unsupported Asset", description: "Currently, only sending ETH is supported.", variant: 'destructive' });
+        return;
+    }
 
-    if (!finalAddress || !amount || amountError || !selectedAsset) {
+    if (!finalAddress || !amount || amountError || !selectedAsset || amountInEth <= 0) {
       toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
       return;
     }
@@ -385,23 +408,23 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
     logEvent('send_transaction_start', {
       asset: selectedAsset.ticker,
-      amount: parseFloat(amount),
+      amount: amountInEth,
+      amount_usd: parseFloat(amount),
       gas_cost_eth: gasCost,
       is_ens: ensResolution.status === 'success',
     });
 
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
+      const tx = sendTransaction(wallet, finalAddress, amountInEth, selectedAsset.ticker, selectedAsset.icon);
       
       await persistTransaction(tx);
 
       setMockBalances(prevBalances => {
           const newBalances = { ...prevBalances };
-          const sentAmount = parseFloat(amount);
-
+          
           if (newBalances[selectedAsset.ticker] !== undefined) {
-              newBalances[selectedAsset.ticker] = Math.max(0, newBalances[selectedAsset.ticker] - sentAmount);
+              newBalances[selectedAsset.ticker] = Math.max(0, newBalances[selectedAsset.ticker] - amountInEth);
           }
 
           if (newBalances['ETH'] !== undefined) {
@@ -436,20 +459,15 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   };
 
   const handleSendClick = () => {
-    const numericAmount = parseFloat(amount) || 0;
-    if (!selectedAsset) return;
-    
-    const usdValue = numericAmount * selectedAsset.priceUSD;
-
-    const ethBalance = mockBalances['ETH'] || 0;
-    if (numericAmount > (selectedAsset.balance || 0)) {
-        setAmountError(t.insufficientTokenBalanceError(selectedAsset.ticker));
-        toast({ title: t.error, description: t.insufficientTokenBalanceError(selectedAsset.ticker), variant: 'destructive' });
+    if (selectedAssetTicker !== 'ETH') {
+        toast({ title: "Unsupported Asset", description: "Currently, only sending ETH is supported.", variant: 'destructive' });
         return;
     }
-    if (gasCost > ethBalance) {
-        setAmountError(t.insufficientGasError);
-        toast({ title: t.error, description: t.insufficientGasError, variant: 'destructive' });
+
+    const usdValue = parseFloat(amount) || 0;
+    
+    if (amountError) {
+        toast({ title: t.error, description: amountError, variant: 'destructive' });
         return;
     }
 
@@ -536,8 +554,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const isSendDisabled = useMemo(() => {
     const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress) && ensResolution.status !== 'success');
-    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid;
-  }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution]);
+    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid || selectedAssetTicker !== 'ETH';
+  }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution, selectedAssetTicker]);
 
   const allAssetsWithIcons = useMemo(() => {
     return ALL_EVM_ASSETS.map(asset => ({
@@ -751,21 +769,30 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               </div>
 
                <div className="grid grid-cols-5 gap-2 items-end pt-2">
-                <div className="col-span-3 space-y-1 pt-6">
-                  <div className="flex justify-between items-end">
-                    <Label htmlFor="amount">{t.amountLabel}</Label>
-                    <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas}>
-                      {t.maxAmountLabel}: {maxSendableAmount.toFixed(5)}
-                    </button>
-                  </div>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="0.01"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    disabled={isSending}
-                  />
+                <div className="col-span-3 space-y-1">
+                    <div className="flex justify-between items-end h-6 mb-1">
+                        <Label htmlFor="amount">{t.amountLabel} (USD)</Label>
+                         <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
+                          {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                        <Input
+                            id="amount"
+                            type="number"
+                            placeholder="10.00"
+                            value={amount}
+                            onChange={handleAmountChange}
+                            disabled={isSending || selectedAssetTicker !== 'ETH'}
+                            className="pl-6"
+                        />
+                         {amount && selectedAssetTicker === 'ETH' && !amountError && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                ({amountInEth.toFixed(5)} ETH)
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <div className="col-span-2 space-y-1">
@@ -803,6 +830,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                                     onSelect={() => {
                                         logEvent('asset_selected_for_send', { asset: asset.ticker });
                                         setSelectedAssetTicker(asset.ticker);
+                                        setAmount('');
+                                        setAmountError('');
                                         setAssetSelectorOpen(false);
                                     }}
                                     >
@@ -830,7 +859,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 {selectedAssetTicker !== 'ETH' && (
                     <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
                         <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <p>{t.tokenPortalInfo}</p>
+                        <p>Sending non-ETH assets is not yet supported.</p>
                     </div>
                 )}
               </div>
@@ -883,8 +912,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               <AlertDialogDescription>
                 You are about to send a significant amount. Please confirm the details below.
                 <div className="my-4 space-y-2 text-foreground break-all">
-                  <p><b>Amount:</b> {parseFloat(amount).toLocaleString()} {selectedAsset?.ticker}</p>
-                  <p><b>Value:</b> ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
+                  <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
                 </div>
               </AlertDialogDescription>
@@ -906,7 +935,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                         Password Required for High-Value Transaction
                     </DialogTitle>
                     <DialogDescription>
-                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount) * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">

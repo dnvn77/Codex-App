@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import {CreateWalletRequestSchema, GetBalanceRequestSchema} from '../types'
+import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema} from '../types'
 import { createOrRetrieveUserAndWallet } from '../services/supabase';
 
 
@@ -36,28 +36,40 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
   }
 });
 
+
+const handleGetBalance = async (address: string, res: any, next: any) => {
+    try {
+        const balance = await getBalance(address);
+        const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+        res.status(200).json({
+            address: address,
+            balanceEth: balance,
+            message: `🔍 Balance de ${shortAddress}:\n*${balance} ETH* (Scroll Sepolia)`,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 /**
  * @route   GET /wallet/balance/:address
- * @desc    Consulta el balance de una dirección en Scroll Sepolia.
+ * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde la URL).
  * @access  Privado (requiere API Key)
- *
- * Documentación de ethers.js: https://docs.ethers.org/v6/
  */
 router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema}), async (req, res, next) => {
-  try {
-    const { address } = req.params;
-
-    const balance = await getBalance(address);
-    const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
-
-    res.status(200).json({
-      address: address,
-      balanceEth: balance,
-      message: `🔍 Balance de ${shortAddress}:\n*${balance} ETH* (Scroll Sepolia)`,
-    });
-  } catch (error) {
-    next(error);
-  }
+    handleGetBalance(req.params.address, res, next);
 });
+
+/**
+ * @route   POST /wallet/balance
+ * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde el body).
+ * @access  Privado (requiere API Key)
+ */
+router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (req, res, next) => {
+    handleGetBalance(req.body.address, res, next);
+});
+
 
 export default router;
