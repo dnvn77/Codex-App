@@ -21,7 +21,7 @@ export const PositiveNumberStringSchema = z.string().refine(val => !isNaN(parseF
     message: 'El valor debe ser un número positivo.',
 });
 
-// --- Esquemas para las Peticiones de los Endpoints ---
+// --- Esquemas para las Peticiones/Respuestas de los Endpoints ---
 
 // POST /wallet/create
 export const CreateWalletRequestSchema = z.object({
@@ -70,3 +70,16 @@ export const VerifyProofRequestSchema = z.object({
   publicSignals: z.array(z.any()), // Placeholder, ajustar según los signals reales
 });
 export type VerifyProofRequest = z.infer<typeof VerifyProofRequestSchema>;
+
+
+// GET /prices
+export const PriceResponseSchema = z.array(
+    z.object({
+        name: z.string(),
+        ticker: z.string(),
+        id: z.number(),
+        priceUSD: z.number(),
+        change24h: z.number(),
+    })
+);
+export type PriceResponse = z.infer<typeof PriceResponseSchema>;

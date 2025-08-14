@@ -12,6 +12,7 @@ import { authenticateApiKey } from './middleware/auth';
 import walletRoutes from './routes/wallet';
 import txRoutes from './routes/tx';
 import zkRoutes from './routes/zk';
+import priceRoutes from './routes/prices'; // Importar la nueva ruta de precios
 import { errorHandler } from './middleware/errorHandler';
 
 
@@ -41,6 +42,8 @@ const apiLimiter = rateLimit({
 app.use('/wallet', apiLimiter, authenticateApiKey, walletRoutes);
 app.use('/tx', apiLimiter, authenticateApiKey, txRoutes);
 app.use('/zk', apiLimiter, authenticateApiKey, zkRoutes);
+// La ruta de precios es pública y solo usa el rate limiter
+app.use('/prices', apiLimiter, priceRoutes);
 
 
 // --- Manejo de Errores ---
