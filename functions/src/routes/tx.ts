@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Rutas de Express para el envío de transacciones.
  */
@@ -7,7 +8,8 @@ import { ethers } from 'ethers';
 import { getZeroDevSigner, getSmartAccountAddress } from '../services/zerodev';
 import { getExplorerUrl } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import { SendTransactionRequestSchema } from '../types';
+import { SendTransactionRequestSchema, LogTransactionRequestSchema } from '../types';
+import { logTransaction } from '../services/supabase';
 
 const router = Router();
 
@@ -26,7 +28,6 @@ router.post('/send', validateRequest({body: SendTransactionRequestSchema}), asyn
     // Obtener el signer de ZeroDev para el usuario.
     // Esto no expone claves privadas, ZeroDev lo gestiona internamente.
     const signer = await getZeroDevSigner(fromUserId);
-    const fromAddress = await signer.getAddress();
     
     const shortTo = `${to.slice(0, 6)}...${to.slice(-4)}`;
 
@@ -55,5 +56,25 @@ router.post('/send', validateRequest({body: SendTransactionRequestSchema}), asyn
     next(error);
   }
 });
+
+/**
+ * @route   POST /tx/log
+ * @desc    Registra una transacción en la base de datos de Supabase.
+ * @access  Privado (requiere API Key)
+ */
+router.post('/log', validateRequest({body: LogTransactionRequestSchema}), async (req, res, next) => {
+    try {
+        const txData = req.body;
+        const result = await logTransaction(txData);
+
+        res.status(201).json({
+            message: 'Transacción registrada exitosamente.',
+            data: result
+        });
+    } catch(error) {
+        next(error);
+    }
+});
+
 
 export default router;

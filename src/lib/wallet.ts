@@ -3,6 +3,7 @@
 
 import type { Wallet, Transaction, StoredWallet } from './types';
 import { commonPasswords } from './commonPasswords';
+import { useTelegram } from '@/hooks/useTelegram';
 
 // Official BIP39 English wordlist
 export const bip39Wordlist: string[] = [

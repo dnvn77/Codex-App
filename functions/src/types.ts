@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Define los esquemas de validación de Zod y los tipos de TypeScript.
  * Centraliza las definiciones de datos para mantener la consistencia en toda la aplicación.
@@ -25,6 +26,7 @@ export const PositiveNumberStringSchema = z.string().refine(val => !isNaN(parseF
 // POST /wallet/create
 export const CreateWalletRequestSchema = z.object({
   userId: z.string().min(1, 'El campo userId es requerido.'),
+  walletAddress: EthAddressSchema,
 });
 export type CreateWalletRequest = z.infer<typeof CreateWalletRequestSchema>;
 
@@ -43,6 +45,17 @@ export const SendTransactionRequestSchema = z.object({
   amountEth: PositiveNumberStringSchema,
 });
 export type SendTransactionRequest = z.infer<typeof SendTransactionRequestSchema>;
+
+// POST /tx/log
+export const LogTransactionRequestSchema = z.object({
+    from_address: EthAddressSchema,
+    to_address: EthAddressSchema,
+    tx_hash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash.'),
+    network: z.string().min(1),
+    amount: z.number().positive(),
+    status: z.enum(['sent', 'confirmed', 'failed']),
+});
+export type LogTransactionRequest = z.infer<typeof LogTransactionRequestSchema>;
 
 
 // POST /zk/verify

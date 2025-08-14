@@ -1,41 +1,36 @@
+
 /**
  * @fileoverview Rutas de Express para la gestión de billeteras (smart accounts).
  * Define los endpoints para crear billeteras y consultar balances.
  */
 
 import { Router } from 'express';
-import { z } from 'zod';
-import { getZeroDevSigner, getSmartAccountAddress } from '../services/zerodev';
+import { getSmartAccountAddress } from '../services/zerodev';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
 import {CreateWalletRequestSchema, GetBalanceRequestSchema} from '../types'
+import { createOrRetrieveUserAndWallet } from '../services/supabase';
+
 
 const router = Router();
 
 /**
  * @route   POST /wallet/create
- * @desc    Crea una nueva smart account con ZeroDev para un User ID.
+ * @desc    Crea una nueva smart account con ZeroDev para un User ID y la guarda en la BD.
  * @access  Privado (requiere API Key)
  *
  * Documentación de ZeroDev SDK: https://docs.zerodev.app/sdk/getting-started
  */
 router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async (req, res, next) => {
   try {
-    const { userId } = req.body;
+    const { userId, walletAddress } = req.body;
 
-    // Obtener la dirección de la smart account para el userId.
-    // ZeroDev deriva la dirección de forma determinista a partir del Project ID y el signer (que aquí es un EOA generado y gestionado por ZeroDev).
-    // No necesitamos una clave privada, solo el Project ID.
-    const address = await getSmartAccountAddress(userId);
-    
-    // Aquí se podría guardar el mapeo userId -> address en Firestore.
-    // Ejemplo:
-    // import { db } from '../services/firebase';
-    // await db.collection('users').doc(userId).set({ smartAccountAddress: address });
+    // Guardar el mapeo userId -> address en Supabase.
+    const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'zerodev');
 
     res.status(200).json({
-      address: address,
-      message: `✅ Smart account creada/obtenida para ${userId}:\n\`${address}\``,
+      address: wallet.address,
+      message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
     next(error);

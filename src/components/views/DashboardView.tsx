@@ -343,6 +343,26 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     handleAmountChange({ target: { value: maxAmountStr } } as React.ChangeEvent<HTMLInputElement>);
   };
 
+  const persistTransaction = async (tx: Transaction) => {
+    try {
+        await fetch('/api/tx/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from_address: tx.from,
+                to_address: tx.to,
+                tx_hash: tx.txHash,
+                network: 'scroll_sepolia',
+                amount: tx.amount,
+                status: 'sent'
+            })
+        });
+    } catch(error) {
+        console.error("Failed to persist transaction data:", error);
+        // Do not block user flow, but log the error
+    }
+  };
+
 
   const executeSend = async () => {
     setAmountConfirmOpen(false);
@@ -374,6 +394,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       await new Promise(resolve => setTimeout(resolve, 2000));
       const tx = sendTransaction(wallet, finalAddress, parseFloat(amount), selectedAsset.ticker, selectedAsset.icon);
       
+      await persistTransaction(tx);
+
       setMockBalances(prevBalances => {
           const newBalances = { ...prevBalances };
           const sentAmount = parseFloat(amount);

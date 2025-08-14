@@ -33,6 +33,7 @@ import { useTranslations } from '@/hooks/useTranslations';
 import Image from 'next/image';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
+import { useTelegram } from '@/hooks/useTelegram';
 
 
 interface ConnectViewProps {
@@ -144,6 +145,7 @@ export function ConnectView({
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
+  const { user } = useTelegram();
 
   const handlePasswordChange = (pass: string) => {
     setPassword(pass);
@@ -213,6 +215,23 @@ export function ConnectView({
       }
     }
   };
+
+  const persistWalletData = async (wallet: Wallet) => {
+    if (!user?.id) {
+        console.warn("Telegram User ID not available. Skipping wallet data persistence.");
+        return;
+    }
+    try {
+        await fetch('/api/wallet/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(user.id), walletAddress: wallet.address })
+        });
+    } catch(error) {
+        console.error("Failed to persist wallet data:", error);
+        // Do not block user flow, but log the error
+    }
+  };
   
   const handleFinalizeCreation = async () => {
     const validation = validatePassword(password);
@@ -241,6 +260,7 @@ export function ConnectView({
 
     if (walletToSave) {
       await storeWallet(walletToSave, password);
+      await persistWalletData(walletToSave);
       
       if (isRecoveryMode && onPasswordReset) {
         logEvent('password_reset_success');
