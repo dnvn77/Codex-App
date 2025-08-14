@@ -127,7 +127,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
         change24h: quote.percent_change_24h,
         icon: getIconPath(assetData.symbol),
       };
-    });
+    }).filter(asset => asset !== null) as AssetPriceOutput;
 
     return results;
   } catch (error) {
