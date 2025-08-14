@@ -222,13 +222,25 @@ export function ConnectView({
         return;
     }
     try {
-        await fetch('/api/wallet/create', {
+        const response = await fetch('/api/wallet/create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+            },
             body: JSON.stringify({ userId: String(user.id), walletAddress: wallet.address })
         });
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Failed to persist wallet data:", errorData);
+            toast({
+                title: "Database Sync Failed",
+                description: "Your wallet is created, but we couldn't save it to your profile. Functionality may be limited.",
+                variant: "destructive"
+            })
+        }
     } catch(error) {
-        console.error("Failed to persist wallet data:", error);
+        console.error("Network error persisting wallet data:", error);
         // Do not block user flow, but log the error
     }
   };

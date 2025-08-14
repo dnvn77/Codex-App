@@ -358,9 +358,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
 
   const persistTransaction = async (tx: Transaction) => {
     try {
-        await fetch('/api/tx/log', {
+        const response = await fetch('/api/tx/log', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+            },
             body: JSON.stringify({
                 from_address: tx.from,
                 to_address: tx.to,
@@ -370,9 +373,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 status: 'sent'
             })
         });
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Failed to persist tx data:", errorData);
+        }
     } catch(error) {
-        console.error("Failed to persist transaction data:", error);
-        // Do not block user flow, but log the error
+        console.error("Network error persisting tx data:", error);
     }
   };
 
