@@ -8,8 +8,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import type {Asset} from '@/lib/types';
 
-// Hide the API key by using environment variables
-const CMC_API_KEY = process.env.COINMARKETCAP_API_KEY;
+// Use the browser-safe environment variable prefix
+const CMC_API_KEY = process.env.NEXT_PUBLIC_COINMARKETCAP_API_KEY;
 
 const AssetPriceInputSchema = z.object({
   symbols: z.array(z.string()).describe('An array of asset ticker symbols, e.g., ["ETH", "BTC"].'),
