@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview Rutas de Express para la gestión de billeteras (smart accounts).
  * Define los endpoints para crear billeteras y consultar balances.
@@ -7,8 +8,8 @@
 import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema} from '../types'
-import { createOrRetrieveUserAndWallet } from '../services/supabase';
+import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema, UpdateFavoritesRequestSchema} from '../types'
+import { createOrRetrieveUserAndWallet, updateUserFavoriteTokens } from '../services/supabase';
 
 
 const router = Router();
@@ -29,6 +30,8 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
 
     res.status(200).json({
       address: wallet.address,
+      // Devolver también los favoritos al crear/recuperar la billetera
+      favoriteTokens: user.favorite_tokens || ['ETH', 'USDC', 'WBTC'],
       message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
@@ -71,5 +74,24 @@ router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (re
     handleGetBalance(req.body.address, res, next);
 });
 
+/**
+ * @route   POST /wallet/favorites
+ * @desc    Actualiza la lista de tokens favoritos de un usuario.
+ * @access  Privado (requiere API Key)
+ */
+router.post('/favorites', validateRequest({body: UpdateFavoritesRequestSchema}), async (req, res, next) => {
+    try {
+        const { userId, favoriteTokens } = req.body;
+        const updatedUser = await updateUserFavoriteTokens(userId, favoriteTokens);
+        res.status(200).json({
+            message: 'Tokens favoritos actualizados exitosamente.',
+            favoriteTokens: updatedUser.favorite_tokens,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 export default router;
+

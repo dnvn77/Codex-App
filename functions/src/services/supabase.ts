@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview Servicio para interactuar con Supabase Admin.
  * Centraliza las operaciones de base de datos relacionadas con la lógica de negocio.
@@ -36,7 +37,11 @@ export async function createOrRetrieveUserAndWallet(telegramUserId: string, wall
     if (!user) {
         const { data: newUser, error: newUserError } = await supabaseAdmin
             .from('users_app')
-            .insert({ telegram_user_id: telegramUserId })
+            .insert({ 
+                telegram_user_id: telegramUserId,
+                // Establece los favoritos por defecto al crear el usuario
+                favorite_tokens: ['ETH', 'USDC', 'WBTC'] 
+            })
             .select()
             .single();
 
@@ -118,3 +123,26 @@ export async function logTransaction(txData: LogTransactionRequest) {
 
     return loggedTx;
 }
+
+/**
+ * Actualiza la lista de tokens favoritos para un usuario.
+ * @param {string} telegramUserId - El ID de usuario de Telegram.
+ * @param {string[]} favoriteTokens - El array de tickers de tokens favoritos.
+ * @returns {Promise<any>} El registro del usuario actualizado.
+ */
+export async function updateUserFavoriteTokens(telegramUserId: string, favoriteTokens: string[]) {
+    const { data, error } = await supabaseAdmin
+        .from('users_app')
+        .update({ favorite_tokens: favoriteTokens })
+        .eq('telegram_user_id', telegramUserId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error actualizando los tokens favoritos:', error);
+        throw new Error('No se pudieron guardar las preferencias de tokens.');
+    }
+
+    return data;
+}
+

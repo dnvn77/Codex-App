@@ -1,5 +1,6 @@
 
 
+
 export interface Wallet {
   address: string;
   seedPhrase: string;
@@ -20,6 +21,7 @@ export interface StoredWallet {
   iv: string;
   address: string;
   balance: number;
+  favoriteTokens?: string[];
 }
 
 export interface Transaction {

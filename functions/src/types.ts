@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview Define los esquemas de validación de Zod y los tipos de TypeScript.
  * Centraliza las definiciones de datos para mantener la consistencia en toda la aplicación.
@@ -83,3 +84,10 @@ export const PriceResponseSchema = z.array(
     })
 );
 export type PriceResponse = z.infer<typeof PriceResponseSchema>;
+
+// POST /wallet/favorites
+export const UpdateFavoritesRequestSchema = z.object({
+    userId: z.string().min(1, 'El campo userId es requerido.'),
+    favoriteTokens: z.array(z.string()),
+});
+export type UpdateFavoritesRequest = z.infer<typeof UpdateFavoritesRequestSchema>;

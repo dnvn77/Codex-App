@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -58,6 +59,7 @@ import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
 import { TransactionHistory } from '@/components/shared/TransactionHistory';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
+import { useTelegram } from '@/hooks/useTelegram';
 
 interface DashboardViewProps {
   wallet: Wallet;
@@ -112,6 +114,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
+  const { user } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -172,7 +175,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setAssetStatus('loading');
     try {
         const priceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
-        const currentFavorites = getFavoriteAssets();
+        const currentFavorites = getFavoriteAssets(user?.id.toString() || null);
         
         const finalAssets = priceData.map(asset => ({
             ...asset,
@@ -197,21 +200,23 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [toast, t, mockBalances]);
+  }, [toast, t, mockBalances, user]);
 
   useEffect(() => {
     updateAssetPrices();
   }, [updateAssetPrices]);
 
   useEffect(() => {
-    setFavoriteAssetsState(getFavoriteAssets());
-  }, []);
+    setFavoriteAssetsState(getFavoriteAssets(user?.id.toString() || null));
+  }, [user]);
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
   }, [assets, favoriteAssets]);
 
   const handleToggleFavorite = useCallback((ticker: string) => {
+    if (!user) return; // Cannot save favorites without a user
+    
     const newFavorites = new Set(favoriteAssets);
     if (newFavorites.has(ticker)) {
       newFavorites.delete(ticker);
@@ -220,7 +225,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       newFavorites.add(ticker);
       logEvent('favorite_asset_added', { ticker });
     }
-    setFavoriteAssets(Array.from(newFavorites));
+    
+    const newFavoritesArray = Array.from(newFavorites);
+    setFavoriteAssets(newFavoritesArray, user.id.toString());
     setFavoriteAssetsState(newFavorites);
     
     // Re-sort assets to reflect new favorite status
@@ -236,7 +243,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       });
     });
 
-  }, [favoriteAssets]);
+  }, [favoriteAssets, user]);
   
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {

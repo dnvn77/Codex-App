@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { Wallet, Transaction, StoredWallet } from './types';
@@ -484,7 +485,7 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   );
 }
 
-async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance'>> {
+async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance' | 'favoriteTokens'>> {
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(secret, salt);
@@ -524,7 +525,8 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
     const storedWallet: StoredWallet = {
         ...encryptedData,
         address: wallet.address,
-        balance: wallet.balance
+        balance: wallet.balance,
+        favoriteTokens: Array.from(getFavoriteAssets(null)) // Pass null to get defaults
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedWallet));
 }
@@ -558,6 +560,12 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
         // Ensure the derived address matches the stored one as a sanity check.
         if(derivedKeys.address !== stored.address) {
             throw new Error("Address mismatch after decryption. This indicates a serious issue.");
+        }
+
+        // After unlocking, save favorites from local storage to the stored wallet object
+        // This ensures they are persisted if the app is reinstalled or password is reset
+        if (stored.favoriteTokens) {
+            setFavoriteAssets(stored.favoriteTokens);
         }
 
         return {
@@ -598,7 +606,7 @@ export async function verifySeedPhrase(seedPhrase: string, storedAddress: string
 
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(FAVORITES_KEY);
+    // Don't clear favorites on disconnect, just on full wallet removal
 }
 
 export function validatePassword(password: string): {
@@ -621,19 +629,47 @@ export function validatePassword(password: string): {
 
 // --- Favorites Management ---
 
-export function getFavoriteAssets(): Set<string> {
-  const favorites = localStorage.getItem(FAVORITES_KEY);
+export function getFavoriteAssets(userId: string | null): Set<string> {
+  if (!userId) {
+    // Fallback for when user is not logged in, or for initial state
+    return new Set(['ETH', 'USDC', 'WBTC']);
+  }
+  
+  // In a real app, you would fetch this from your backend for the given userId
+  // For now, we simulate by storing it in localStorage keyed by user
+  const key = `${FAVORITES_KEY}_${userId}`;
+  const favorites = localStorage.getItem(key);
+
   if (favorites) {
     try {
       const parsed = JSON.parse(favorites);
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch {
-      return new Set();
+      return new Set(['ETH', 'USDC', 'WBTC']);
     }
   }
+  // Default favorites for a new user
   return new Set(['ETH', 'USDC', 'WBTC']);
 }
 
-export function setFavoriteAssets(favorites: string[]): void {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+export async function setFavoriteAssets(favorites: string[], userId: string): Promise<void> {
+  const key = `${FAVORITES_KEY}_${userId}`;
+  localStorage.setItem(key, JSON.stringify(favorites));
+
+  // Sync with the backend
+  try {
+    const response = await fetch('/api/wallet/favorites', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+        },
+        body: JSON.stringify({ userId: userId, favoriteTokens: favorites })
+    });
+    if (!response.ok) {
+        console.error("Failed to sync favorite tokens to the backend.");
+    }
+  } catch (error) {
+    console.error("Network error while syncing favorites:", error);
+  }
 }
