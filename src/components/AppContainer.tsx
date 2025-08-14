@@ -107,12 +107,19 @@ export function AppContainer() {
       }, 1000);
     }
   }, [isReady, initData]);
+  
+  const incrementUsageCount = () => {
+      const currentCount = parseInt(localStorage.getItem('usage_count') || '0', 10);
+      localStorage.setItem('usage_count', String(currentCount + 1));
+      logEvent('app_usage_incremented', { new_count: currentCount + 1 });
+  };
 
   const handleWalletConnected = (newWallet: Wallet) => {
     setWallet(newWallet);
     const storedInfo = getStoredWallet();
     setStoredWalletInfo(storedInfo);
     handleViewChange('dashboard');
+    incrementUsageCount();
   };
 
   const handleWalletUnlocked = async (password: string) => {
@@ -120,6 +127,7 @@ export function AppContainer() {
     if(unlockedWallet) {
         setWallet(unlockedWallet);
         handleViewChange('dashboard');
+        incrementUsageCount();
     }
   }
 
