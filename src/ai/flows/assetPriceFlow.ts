@@ -57,7 +57,7 @@ const mockPrices: Record<string, { name: string, id: number, price: number, chan
     ETH: { name: 'Ethereum', id: 1027, price: 3450.12, change: -1.25 },
     USDC: { name: 'USD Coin', id: 3408, price: 1.00, change: 0.01 },
     USDT: { name: 'Tether', id: 825, price: 0.99, change: -0.02 },
-    WBTC: { name: 'Wrapped BTC', id: 3717, price: 65023.45, change: -2.50 },
+    WBTC: { name: 'Wrapped BTC', id: 3717, price: 65005.30, change: -2.45 },
     LINK: { name: 'Chainlink', id: 1975, price: 18.50, change: 3.12 },
     UNI: { name: 'Uniswap', id: 7083, price: 10.25, change: 1.55 },
     DAI: { name: 'Dai', id: 4943, price: 1.01, change: 0.05 },
