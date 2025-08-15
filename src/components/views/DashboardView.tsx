@@ -183,11 +183,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
   }, [toast, t]);
 
+  const initialFavorites = useMemo(() => getFavoriteAssets(user?.id.toString() || null, wallet), [user, wallet]);
+
   useEffect(() => {
-      const initialFavorites = getFavoriteAssets(user?.id.toString() || null, wallet);
-      setFavoriteAssets(initialFavorites);
-      updateAssetPrices();
-  }, [updateAssetPrices, user, wallet]);
+    setFavoriteAssets(initialFavorites);
+    updateAssetPrices();
+  }, [initialFavorites, updateAssetPrices]);
   
   // Step 2: Combine price data, favorites, and balances into the final asset list
   useEffect(() => {
@@ -197,13 +198,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               balance: mockBalances[asset.ticker] || 0,
               isFavorite: favoriteAssets.has(asset.ticker),
           })).sort((a, b) => {
-              // This sorting logic is now stable
               if (a.isFavorite && !b.isFavorite) return -1;
               if (!a.isFavorite && b.isFavorite) return 1;
               const valueA = a.balance * a.priceUSD;
               const valueB = b.balance * b.priceUSD;
               if (valueB !== valueA) return valueB - valueA;
-              return a.ticker.localeCompare(b.ticker); // Fallback sort
+              return a.ticker.localeCompare(b.ticker);
           });
           setAssets(combinedAssets);
       }
@@ -218,7 +218,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       const userId = user?.id.toString();
       if (!userId) return;
 
-      // Optimistic update of the Set for immediate UI feedback
       const newFavorites = new Set(favoriteAssets);
       if (newFavorites.has(ticker)) {
           newFavorites.delete(ticker);
@@ -229,7 +228,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       }
       setFavoriteAssets(newFavorites);
 
-      // Persist to backend and handle potential errors
       try {
           await setFavoriteAssets(Array.from(newFavorites), userId);
       } catch (error) {
@@ -238,7 +236,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               description: "Could not update your favorite tokens. Please try again.",
               variant: "destructive"
           });
-          // Revert optimistic update on failure
           const revertedFavorites = new Set(favoriteAssets);
           if (revertedFavorites.has(ticker)) {
             revertedFavorites.delete(ticker);
