@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -164,31 +163,40 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const ethPrice = useMemo(() => {
     return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500; // Fallback price
   }, [assets]);
-
-  const userAssetSymbols = useMemo(() => {
-    const symbols = new Set(Object.keys(mockBalances));
-    symbols.add('ETH'); // Ensure ETH is always included
-    return Array.from(symbols);
-  }, [mockBalances]);
   
-  const updateAssetPrices = useCallback(async (currentFavorites: Set<string>) => {
+  const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
         const priceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
         
-        const finalAssets = priceData.map(asset => ({
-            ...asset,
-            balance: mockBalances[asset.ticker] || 0,
-            isFavorite: currentFavorites.has(asset.ticker),
-        })).sort((a, b) => {
-            if (a.isFavorite && !b.isFavorite) return -1;
-            if (!a.isFavorite && b.isFavorite) return 1;
-            const valueA = a.balance * a.priceUSD;
-            const valueB = b.balance * a.priceUSD;
-            return valueB - valueA;
+        setAssets(currentAssets => {
+             // Get the latest favorites set, as it might have changed
+            const latestFavorites = getFavoriteAssets(user?.id.toString() || null, wallet);
+            
+            // If currentAssets is empty, it's the initial load.
+            if (currentAssets.length === 0) {
+                const initialAssets = priceData.map(asset => ({
+                    ...asset,
+                    balance: mockBalances[asset.ticker] || 0,
+                    isFavorite: latestFavorites.has(asset.ticker),
+                })).sort((a, b) => {
+                    if (a.isFavorite && !b.isFavorite) return -1;
+                    if (!a.isFavorite && b.isFavorite) return 1;
+                    const valueA = a.balance * a.priceUSD;
+                    const valueB = b.balance * b.priceUSD;
+                    return valueB - valueA;
+                });
+                return initialAssets;
+            }
+            
+            // If assets already exist, just update their prices.
+            // This preserves the `isFavorite` state and balance from user actions.
+            return currentAssets.map(existingAsset => {
+                const newPriceData = priceData.find(p => p.ticker === existingAsset.ticker);
+                return newPriceData ? { ...existingAsset, ...newPriceData } : existingAsset;
+            });
         });
 
-        setAssets(finalAssets);
         setAssetStatus('success');
     } catch (error) {
         console.error("Failed to fetch asset prices:", error);
@@ -199,62 +207,77 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [toast, t, mockBalances]);
+  }, [toast, t, user, wallet, mockBalances]);
 
   useEffect(() => {
     const favs = getFavoriteAssets(user?.id.toString() || null, wallet);
     setFavoriteAssetsState(favs);
-    updateAssetPrices(favs);
+    updateAssetPrices();
   }, [updateAssetPrices, user, wallet]);
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
   }, [assets, favoriteAssets]);
 
-  const handleToggleFavorite = (ticker: string) => {
+  const handleToggleFavorite = async (ticker: string) => {
     const userId = user?.id.toString();
     if (!userId) return;
 
-    setFavoriteAssetsState(currentFavorites => {
-      const newFavorites = new Set(currentFavorites);
-      if (newFavorites.has(ticker)) {
+    // Optimistically update UI
+    const newFavorites = new Set(favoriteAssets);
+    const isCurrentlyFavorite = newFavorites.has(ticker);
+
+    if (isCurrentlyFavorite) {
         newFavorites.delete(ticker);
         logEvent('favorite_asset_removed', { ticker });
-      } else {
+    } else {
         newFavorites.add(ticker);
         logEvent('favorite_asset_added', { ticker });
-      }
-      
-      const newFavoritesArray = Array.from(newFavorites);
+    }
 
-      setFavoriteAssets(newFavoritesArray, userId)
-        .then(confirmedFavorites => {
-            const confirmedFavoritesSet = new Set(confirmedFavorites);
-            setFavoriteAssetsState(confirmedFavoritesSet);
-            setAssets(prevAssets => {
-              return [...prevAssets]
-                .map(a => ({...a, isFavorite: confirmedFavoritesSet.has(a.ticker)}))
-                .sort((a, b) => {
-                  if (a.isFavorite && !b.isFavorite) return -1;
-                  if (!a.isFavorite && b.isFavorite) return 1;
-                  const valueA = a.balance * a.priceUSD;
-                  const valueB = b.balance * b.priceUSD;
-                  return valueB - valueA;
-                });
-            });
-        })
-        .catch(() => {
-            toast({
-                title: "Error",
-                description: "Could not update your favorite tokens. Please try again.",
-                variant: "destructive"
-            });
-            // Revert UI state on failure by returning the original set
-            setFavoriteAssetsState(currentFavorites);
-        });
+    setFavoriteAssetsState(newFavorites);
 
-      return newFavorites;
+    setAssets(prevAssets => {
+        return [...prevAssets]
+            .map(a => ({ ...a, isFavorite: newFavorites.has(a.ticker) }))
+            .sort((a, b) => {
+                if (a.isFavorite && !b.isFavorite) return -1;
+                if (!a.isFavorite && b.isFavorite) return 1;
+                const valueA = a.balance * a.priceUSD;
+                const valueB = b.balance * b.priceUSD;
+                return valueB - valueA;
+            });
     });
+
+    try {
+        await setFavoriteAssets(Array.from(newFavorites), userId);
+    } catch (error) {
+        // Revert UI on failure
+        toast({
+            title: "Error",
+            description: "Could not update your favorite tokens. Please try again.",
+            variant: "destructive"
+        });
+        
+        const revertedFavorites = new Set(favoriteAssets);
+        if (isCurrentlyFavorite) {
+            revertedFavorites.add(ticker);
+        } else {
+            revertedFavorites.delete(ticker);
+        }
+        setFavoriteAssetsState(revertedFavorites);
+         setAssets(prevAssets => {
+            return [...prevAssets]
+                .map(a => ({ ...a, isFavorite: revertedFavorites.has(a.ticker) }))
+                .sort((a, b) => {
+                    if (a.isFavorite && !b.isFavorite) return -1;
+                    if (!a.isFavorite && b.isFavorite) return 1;
+                    const valueA = a.balance * a.priceUSD;
+                    const valueB = b.balance * b.priceUSD;
+                    return valueB - valueA;
+                });
+        });
+    }
   };
   
   const totalBalanceUSD = useMemo(() => {
@@ -749,7 +772,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   showBalances={showBalances} 
                   hideZeroBalances={hideZeroBalances} 
                   t={t} 
-                  onRefresh={() => updateAssetPrices(favoriteAssets)} 
+                  onRefresh={updateAssetPrices} 
                   isRefreshing={assetStatus === 'loading'}
                   onToggleFavorite={handleToggleFavorite}
                 />
@@ -1025,7 +1048,3 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
-
-    
-
-    
