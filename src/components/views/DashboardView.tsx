@@ -952,7 +952,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </DialogTitle>
             </DialogHeader>
             <div className="h-96 w-full">
-                {detailedChartAsset && <DetailedChartAsset asset={detailedChartAsset} />}
+                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
             </div>
         </DialogContent>
     </Dialog>
