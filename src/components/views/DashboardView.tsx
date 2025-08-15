@@ -211,47 +211,54 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return assets.filter(a => favoriteAssets.has(a.ticker));
   }, [assets, favoriteAssets]);
 
-  const handleToggleFavorite = useCallback(async (ticker: string) => {
+  const handleToggleFavorite = (ticker: string) => {
     const userId = user?.id.toString();
     if (!userId) return;
 
-    const currentFavorites = favoriteAssets;
-    const newFavoritesArray = currentFavorites.has(ticker)
-      ? Array.from(currentFavorites).filter(f => f !== ticker)
-      : [...currentFavorites, ticker];
-
-    if (currentFavorites.has(ticker)) {
+    setFavoriteAssetsState(prevFavorites => {
+      const newFavorites = new Set(prevFavorites);
+      if (newFavorites.has(ticker)) {
+        newFavorites.delete(ticker);
         logEvent('favorite_asset_removed', { ticker });
-    } else {
+      } else {
+        newFavorites.add(ticker);
         logEvent('favorite_asset_added', { ticker });
-    }
+      }
+      
+      const newFavoritesArray = Array.from(newFavorites);
 
-    try {
-        const updatedFavorites = await setFavoriteAssets(newFavoritesArray, userId);
-        const newFavoritesSet = new Set(updatedFavorites);
-        setFavoriteAssetsState(newFavoritesSet);
-        
-        // Re-sort assets to reflect new favorite status
-        setAssets(prevAssets => {
-          const sortedAssets = [...prevAssets]
-            .map(a => ({...a, isFavorite: newFavoritesSet.has(a.ticker)}))
-            .sort((a, b) => {
-              if (a.isFavorite && !b.isFavorite) return -1;
-              if (!a.isFavorite && b.isFavorite) return 1;
-              const valueA = a.balance * a.priceUSD;
-              const valueB = b.balance * b.priceUSD;
-              return valueB - valueA;
+      setFavoriteAssets(newFavoritesArray, userId)
+        .then(confirmedFavorites => {
+            const confirmedFavoritesSet = new Set(confirmedFavorites);
+            // Ensure UI state matches the backend state
+            setFavoriteAssetsState(confirmedFavoritesSet);
+            
+            // Re-sort assets to reflect new favorite status
+            setAssets(prevAssets => {
+              return [...prevAssets]
+                .map(a => ({...a, isFavorite: confirmedFavoritesSet.has(a.ticker)}))
+                .sort((a, b) => {
+                  if (a.isFavorite && !b.isFavorite) return -1;
+                  if (!a.isFavorite && b.isFavorite) return 1;
+                  const valueA = a.balance * a.priceUSD;
+                  const valueB = b.balance * b.priceUSD;
+                  return valueB - valueA;
+                });
             });
-          return sortedAssets;
+        })
+        .catch(() => {
+            toast({
+                title: "Error",
+                description: "Could not update your favorite tokens. Please try again.",
+                variant: "destructive"
+            });
+            // Revert UI state on failure
+            setFavoriteAssetsState(prevFavorites); 
         });
-    } catch (error) {
-        toast({
-            title: "Error",
-            description: "Could not update your favorite tokens. Please try again.",
-            variant: "destructive"
-        });
-    }
-  }, [favoriteAssets, user, toast]);
+
+      return newFavorites;
+    });
+  };
   
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
