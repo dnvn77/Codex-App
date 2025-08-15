@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteAssets, setFavoriteAssets } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History } from 'lucide-react';
@@ -52,8 +52,6 @@ import { useTranslations } from '@/hooks/useTranslations';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { FavoriteAssetChart } from '@/components/shared/FavoriteAssetChart';
 import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
 import { TransactionHistory } from '@/components/shared/TransactionHistory';
 import { logEvent } from '@/lib/analytics';
@@ -67,7 +65,7 @@ interface DashboardViewProps {
   onShowCredits: () => void;
 }
 
-const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'isFavorite' | 'icon'>[] = [
+const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'icon'>[] = [
     { name: 'Ethereum', ticker: 'ETH', id: 1027 },
     { name: 'USD Coin', ticker: 'USDC', id: 3408 },
     { name: 'Tether', ticker: 'USDT', id: 825 },
@@ -139,7 +137,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const [assets, setAssets] = useState<Asset[]>([]); 
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [priceData, setPriceData] = useState<AssetPriceOutput>([]);
-  const [favoriteAssets, setFavoriteAssets] = useState<Set<string>>(new Set());
   
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
   
@@ -165,7 +162,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return priceData.find(a => a.ticker === 'ETH')?.priceUSD || 3500; // Fallback price
   }, [priceData]);
 
-  // Step 1: Fetch initial favorites and price data
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
     try {
@@ -183,23 +179,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
   }, [toast, t]);
 
-  const initialFavorites = useMemo(() => getFavoriteAssets(user?.id.toString() || null, wallet), [user, wallet]);
-
   useEffect(() => {
-    setFavoriteAssets(initialFavorites);
     updateAssetPrices();
-  }, [initialFavorites, updateAssetPrices]);
+  }, [updateAssetPrices]);
   
-  // Step 2: Combine price data, favorites, and balances into the final asset list
   useEffect(() => {
       if (priceData.length > 0) {
           const combinedAssets = priceData.map(asset => ({
               ...asset,
               balance: mockBalances[asset.ticker] || 0,
-              isFavorite: favoriteAssets.has(asset.ticker),
           })).sort((a, b) => {
-              if (a.isFavorite && !b.isFavorite) return -1;
-              if (!a.isFavorite && b.isFavorite) return 1;
               const valueA = a.balance * a.priceUSD;
               const valueB = b.balance * b.priceUSD;
               if (valueB !== valueA) return valueB - valueA;
@@ -207,45 +196,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
           });
           setAssets(combinedAssets);
       }
-  }, [priceData, mockBalances, favoriteAssets]);
+  }, [priceData, mockBalances]);
 
-
-  const assetsForCarousel = useMemo(() => {
-    return assets.filter(a => favoriteAssets.has(a.ticker));
-  }, [assets, favoriteAssets]);
-
-  const handleToggleFavorite = useCallback(async (ticker: string) => {
-      const userId = user?.id.toString();
-      if (!userId) return;
-
-      const newFavorites = new Set(favoriteAssets);
-      if (newFavorites.has(ticker)) {
-          newFavorites.delete(ticker);
-          logEvent('favorite_asset_removed', { ticker });
-      } else {
-          newFavorites.add(ticker);
-          logEvent('favorite_asset_added', { ticker });
-      }
-      setFavoriteAssets(newFavorites);
-
-      try {
-          await setFavoriteAssets(Array.from(newFavorites), userId);
-      } catch (error) {
-          toast({
-              title: "Error",
-              description: "Could not update your favorite tokens. Please try again.",
-              variant: "destructive"
-          });
-          const revertedFavorites = new Set(favoriteAssets);
-          if (revertedFavorites.has(ticker)) {
-            revertedFavorites.delete(ticker);
-          } else {
-            revertedFavorites.add(ticker);
-          }
-          setFavoriteAssets(revertedFavorites);
-      }
-  }, [favoriteAssets, user, toast]);
-  
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
         const valueInUSD = asset.balance * asset.priceUSD;
@@ -678,33 +630,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                     <TransactionHistory walletAddress={wallet.address} />
                 </DialogContent>
             </Dialog>
-
-            {assetsForCarousel.length > 0 && (
-                <Carousel
-                    opts={{
-                    align: "start",
-                    }}
-                    className="w-full"
-                >
-                    <CarouselContent>
-                    {assetsForCarousel.map((asset) => (
-                        <CarouselItem key={asset.ticker} className="md:basis-1/2 lg:basis-1/3">
-                            <div className="p-1">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <button className="w-full" onClick={() => setDetailedChartAsset(asset)}>
-                                             <FavoriteAssetChart asset={asset} />
-                                        </button>
-                                    </DialogTrigger>
-                                </Dialog>
-                            </div>
-                        </CarouselItem>
-                    ))}
-                    </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                </Carousel>
-            )}
             
             <Separator />
             
@@ -740,7 +665,6 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   t={t} 
                   onRefresh={updateAssetPrices} 
                   isRefreshing={assetStatus === 'loading'}
-                  onToggleFavorite={handleToggleFavorite}
                 />
               )}
             </div>

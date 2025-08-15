@@ -273,7 +273,6 @@ export const bip39Wordlist: string[] = [
 // and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
 
 const STORAGE_KEY = 'strawberry_wallet';
-const FAVORITES_KEY = 'strawberry_wallet_favorites';
 
 function generateRandomString(length: number, chars: string): string {
   let result = '';
@@ -485,7 +484,7 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   );
 }
 
-async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance' | 'favoriteTokens'>> {
+async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance'>> {
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(secret, salt);
@@ -526,7 +525,6 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
         ...encryptedData,
         address: wallet.address,
         balance: wallet.balance,
-        favoriteTokens: Array.from(getFavoriteAssets(null, wallet)) // Pass null to get defaults
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedWallet));
 }
@@ -567,13 +565,6 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
             seedPhrase,
             balance: stored.balance,
         };
-
-        // After unlocking, save favorites from local storage to the stored wallet object
-        // This ensures they are persisted if the app is reinstalled or password is reset
-        if (stored.favoriteTokens) {
-            setFavoriteAssets(stored.favoriteTokens, wallet.address);
-        }
-
         return wallet;
     } catch (e) {
         console.error("Decryption failed (likely wrong password):", e);
@@ -608,7 +599,6 @@ export async function verifySeedPhrase(seedPhrase: string, storedAddress: string
 
 export function clearStoredWallet(): void {
     localStorage.removeItem(STORAGE_KEY);
-    // Don't clear favorites on disconnect, just on full wallet removal
 }
 
 export function validatePassword(password: string): {
@@ -627,50 +617,4 @@ export function validatePassword(password: string): {
         special: /[\W_]/.test(password), // Matches any non-word character
         common: !commonPasswords.has(password.toLowerCase()),
     };
-}
-
-// --- Favorites Management ---
-
-export function getFavoriteAssets(userId: string | null, wallet: Wallet | StoredWallet | null): Set<string> {
-    if (wallet && 'favoriteTokens' in wallet && wallet.favoriteTokens) {
-      return new Set(wallet.favoriteTokens);
-    }
-    const stored = getStoredWallet();
-    if (stored?.favoriteTokens) {
-        return new Set(stored.favoriteTokens);
-    }
-    
-    // Default list for when there's no stored wallet or user info yet.
-    return new Set(['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW']);
-}
-
-
-export async function setFavoriteAssets(favorites: string[], userId: string): Promise<string[]> {
-  // Update local storage for immediate UI feedback
-  const stored = getStoredWallet();
-  if (stored) {
-    const updatedWallet = { ...stored, favoriteTokens: favorites };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWallet));
-  }
-
-  // Sync with the backend
-  try {
-    const response = await fetch('/api/wallet/favorites', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
-        },
-        body: JSON.stringify({ userId: userId, favoriteTokens: favorites })
-    });
-    if (!response.ok) {
-        throw new Error("Failed to sync favorite tokens to the backend.");
-    }
-    const data = await response.json();
-    return data.favoriteTokens || [];
-  } catch (error) {
-    console.error("Network error while syncing favorites:", error);
-    // Re-throw the error so the calling component can handle it (e.g., show a toast)
-    throw error;
-  }
 }

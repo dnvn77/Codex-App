@@ -84,10 +84,3 @@ export const PriceResponseSchema = z.array(
     })
 );
 export type PriceResponse = z.infer<typeof PriceResponseSchema>;
-
-// POST /wallet/favorites
-export const UpdateFavoritesRequestSchema = z.object({
-    userId: z.string().min(1, 'El campo userId es requerido.'),
-    favoriteTokens: z.array(z.string()),
-});
-export type UpdateFavoritesRequest = z.infer<typeof UpdateFavoritesRequestSchema>;

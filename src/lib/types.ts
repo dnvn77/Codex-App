@@ -1,6 +1,7 @@
 
 
 
+
 export interface Wallet {
   address: string;
   seedPhrase: string;
@@ -21,7 +22,6 @@ export interface StoredWallet {
   iv: string;
   address: string;
   balance: number;
-  favoriteTokens?: string[];
 }
 
 export interface Transaction {
@@ -43,7 +43,6 @@ export interface Asset {
   priceUSD: number;
   change24h: number; // Percentage change in 24h
   icon: string;
-  isFavorite: boolean;
 }
 
 export interface TransactionHistoryItem {

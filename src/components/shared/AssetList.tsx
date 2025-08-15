@@ -5,7 +5,7 @@ import type { Asset } from '@/lib/types';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { ArrowDownRight, ArrowUpRight, RefreshCw, Star } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AssetListProps {
@@ -15,7 +15,6 @@ interface AssetListProps {
   t: any; // Translation object
   onRefresh: () => void;
   isRefreshing: boolean;
-  onToggleFavorite: (ticker: string) => void;
   currencySymbol?: string;
 }
 
@@ -26,7 +25,6 @@ export function AssetList({
   t, 
   onRefresh, 
   isRefreshing, 
-  onToggleFavorite, 
   currencySymbol = '$' 
 }: AssetListProps) {
   
@@ -64,7 +62,6 @@ export function AssetList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10"></TableHead>
             <TableHead>{t.assetLabel}</TableHead>
             <TableHead className="text-right">{t.priceLabel}</TableHead>
             <TableHead className="text-right">{t.balanceLabel}</TableHead>
@@ -73,11 +70,6 @@ export function AssetList({
         <TableBody>
           {filteredAssets.map((asset) => (
             <TableRow key={asset.ticker}>
-              <TableCell className="px-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(asset.ticker)}>
-                    <Star className={cn("h-5 w-5 text-primary transition-colors", asset.isFavorite && "fill-current text-primary")} />
-                </Button>
-              </TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Image src={asset.icon} alt={asset.name} width={32} height={32} className="rounded-full" data-ai-hint={`${asset.name} logo`}/>
