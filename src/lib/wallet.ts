@@ -526,7 +526,7 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
         ...encryptedData,
         address: wallet.address,
         balance: wallet.balance,
-        favoriteTokens: Array.from(getFavoriteAssets(null)) // Pass null to get defaults
+        favoriteTokens: Array.from(getFavoriteAssets(null, wallet)) // Pass null to get defaults
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(storedWallet));
 }
@@ -562,17 +562,19 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
             throw new Error("Address mismatch after decryption. This indicates a serious issue.");
         }
 
-        // After unlocking, save favorites from local storage to the stored wallet object
-        // This ensures they are persisted if the app is reinstalled or password is reset
-        if (stored.favoriteTokens) {
-            setFavoriteAssets(stored.favoriteTokens);
-        }
-
-        return {
+        const wallet = {
             ...derivedKeys,
             seedPhrase,
             balance: stored.balance,
         };
+
+        // After unlocking, save favorites from local storage to the stored wallet object
+        // This ensures they are persisted if the app is reinstalled or password is reset
+        if (stored.favoriteTokens) {
+            setFavoriteAssets(stored.favoriteTokens, wallet.address);
+        }
+
+        return wallet;
     } catch (e) {
         console.error("Decryption failed (likely wrong password):", e);
         throw e;
@@ -629,20 +631,21 @@ export function validatePassword(password: string): {
 
 // --- Favorites Management ---
 
-export function getFavoriteAssets(userId: string | null): Set<string> {
-  // Favorites are now primarily driven by the backend.
-  // This function can serve as a fallback or for the initial state before the wallet is connected.
-  const stored = getStoredWallet();
-  if (stored?.favoriteTokens) {
-      return new Set(stored.favoriteTokens);
-  }
-  
-  // Default list for when there's no stored wallet or user info yet.
-  return new Set(['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW']);
+export function getFavoriteAssets(userId: string | null, wallet: Wallet | StoredWallet | null): Set<string> {
+    if (wallet && 'favoriteTokens' in wallet && wallet.favoriteTokens) {
+      return new Set(wallet.favoriteTokens);
+    }
+    const stored = getStoredWallet();
+    if (stored?.favoriteTokens) {
+        return new Set(stored.favoriteTokens);
+    }
+    
+    // Default list for when there's no stored wallet or user info yet.
+    return new Set(['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW']);
 }
 
 
-export async function setFavoriteAssets(favorites: string[], userId: string): Promise<void> {
+export async function setFavoriteAssets(favorites: string[], userId: string): Promise<string[]> {
   // Update local storage for immediate UI feedback
   const stored = getStoredWallet();
   if (stored) {
@@ -661,10 +664,13 @@ export async function setFavoriteAssets(favorites: string[], userId: string): Pr
         body: JSON.stringify({ userId: userId, favoriteTokens: favorites })
     });
     if (!response.ok) {
-        console.error("Failed to sync favorite tokens to the backend.");
+        throw new Error("Failed to sync favorite tokens to the backend.");
     }
+    const data = await response.json();
+    return data.favoriteTokens || [];
   } catch (error) {
     console.error("Network error while syncing favorites:", error);
+    // Re-throw the error so the calling component can handle it (e.g., show a toast)
+    throw error;
   }
 }
-

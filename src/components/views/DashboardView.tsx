@@ -171,11 +171,10 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     return Array.from(symbols);
   }, [mockBalances]);
   
-  const updateAssetPrices = useCallback(async () => {
+  const updateAssetPrices = useCallback(async (currentFavorites: Set<string>) => {
     setAssetStatus('loading');
     try {
         const priceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
-        const currentFavorites = getFavoriteAssets(user?.id.toString() || null);
         
         const finalAssets = priceData.map(asset => ({
             ...asset,
@@ -200,50 +199,58 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         });
         setAssetStatus('error');
     }
-  }, [toast, t, mockBalances, user]);
+  }, [toast, t, mockBalances]);
 
   useEffect(() => {
-    updateAssetPrices();
-  }, [updateAssetPrices]);
-
-  useEffect(() => {
-    setFavoriteAssetsState(getFavoriteAssets(user?.id.toString() || null));
-  }, [user]);
+    const favs = getFavoriteAssets(user?.id.toString() || null, wallet);
+    setFavoriteAssetsState(favs);
+    updateAssetPrices(favs);
+  }, [updateAssetPrices, user, wallet]);
   
   const assetsForCarousel = useMemo(() => {
     return assets.filter(a => favoriteAssets.has(a.ticker));
   }, [assets, favoriteAssets]);
 
-  const handleToggleFavorite = useCallback((ticker: string) => {
+  const handleToggleFavorite = useCallback(async (ticker: string) => {
     const userId = user?.id.toString();
-    if (!userId) return; // Cannot save favorites without a user
-    
-    const newFavorites = new Set(favoriteAssets);
-    if (newFavorites.has(ticker)) {
-      newFavorites.delete(ticker);
-      logEvent('favorite_asset_removed', { ticker });
-    } else {
-      newFavorites.add(ticker);
-      logEvent('favorite_asset_added', { ticker });
-    }
-    
-    const newFavoritesArray = Array.from(newFavorites);
-    setFavoriteAssets(newFavoritesArray, userId);
-    setFavoriteAssetsState(newFavorites);
-    
-    // Re-sort assets to reflect new favorite status
-    setAssets(prevAssets => {
-      const sortedAssets = [...prevAssets].map(a => ({...a, isFavorite: newFavorites.has(a.ticker)})).sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
-        const valueA = a.balance * a.priceUSD;
-        const valueB = b.balance * b.priceUSD;
-        return valueB - valueA;
-      });
-      return sortedAssets;
-    });
+    if (!userId) return;
 
-  }, [favoriteAssets, user]);
+    const newFavoritesArray = favoriteAssets.has(ticker)
+      ? Array.from(favoriteAssets).filter(f => f !== ticker)
+      : [...favoriteAssets, ticker];
+
+    if (favoriteAssets.has(ticker)) {
+        logEvent('favorite_asset_removed', { ticker });
+    } else {
+        logEvent('favorite_asset_added', { ticker });
+    }
+
+    try {
+        const updatedFavorites = await setFavoriteAssets(newFavoritesArray, userId);
+        const newFavoritesSet = new Set(updatedFavorites);
+        setFavoriteAssetsState(newFavoritesSet);
+        
+        // Re-sort assets to reflect new favorite status
+        setAssets(prevAssets => {
+          const sortedAssets = [...prevAssets]
+            .map(a => ({...a, isFavorite: newFavoritesSet.has(a.ticker)}))
+            .sort((a, b) => {
+              if (a.isFavorite && !b.isFavorite) return -1;
+              if (!a.isFavorite && b.isFavorite) return 1;
+              const valueA = a.balance * a.priceUSD;
+              const valueB = b.balance * b.priceUSD;
+              return valueB - valueA;
+            });
+          return sortedAssets;
+        });
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: "Could not update your favorite tokens. Please try again.",
+            variant: "destructive"
+        });
+    }
+  }, [favoriteAssets, user, toast]);
   
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
@@ -737,7 +744,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                   showBalances={showBalances} 
                   hideZeroBalances={hideZeroBalances} 
                   t={t} 
-                  onRefresh={updateAssetPrices} 
+                  onRefresh={() => updateAssetPrices(favoriteAssets)} 
                   isRefreshing={assetStatus === 'loading'}
                   onToggleFavorite={handleToggleFavorite}
                 />
