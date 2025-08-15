@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 
 // Load environment variables from .env file
@@ -39,6 +40,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 's2.coinmarketcap.com',
+        port: '',
+        pathname: '/static/img/coins/64x64/**',
+      }
     ],
     dangerouslyAllowSVG: true,
   },

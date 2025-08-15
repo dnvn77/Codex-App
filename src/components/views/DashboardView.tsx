@@ -66,7 +66,7 @@ interface DashboardViewProps {
   onShowCredits: () => void;
 }
 
-const ALL_EVM_ASSETS: Omit<Asset, 'balance' | 'priceUSD' | 'change24h' | 'icon'>[] = [
+const ALL_EVM_ASSETS = [
     { name: 'Ethereum', ticker: 'ETH', id: 1027 },
     { name: 'USD Coin', ticker: 'USDC', id: 3408 },
     { name: 'Tether', ticker: 'USDT', id: 825 },
@@ -531,11 +531,14 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution, selectedAssetTicker]);
 
   const allAssetsWithIcons = useMemo(() => {
-    return ALL_EVM_ASSETS.map(asset => ({
-        ...asset,
-        icon: `/icons/${asset.ticker.toLowerCase()}.svg`
-    }));
-  }, []);
+    return ALL_EVM_ASSETS.map(asset => {
+        const priceInfo = priceData.find(p => p.ticker === asset.ticker);
+        return {
+            ...asset,
+            icon: priceInfo?.icon || '/strawberry-logo.svg', // Use fetched icon, fallback to default
+        };
+    });
+  }, [priceData]);
   
   const handleContactSelect = (contact: Contact) => {
       setToAddress(contact.address);
@@ -949,7 +952,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </DialogTitle>
             </DialogHeader>
             <div className="h-96 w-full">
-                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
+                {detailedChartAsset && <DetailedChartAsset asset={detailedChartAsset} />}
             </div>
         </DialogContent>
     </Dialog>

@@ -27,31 +27,11 @@ const AssetPriceOutputSchema = z.array(
 );
 export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
-const getIconPath = (ticker: string): string => {
-    const basePath = '/icons/';
-    const defaultIcon = 'strawberry-logo.svg';
-    const tickerMap: { [key: string]: string } = {
-        ETH: 'eth.svg',
-        USDC: 'usdc.svg',
-        USDT: 'usdt.svg',
-        WBTC: 'wbtc.svg',
-        LINK: 'link.svg',
-        UNI: 'uni.svg',
-        DAI: 'dai.svg',
-        LDO: 'ldo.svg',
-        ARB: 'arb.svg',
-        OP: 'op.svg',
-        AAVE: 'aave.svg',
-        MKR: 'mkr.svg',
-        SAND: 'sand.svg',
-        MANA: 'mana.svg',
-        STRW: defaultIcon
-    };
-
-    const upperTicker = ticker.toUpperCase();
-    const iconFile = tickerMap[upperTicker];
-
-    return `${basePath}${iconFile || defaultIcon}`;
+const getIconPath = (assetId: number): string => {
+    if (assetId === 0) { // Handle Strawberry Token case
+      return '/strawberry-logo.svg';
+    }
+    return `https://s2.coinmarketcap.com/static/img/coins/64x64/${assetId}.png`;
 }
 
 const mockPrices: Record<string, { name: string, id: number, price: number, change: number }> = {
@@ -85,19 +65,20 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
                 balance: 0,
                 priceUSD: mockData.price,
                 change24h: mockData.change,
-                icon: getIconPath(symbol),
+                icon: getIconPath(mockData.id),
                 isFavorite: false, // isFavorite will be set by the client
             }
         }
         // Fallback for any unknown symbol
+        const randomId = Math.floor(Math.random() * 20000) + 1;
         return {
             name: symbol,
             ticker: symbol,
-            id: Math.floor(Math.random() * 20000),
+            id: randomId,
             balance: 0,
             priceUSD: 0,
             change24h: 0,
-            icon: getIconPath(symbol),
+            icon: getIconPath(randomId),
             isFavorite: false,
         };
     });
