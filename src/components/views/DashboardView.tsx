@@ -215,7 +215,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   }, [assets, favoriteAssets]);
 
   const handleToggleFavorite = useCallback((ticker: string) => {
-    if (!user) return; // Cannot save favorites without a user
+    const userId = user?.id.toString();
+    if (!userId) return; // Cannot save favorites without a user
     
     const newFavorites = new Set(favoriteAssets);
     if (newFavorites.has(ticker)) {
@@ -227,12 +228,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     }
     
     const newFavoritesArray = Array.from(newFavorites);
-    setFavoriteAssets(newFavoritesArray, user.id.toString());
+    setFavoriteAssets(newFavoritesArray, userId);
     setFavoriteAssetsState(newFavorites);
     
     // Re-sort assets to reflect new favorite status
     setAssets(prevAssets => {
-      return [...prevAssets].sort((a, b) => {
+      const sortedAssets = [...prevAssets].sort((a, b) => {
         const aIsFav = newFavorites.has(a.ticker);
         const bIsFav = newFavorites.has(b.ticker);
         if (aIsFav && !bIsFav) return -1;
@@ -241,6 +242,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         const valueB = b.balance * b.priceUSD;
         return valueB - valueA;
       });
+      return sortedAssets;
     });
 
   }, [favoriteAssets, user]);
@@ -330,28 +332,33 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
-    
-    // Only ETH is supported for sending for now
+    validateAmount(newAmount);
+  };
+  
+  const validateAmount = (value: string) => {
     if (selectedAssetTicker !== 'ETH') {
         setAmountError('Sending non-ETH assets is not yet supported.');
         return;
     }
     
-    const numericAmountUSD = parseFloat(newAmount);
-    const amountInEth = numericAmountUSD / ethPrice;
+    const numericAmountUSD = parseFloat(value);
     
-    const balance = selectedAsset?.balance || 0;
-    
-    if (isNaN(numericAmountUSD) || numericAmountUSD < 0) {
+    if (isNaN(numericAmountUSD) || numericAmountUSD <= 0) {
         setAmountError(t.invalidNumberError);
-    } else if (amountInEth > balance) {
-        setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-    } else if (gasCost > balance) {
-        setAmountError(t.insufficientGasError);
     } else {
-        setAmountError('');
+        const amountInEth = numericAmountUSD / ethPrice;
+        const balance = selectedAsset?.balance || 0;
+        
+        if (amountInEth > balance) {
+            setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
+        } else if (amountInEth > maxSendableAmount) {
+            setAmountError(t.insufficientGasError);
+        } else {
+            setAmountError('');
+        }
     }
-};
+  };
+
 
   const handleSetMaxAmount = () => {
     if (!selectedAsset || selectedAssetTicker !== 'ETH') return;
@@ -359,7 +366,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const maxUsd = maxEth * ethPrice;
     const maxAmountStr = maxUsd.toFixed(2);
     setAmount(maxAmountStr);
-    handleAmountChange({ target: { value: maxAmountStr } } as React.ChangeEvent<HTMLInputElement>);
+    validateAmount(maxAmountStr);
   };
 
   const persistTransaction = async (tx: Transaction) => {
@@ -1001,7 +1008,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 </DialogTitle>
             </DialogHeader>
             <div className="h-96 w-full">
-                {detailedChartAsset && <DetailedChartAsset asset={detailedChartAsset} />}
+                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
             </div>
         </DialogContent>
     </Dialog>
