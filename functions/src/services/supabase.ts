@@ -15,14 +15,11 @@ import type { LogTransactionRequest } from '../types';
 const supabaseAdmin = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY);
 
 /**
- * Crea o recupera un usuario y su billetera asociada.
+ * Crea o recupera un usuario de la aplicación.
  * @param {string} telegramUserId - El ID de usuario de Telegram.
- * @param {string} walletAddress - La dirección de la smart account.
- * @param {string} provider - El proveedor de la billetera (ej. 'zerodev').
- * @returns {Promise<{user: any, wallet: any}>} El usuario y la billetera de la BD.
+ * @returns {Promise<any>} El objeto de usuario de la BD.
  */
-export async function createOrRetrieveUserAndWallet(telegramUserId: string, walletAddress: string, provider: string) {
-    // 1. Buscar o crear el usuario de la app.
+async function findOrCreateUser(telegramUserId: string) {
     let { data: user, error: userError } = await supabaseAdmin
         .from('users_app')
         .select('*')
@@ -49,8 +46,17 @@ export async function createOrRetrieveUserAndWallet(telegramUserId: string, wall
         }
         user = newUser;
     }
+    return user;
+}
 
-    // 2. Buscar o crear la billetera.
+/**
+ * Crea o recupera una billetera para un usuario.
+ * @param {string} userId - El ID del usuario de la app (UUID de la tabla users_app).
+ * @param {string} walletAddress - La dirección de la smart account.
+ * @param {string} provider - El proveedor de la billetera.
+ * @returns {Promise<any>} El objeto de la billetera de la BD.
+ */
+async function findOrCreateWallet(userId: string, walletAddress: string, provider: string) {
     let { data: wallet, error: walletError } = await supabaseAdmin
         .from('wallets')
         .select('*')
@@ -66,7 +72,7 @@ export async function createOrRetrieveUserAndWallet(telegramUserId: string, wall
         const { data: newWallet, error: newWalletError } = await supabaseAdmin
             .from('wallets')
             .insert({
-                user_id: user.id,
+                user_id: userId,
                 address: walletAddress,
                 wallet_provider: provider
             })
@@ -79,9 +85,45 @@ export async function createOrRetrieveUserAndWallet(telegramUserId: string, wall
         }
         wallet = newWallet;
     }
+    return wallet;
+}
 
+
+/**
+ * Crea o recupera un usuario y su billetera asociada, asegurando que ambos existan.
+ * @param {string} telegramUserId - El ID de usuario de Telegram.
+ * @param {string} walletAddress - La dirección de la smart account.
+ * @param {string} provider - El proveedor de la billetera (ej. 'zerodev').
+ * @returns {Promise<{user: any, wallet: any}>} El usuario y la billetera de la BD.
+ */
+export async function createOrRetrieveUserAndWallet(telegramUserId: string, walletAddress: string, provider: string) {
+    const user = await findOrCreateUser(telegramUserId);
+    const wallet = await findOrCreateWallet(user.id, walletAddress, provider);
     return { user, wallet };
 }
+
+/**
+ * Actualiza la lista de tokens favoritos de un usuario.
+ * @param {string} telegramUserId - El ID de usuario de Telegram.
+ * @param {string[]} favoriteTokens - El array de tickers de tokens favoritos.
+ * @returns {Promise<any>} El objeto de usuario actualizado.
+ */
+export async function updateUserFavoriteTokens(telegramUserId: string, favoriteTokens: string[]) {
+    const { data: user, error } = await supabaseAdmin
+        .from('users_app')
+        .update({ favorite_tokens: favoriteTokens })
+        .eq('telegram_user_id', telegramUserId)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error al actualizar tokens favoritos:', error);
+        throw new Error('No se pudieron actualizar los tokens favoritos.');
+    }
+
+    return user;
+}
+
 
 /**
  * Registra una transacción en la base de datos.
