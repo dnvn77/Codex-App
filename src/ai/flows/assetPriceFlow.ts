@@ -22,6 +22,7 @@ const AssetPriceOutputSchema = z.array(
         priceUSD: z.number(),
         change24h: z.number(), 
         icon: z.string(),
+        isFavorite: z.boolean(),
     })
 );
 export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
@@ -85,6 +86,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
                 priceUSD: mockData.price,
                 change24h: mockData.change,
                 icon: getIconPath(symbol),
+                isFavorite: false, // isFavorite will be set by the client
             }
         }
         // Fallback for any unknown symbol
@@ -95,7 +97,8 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
             balance: 0,
             priceUSD: 0,
             change24h: 0,
-            icon: getIconPath(symbol)
+            icon: getIconPath(symbol),
+            isFavorite: false,
         };
     });
 }
