@@ -1,7 +1,4 @@
 
-
-
-
 export interface Wallet {
   address: string;
   seedPhrase: string;
@@ -55,4 +52,9 @@ export interface TransactionHistoryItem {
     origin: 'strawberry' | 'other'; // Where the tx was initiated
     blockNumber: number;
     status: 'confirmed' | 'pending' | 'failed';
+}
+
+export interface Contact {
+  name: string;
+  address: string;
 }

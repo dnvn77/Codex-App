@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { Wallet, Transaction, StoredWallet } from './types';
+import type { Wallet, Transaction, StoredWallet, Contact } from './types';
 import { commonPasswords } from './commonPasswords';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -272,7 +272,8 @@ export const bip39Wordlist: string[] = [
 // A real implementation would use a proper HD wallet library like ethers.js or viem,
 // and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
 
-const STORAGE_KEY = 'strawberry_wallet';
+const WALLET_STORAGE_KEY = 'strawberry_wallet';
+const CONTACTS_STORAGE_KEY = 'strawberry_contacts';
 
 function generateRandomString(length: number, chars: string): string {
   let result = '';
@@ -371,7 +372,6 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
     const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
     // Simulate a "fetched" or deterministic balance for an imported wallet.
-    // Replace the previous unstable hash-based balance generation with a simpler, stable one.
     let sum = 0;
     for (let i = 0; i < joinedSeed.length; i++) {
         sum += joinedSeed.charCodeAt(i);
@@ -463,25 +463,24 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
-  const encoder = new TextEncoder();
-  const baseKey = await window.crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey']
-  );
+    const encoder = new TextEncoder();
+    const baseKey = await window.crypto.subtle.importKey(
+        'raw',
+        encoder.encode(secret),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+    );
 
-  // Using a higher iteration count for increased security against brute-force attacks.
-  const iterations = 300000;
+    const iterations = 300000;
 
-  return window.crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-    baseKey,
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt']
-  );
+    return window.crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
 }
 
 async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance'>> {
@@ -526,25 +525,12 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
         address: wallet.address,
         balance: wallet.balance,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storedWallet));
+    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(storedWallet));
 }
 
 export function getStoredWallet(): StoredWallet | null {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = localStorage.getItem(WALLET_STORAGE_KEY);
     return data ? JSON.parse(data) : null;
-}
-
-export function updateStoredWalletBalance(newBalance: number): void {
-  const stored = getStoredWallet();
-  if (!stored) return;
-  
-  const finalBalance = Math.max(0, newBalance);
-
-  const updatedWallet: StoredWallet = {
-    ...stored,
-    balance: finalBalance
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWallet));
 }
 
 export async function unlockWallet(password: string): Promise<Wallet | null> {
@@ -555,22 +541,22 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
         const seedPhrase = await decrypt(stored, password);
         const derivedKeys = deriveKeysFromSeed(seedPhrase);
         
-        // Ensure the derived address matches the stored one as a sanity check.
         if(derivedKeys.address !== stored.address) {
-            throw new Error("Address mismatch after decryption. This indicates a serious issue.");
+            console.error("Address mismatch after decryption. This indicates a serious issue.");
+            return null; // Return null on integrity failure
         }
 
-        const wallet = {
+        return {
             ...derivedKeys,
             seedPhrase,
             balance: stored.balance,
         };
-        return wallet;
     } catch (e) {
         console.error("Decryption failed (likely wrong password):", e);
-        throw e;
+        return null;
     }
 }
+
 
 /**
  * Verifies if a given seed phrase corresponds to the stored wallet address.
@@ -598,7 +584,8 @@ export async function verifySeedPhrase(seedPhrase: string, storedAddress: string
 
 
 export function clearStoredWallet(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(WALLET_STORAGE_KEY);
+    localStorage.removeItem(CONTACTS_STORAGE_KEY);
 }
 
 export function validatePassword(password: string): {
@@ -617,4 +604,37 @@ export function validatePassword(password: string): {
         special: /[\W_]/.test(password), // Matches any non-word character
         common: !commonPasswords.has(password.toLowerCase()),
     };
+}
+
+// --- Contacts Management ---
+
+export function getContacts(): Contact[] {
+    const data = localStorage.getItem(CONTACTS_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+export function saveContact(newContact: Contact): Contact[] {
+    const contacts = getContacts();
+    const existingIndex = contacts.findIndex(c => c.address.toLowerCase() === newContact.address.toLowerCase());
+    
+    if (existingIndex > -1) {
+        // Update existing contact name
+        contacts[existingIndex].name = newContact.name;
+    } else {
+        // Add new contact
+        contacts.push(newContact);
+    }
+
+    // Sort by name for consistent display
+    contacts.sort((a, b) => a.name.localeCompare(b.name));
+    
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
+    return contacts;
+}
+
+export function deleteContact(address: string): Contact[] {
+    let contacts = getContacts();
+    contacts = contacts.filter(c => c.address.toLowerCase() !== address.toLowerCase());
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
+    return contacts;
 }

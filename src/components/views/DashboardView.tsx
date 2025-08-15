@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
-import type { Wallet, Transaction, Asset } from '@/lib/types';
+import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History } from 'lucide-react';
+import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -54,6 +54,7 @@ import { Switch } from '@/components/ui/switch';
 import { AssetList } from '@/components/shared/AssetList';
 import { DetailedAssetChart } from '@/components/shared/DetailedAssetChart';
 import { TransactionHistory } from '@/components/shared/TransactionHistory';
+import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -147,6 +148,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   
   const [detailedChartAsset, setDetailedChartAsset] = useState<Asset | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isContactsOpen, setContactsOpen] = useState(false);
 
   // Mock balances for demonstration. In a real app, this data would come from an on-chain query.
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
@@ -461,7 +463,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     setIsSending(true);
     setConfirmPasswordError('');
     try {
-        await unlockWallet(confirmPassword);
+        const unlocked = await unlockWallet(confirmPassword);
+        if (!unlocked) throw new Error("Wrong password");
         setPasswordConfirmOpen(false);
         setConfirmPassword('');
         await executeSend();
@@ -533,6 +536,11 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         icon: `/icons/${asset.ticker.toLowerCase()}.svg`
     }));
   }, []);
+  
+  const handleContactSelect = (contact: Contact) => {
+      setToAddress(contact.address);
+      setContactsOpen(false);
+  }
 
   return (
     <>
@@ -687,6 +695,16 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                       disabled={isSending}
                       className="flex-grow"
                     />
+                    <Dialog open={isContactsOpen} onOpenChange={setContactsOpen}>
+                       <DialogTrigger asChild>
+                         <Button variant="outline" size="icon" disabled={isSending}>
+                            <User className="h-5 w-5" />
+                         </Button>
+                       </DialogTrigger>
+                       <DialogContent>
+                          <ContactsList onContactSelect={handleContactSelect} />
+                       </DialogContent>
+                    </Dialog>
                     <Dialog open={isScannerOpen} onOpenChange={setScannerOpen}>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="icon" disabled={isSending} onClick={() => logEvent('qr_scanner_opened')}>
