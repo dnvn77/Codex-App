@@ -632,7 +632,7 @@ export function validatePassword(password: string): {
 export function getFavoriteAssets(userId: string | null): Set<string> {
   if (!userId) {
     // Fallback for when user is not logged in, or for initial state
-    return new Set(['ETH', 'USDC', 'WBTC']);
+    return new Set(['ETH', 'USDC', 'WBTC', 'LINK', 'UNI', 'DAI']);
   }
   
   // In a real app, you would fetch this from your backend for the given userId
@@ -645,11 +645,11 @@ export function getFavoriteAssets(userId: string | null): Set<string> {
       const parsed = JSON.parse(favorites);
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch {
-      return new Set(['ETH', 'USDC', 'WBTC']);
+      return new Set(['ETH', 'USDC', 'WBTC', 'LINK', 'UNI', 'DAI']);
     }
   }
   // Default favorites for a new user
-  return new Set(['ETH', 'USDC', 'WBTC']);
+  return new Set(['ETH', 'USDC', 'WBTC', 'LINK', 'UNI', 'DAI']);
 }
 
 export async function setFavoriteAssets(favorites: string[], userId: string): Promise<void> {

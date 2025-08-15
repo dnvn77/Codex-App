@@ -40,7 +40,7 @@ export async function createOrRetrieveUserAndWallet(telegramUserId: string, wall
             .insert({ 
                 telegram_user_id: telegramUserId,
                 // Establece los favoritos por defecto al crear el usuario
-                favorite_tokens: ['ETH', 'USDC', 'WBTC'] 
+                favorite_tokens: ['ETH', 'USDC', 'WBTC', 'LINK', 'UNI', 'DAI'] 
             })
             .select()
             .single();
@@ -145,4 +145,3 @@ export async function updateUserFavoriteTokens(telegramUserId: string, favoriteT
 
     return data;
 }
-
