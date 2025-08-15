@@ -215,8 +215,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const userId = user?.id.toString();
     if (!userId) return;
 
-    setFavoriteAssetsState(prevFavorites => {
-      const newFavorites = new Set(prevFavorites);
+    setFavoriteAssetsState(currentFavorites => {
+      const newFavorites = new Set(currentFavorites);
       if (newFavorites.has(ticker)) {
         newFavorites.delete(ticker);
         logEvent('favorite_asset_removed', { ticker });
@@ -230,10 +230,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
       setFavoriteAssets(newFavoritesArray, userId)
         .then(confirmedFavorites => {
             const confirmedFavoritesSet = new Set(confirmedFavorites);
-            // Ensure UI state matches the backend state
             setFavoriteAssetsState(confirmedFavoritesSet);
-            
-            // Re-sort assets to reflect new favorite status
             setAssets(prevAssets => {
               return [...prevAssets]
                 .map(a => ({...a, isFavorite: confirmedFavoritesSet.has(a.ticker)}))
@@ -252,8 +249,8 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 description: "Could not update your favorite tokens. Please try again.",
                 variant: "destructive"
             });
-            // Revert UI state on failure
-            setFavoriteAssetsState(prevFavorites); 
+            // Revert UI state on failure by returning the original set
+            setFavoriteAssetsState(currentFavorites);
         });
 
       return newFavorites;
@@ -1028,5 +1025,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     </>
   );
 }
+
+    
 
     
