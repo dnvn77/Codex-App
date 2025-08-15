@@ -31,7 +31,7 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
     res.status(200).json({
       address: wallet.address,
       // Devolver también los favoritos al crear/recuperar la billetera
-      favoriteTokens: user.favorite_tokens || ['ETH', 'USDC', 'WBTC'],
+      favoriteTokens: user.favorite_tokens || ['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW'],
       message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
@@ -94,4 +94,5 @@ router.post('/favorites', validateRequest({body: UpdateFavoritesRequestSchema}),
 
 
 export default router;
+
 

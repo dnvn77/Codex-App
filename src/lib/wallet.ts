@@ -630,33 +630,25 @@ export function validatePassword(password: string): {
 // --- Favorites Management ---
 
 export function getFavoriteAssets(userId: string | null): Set<string> {
-  const defaultFavorites = ['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW'];
-  
-  if (!userId) {
-    // Fallback for when user is not logged in, or for initial state
-    return new Set(defaultFavorites);
+  // Favorites are now primarily driven by the backend.
+  // This function can serve as a fallback or for the initial state before the wallet is connected.
+  const stored = getStoredWallet();
+  if (stored?.favoriteTokens) {
+      return new Set(stored.favoriteTokens);
   }
   
-  // In a real app, you would fetch this from your backend for the given userId
-  // For now, we simulate by storing it in localStorage keyed by user
-  const key = `${FAVORITES_KEY}_${userId}`;
-  const favorites = localStorage.getItem(key);
-
-  if (favorites) {
-    try {
-      const parsed = JSON.parse(favorites);
-      return new Set(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      return new Set(defaultFavorites);
-    }
-  }
-  // Default favorites for a new user
-  return new Set(defaultFavorites);
+  // Default list for when there's no stored wallet or user info yet.
+  return new Set(['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW']);
 }
 
+
 export async function setFavoriteAssets(favorites: string[], userId: string): Promise<void> {
-  const key = `${FAVORITES_KEY}_${userId}`;
-  localStorage.setItem(key, JSON.stringify(favorites));
+  // Update local storage for immediate UI feedback
+  const stored = getStoredWallet();
+  if (stored) {
+    const updatedWallet = { ...stored, favoriteTokens: favorites };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWallet));
+  }
 
   // Sync with the backend
   try {
@@ -675,3 +667,4 @@ export async function setFavoriteAssets(favorites: string[], userId: string): Pr
     console.error("Network error while syncing favorites:", error);
   }
 }
+

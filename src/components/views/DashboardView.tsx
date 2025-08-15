@@ -233,11 +233,9 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     
     // Re-sort assets to reflect new favorite status
     setAssets(prevAssets => {
-      const sortedAssets = [...prevAssets].sort((a, b) => {
-        const aIsFav = newFavorites.has(a.ticker);
-        const bIsFav = newFavorites.has(b.ticker);
-        if (aIsFav && !bIsFav) return -1;
-        if (!aIsFav && bIsFav) return 1;
+      const sortedAssets = [...prevAssets].map(a => ({...a, isFavorite: newFavorites.has(a.ticker)})).sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
         const valueA = a.balance * a.priceUSD;
         const valueB = b.balance * b.priceUSD;
         return valueB - valueA;
