@@ -215,11 +215,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
     const userId = user?.id.toString();
     if (!userId) return;
 
-    const newFavoritesArray = favoriteAssets.has(ticker)
-      ? Array.from(favoriteAssets).filter(f => f !== ticker)
-      : [...favoriteAssets, ticker];
+    const currentFavorites = favoriteAssets;
+    const newFavoritesArray = currentFavorites.has(ticker)
+      ? Array.from(currentFavorites).filter(f => f !== ticker)
+      : [...currentFavorites, ticker];
 
-    if (favoriteAssets.has(ticker)) {
+    if (currentFavorites.has(ticker)) {
         logEvent('favorite_asset_removed', { ticker });
     } else {
         logEvent('favorite_asset_added', { ticker });
