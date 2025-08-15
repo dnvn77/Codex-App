@@ -110,8 +110,9 @@ export function AppContainer() {
   
   const incrementUsageCount = () => {
       const currentCount = parseInt(localStorage.getItem('usage_count') || '0', 10);
-      localStorage.setItem('usage_count', String(currentCount + 1));
-      logEvent('app_usage_incremented', { new_count: currentCount + 1 });
+      const newCount = currentCount + 1;
+      localStorage.setItem('usage_count', String(newCount));
+      logEvent('app_usage_incremented', { new_count: newCount });
   };
 
   const handleWalletConnected = (newWallet: Wallet) => {

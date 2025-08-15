@@ -21,11 +21,30 @@ export const FeedbackOrchestrator = ({ currentView }: FeedbackOrchestratorProps)
     // on the backend or more robustly in localStorage to avoid re-triggering.
     // For this implementation, we'll keep it simple.
     const usageCount = parseInt(localStorage.getItem('usage_count') || '0', 10);
+    const feedbackGivenCount = parseInt(localStorage.getItem('feedback_given_count') || '0', 10);
+
+    let shouldTrigger = false;
+    if (feedbackGivenCount === 0) {
+      // Ask on the first 3 uses if no feedback has been given yet
+      if (usageCount > 0 && usageCount <= 3) {
+        // We use a unique key to ensure we only ask once per usage number (1, 2, 3)
+        const key = `feedback_asked_for_usage_${usageCount}`;
+        if (!localStorage.getItem(key)) {
+            shouldTrigger = true;
+            localStorage.setItem(key, 'true');
+        }
+      }
+    } else {
+      // After first feedback, ask every 35 uses
+      // We check if the current usage count is a multiple of 35 since the last feedback
+      const lastFeedbackUsage = parseInt(localStorage.getItem('last_feedback_usage_count') || '0', 10);
+      if (usageCount >= lastFeedbackUsage + 35) {
+        shouldTrigger = true;
+      }
+    }
     
-    if (currentView === 'dashboard' && usageCount >= 3) {
+    if (currentView === 'dashboard' && shouldTrigger) {
       triggerFeedbackEvent('repeated_usage_n');
-      // Prevent re-triggering in the same session for this condition.
-      localStorage.setItem('usage_count', '0'); 
     }
     
     // Check for first fund receipt
@@ -71,5 +90,3 @@ export const FeedbackOrchestrator = ({ currentView }: FeedbackOrchestratorProps)
 
   return null;
 };
-
-    

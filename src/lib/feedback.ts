@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
@@ -49,6 +50,17 @@ const feedbackClient = {
   logFeedback: async (payload: Omit<FeedbackPayload, 'session_id' | 'client_timestamp' | 'screen_time_seconds' | 'ui_theme' | 'language' | 'device_type'>) => {
     if (typeof window === 'undefined') return;
 
+    if (payload.question_id === 'overall_csat') {
+        const feedbackGivenCount = parseInt(localStorage.getItem('feedback_given_count') || '0', 10);
+        const newCount = feedbackGivenCount + 1;
+        localStorage.setItem('feedback_given_count', String(newCount));
+        
+        const usageCount = localStorage.getItem('usage_count') || '0';
+        localStorage.setItem('last_feedback_usage_count', usageCount);
+        feedbackClient.markSessionAsAsked();
+    }
+
+
     const sessionId = feedbackClient.ensureSessionId();
     const screenTimeSeconds = Math.round((Date.now() - screenTimeStart) / 1000);
     
@@ -71,7 +83,9 @@ const feedbackClient = {
       console.error('Supabase feedback insert error:', error);
     } else {
         console.log('Feedback event successfully logged to Supabase.');
-        feedbackClient.markSessionAsAsked();
+        if (payload.question_id !== 'overall_csat') {
+            feedbackClient.markSessionAsAsked();
+        }
         screenTimeStart = Date.now(); // Reset timer after successful feedback
     }
   },
