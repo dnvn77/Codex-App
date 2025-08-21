@@ -14,19 +14,13 @@ export const getSupabase = () => {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error("Supabase credentials are not set in the environment variables. Please check your .env file.");
-      // We can return a mock or throw an error, but for the app to not crash,
-      // we'll proceed, and Supabase client itself will handle connection errors.
-      // However, the createClient function will throw an error if the URL is invalid.
-      // So we must ensure they are at least valid strings.
-      supabaseClient = createClient('http://localhost:54321', 'test_key');
+      console.error("Supabase credentials are not set in the environment variables. Please check your .env file. Analytics will be disabled.");
+      // Return the existing client (which will be null) to prevent a crash.
+      // The logEvent function will handle the null case gracefully.
+      return supabaseClient;
     } else {
         supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
     }
   }
   return supabaseClient;
 };
-
-// For convenience, we can still export a default object that lazy-loads the client.
-// This is an advanced pattern and might be confusing. For now, we stick to the function export.
-// export const supabase = getSupabase();
