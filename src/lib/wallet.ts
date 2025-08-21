@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { Wallet, Transaction, StoredWallet, Contact } from './types';
@@ -267,21 +266,9 @@ export const bip39Wordlist: string[] = [
 ];
 
 
-// WARNING: This is a mock implementation for demonstration purposes.
-// Do not use this in a production environment.
-// A real implementation would use a proper HD wallet library like ethers.js or viem,
-// and cryptographic libraries for hashing like 'crypto' or 'js-sha3'.
-
 const WALLET_STORAGE_KEY = 'strawberry_wallet';
 const CONTACTS_STORAGE_KEY = 'strawberry_contacts';
-
-function generateRandomString(length: number, chars: string): string {
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+const FAVORITE_TOKENS_KEY_PREFIX = 'favorite_tokens_';
 
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
 function mockHash(input: string): string {
@@ -295,12 +282,10 @@ function mockHash(input: string): string {
     
     let hex = (hash >>> 0).toString(16);
     
-    // Pad to ensure consistent length for the base hash
     while (hex.length < 8) {
         hex = '0' + hex;
     }
     
-    // Simple deterministic expansion to reach 64 chars
     let expandedHex = hex;
     while (expandedHex.length < 64) {
         let newPart = '';
@@ -315,16 +300,9 @@ function mockHash(input: string): string {
 
 
 function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
-    // In a real app, the seed phrase would be used with BIP39 to generate a master seed,
-    // then SLIP-10 or BIP32/44 to derive keys.
     const masterKey = '0x' + mockHash(seedPhrase);
-    
-    // Derive App Key and Nullifier Key from the Master Key.
-    // In Aztec, these derivations are specific cryptographic operations.
     const appKey = '0x' + mockHash(masterKey + "_app_key");
     const nullifierKey = '0x' + mockHash(masterKey + "_nullifier_key");
-
-    // The address is derived from the app key.
     const address = '0x' + mockHash(appKey).substring(0, 40);
 
     return {
@@ -336,34 +314,23 @@ function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'ba
 }
 
 
-/**
- * Creates a mock wallet with a random seed phrase and derived keys based on Aztec concepts.
- * @returns A mock Wallet object.
- */
 export function createWallet(): Wallet {
   const seedPhrase = [...Array(12)].map(() => bip39Wordlist[Math.floor(Math.random() * bip39Wordlist.length)]).join(' ');
   const derivedKeys = deriveKeysFromSeed(seedPhrase);
 
   return {
     seedPhrase,
-    balance: 0.50, // Default balance for new wallets
+    balance: 0.50,
     ...derivedKeys,
   };
 }
 
 
-/**
- * Imports a wallet from a seed phrase.
- * @param seedPhrase The secret phrase.
- * @returns A Wallet object.
- */
 export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> {
     const words = seedPhrase.trim().toLowerCase().split(/\s+/);
     if (![12, 15, 18, 24].includes(words.length)) {
         throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
     }
-
-    // In a real app, this would be a checksum validation.
     if (words.some(word => !bip39Wordlist.includes(word))) {
        throw new Error("Invalid seed phrase. One or more words are not part of the official wordlist.");
     }
@@ -371,12 +338,11 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
     const joinedSeed = words.join(' ');
     const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
-    // Simulate a "fetched" or deterministic balance for an imported wallet.
     let sum = 0;
     for (let i = 0; i < joinedSeed.length; i++) {
         sum += joinedSeed.charCodeAt(i);
     }
-    const balance = (sum % 20000) / 10000 + 0.1; // Range 0.1 to 2.1
+    const balance = (sum % 20000) / 10000 + 0.1;
 
     return {
         seedPhrase: joinedSeed,
@@ -386,25 +352,12 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
 }
 
 
-/**
- * Simulates sending a private transaction.
- * @param fromWallet The sender's wallet.
- * @param to The recipient's address.
- * @param amount The amount of the asset to send.
- * @param ticker The ticker of the asset being sent.
- * @param icon The icon URL of the asset being sent.
- * @returns A mock Transaction object.
- */
 export function sendTransaction(fromWallet: Wallet, to: string, amount: number, ticker: string, icon?: string): Transaction {
   if (amount <= 0) {
     throw new Error('Amount must be positive.');
   }
 
-  // In a real Aztec transaction, the nullifierKey would be used to generate nullifiers for the notes being spent.
-  // The appKey would be used to sign the transaction.
-  // If the asset is not ETH, this would involve interacting with a TokenPortal contract.
-
-  const txHash = '0x' + generateRandomString(64, '0123456789abcdef');
+  const txHash = '0x' + [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
   const l1SettlementBlock = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 120);
 
   return {
@@ -419,11 +372,6 @@ export function sendTransaction(fromWallet: Wallet, to: string, amount: number, 
 }
 
 
-/**
- * Simulates resolving an ENS name to an Ethereum address.
- * @param ensName The ENS name to resolve (e.g., 'vitalik.eth').
- * @returns A Promise that resolves to the address string or null if not found.
- */
 export async function resolveEnsName(ensName: string): Promise<string | null> {
   const mockEnsRegistry: { [key: string]: string } = {
     'vitalik.eth': '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
@@ -434,7 +382,6 @@ export async function resolveEnsName(ensName: string): Promise<string | null> {
   };
 
   return new Promise(resolve => {
-    // Simulate network delay
     setTimeout(() => {
       const address = mockEnsRegistry[ensName.toLowerCase()];
       resolve(address || null);
@@ -443,15 +390,10 @@ export async function resolveEnsName(ensName: string): Promise<string | null> {
 }
 
 
-// --- Wallet Storage and Encryption ---
-// Using Web Crypto API for strong encryption.
-
-// Helper to convert ArrayBuffer to Base64 string
 function bufferToBase64(buffer: ArrayBuffer): string {
     return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(buffer))));
 }
 
-// Helper to convert Base64 string to Uint8Array
 function base64ToUint8Array(base64: string): Uint8Array {
     const binaryString = atob(base64);
     const len = binaryString.length;
@@ -472,10 +414,8 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
         ['deriveKey']
     );
 
-    const iterations = 300000;
-
     return window.crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt, iterations: 300000, hash: 'SHA-256' },
         baseKey,
         { name: 'AES-GCM', length: 256 },
         true,
@@ -483,7 +423,7 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
     );
 }
 
-async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance'>> {
+async function encrypt(data: string, secret: string): Promise<Omit<StoredWallet, 'address' | 'balance' | 'favoriteTokens'>> {
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(secret, salt);
@@ -519,16 +459,19 @@ async function decrypt(stored: StoredWallet, secret: string): Promise<string> {
 }
 
 export async function storeWallet(wallet: Wallet, password: string): Promise<void> {
+    if (typeof window === 'undefined') return;
     const encryptedData = await encrypt(wallet.seedPhrase, password);
     const storedWallet: StoredWallet = {
         ...encryptedData,
         address: wallet.address,
         balance: wallet.balance,
+        favoriteTokens: ['ETH', 'WBTC', 'USDC', 'STRW']
     };
     localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(storedWallet));
 }
 
 export function getStoredWallet(): StoredWallet | null {
+    if (typeof window === 'undefined') return null;
     const data = localStorage.getItem(WALLET_STORAGE_KEY);
     return data ? JSON.parse(data) : null;
 }
@@ -542,8 +485,7 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
         const derivedKeys = deriveKeysFromSeed(seedPhrase);
         
         if(derivedKeys.address !== stored.address) {
-            console.error("Address mismatch after decryption. This indicates a serious issue.");
-            return null; // Return null on integrity failure
+            throw new Error("Address mismatch after decryption. Data integrity error.");
         }
 
         return {
@@ -552,18 +494,12 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
             balance: stored.balance,
         };
     } catch (e) {
-        console.error("Decryption failed (likely wrong password):", e);
-        return null;
+        console.error("Decryption failed:", e);
+        throw new Error("Wrong password");
     }
 }
 
 
-/**
- * Verifies if a given seed phrase corresponds to the stored wallet address.
- * @param seedPhrase The seed phrase to verify.
- * @param storedAddress The address of the wallet currently in storage.
- * @returns A Promise that resolves to true if the address matches, false otherwise.
- */
 export async function verifySeedPhrase(seedPhrase: string, storedAddress: string): Promise<boolean> {
     try {
         const words = seedPhrase.trim().toLowerCase().split(/\s+/);
@@ -584,8 +520,15 @@ export async function verifySeedPhrase(seedPhrase: string, storedAddress: string
 
 
 export function clearStoredWallet(): void {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem(WALLET_STORAGE_KEY);
     localStorage.removeItem(CONTACTS_STORAGE_KEY);
+    // Also clear favorite tokens for all users
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(FAVORITE_TOKENS_KEY_PREFIX)) {
+            localStorage.removeItem(key);
+        }
+    });
 }
 
 export function validatePassword(password: string): {
@@ -601,14 +544,14 @@ export function validatePassword(password: string): {
         uppercase: /[A-Z]/.test(password),
         lowercase: /[a-z]/.test(password),
         number: /[0-9]/.test(password),
-        special: /[\W_]/.test(password), // Matches any non-word character
+        special: /[\W_]/.test(password),
         common: !commonPasswords.has(password.toLowerCase()),
     };
 }
 
-// --- Contacts Management ---
 
 export function getContacts(): Contact[] {
+    if (typeof window === 'undefined') return [];
     const data = localStorage.getItem(CONTACTS_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
 }
@@ -618,14 +561,10 @@ export function saveContact(newContact: Contact): Contact[] {
     const existingIndex = contacts.findIndex(c => c.address.toLowerCase() === newContact.address.toLowerCase());
     
     if (existingIndex > -1) {
-        // Update existing contact name
         contacts[existingIndex].name = newContact.name;
     } else {
-        // Add new contact
         contacts.push(newContact);
     }
-
-    // Sort by name for consistent display
     contacts.sort((a, b) => a.name.localeCompare(b.name));
     
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
@@ -637,4 +576,50 @@ export function deleteContact(address: string): Contact[] {
     contacts = contacts.filter(c => c.address.toLowerCase() !== address.toLowerCase());
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts));
     return contacts;
+}
+
+// Favorite Tokens Management
+export function getFavoriteTokens(): string[] {
+    if (typeof window === 'undefined') return ['ETH', 'WBTC', 'USDC', 'STRW']; // Default for SSR
+    
+    const storedWallet = getStoredWallet();
+    // Use user-specific key if available, otherwise fallback to wallet-specific, then default.
+    const key = storedWallet?.address ? `${FAVORITE_TOKENS_KEY_PREFIX}${storedWallet.address}` : null;
+    
+    if (key) {
+        const data = localStorage.getItem(key);
+        if(data) return JSON.parse(data);
+    }
+    
+    // Fallback to reading from the main wallet object for migration purposes
+    if (storedWallet?.favoriteTokens) {
+        // Migrate to new system
+        if(key) setFavoriteTokens(storedWallet.address, storedWallet.favoriteTokens);
+        return storedWallet.favoriteTokens;
+    }
+
+    return ['ETH', 'WBTC', 'USDC', 'STRW']; // Default favorites
+}
+
+export async function setFavoriteTokens(userId: string, tokens: string[]): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const key = `${FAVORITE_TOKENS_KEY_PREFIX}${userId}`;
+    localStorage.setItem(key, JSON.stringify(tokens));
+    
+    // Also try to sync with backend
+    if (!process.env.NEXT_PUBLIC_API_KEY_BACKEND) return;
+
+    try {
+        await fetch('/api/wallet/favorites', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND,
+            },
+            body: JSON.stringify({ userId, favoriteTokens: tokens }),
+        });
+    } catch (e) {
+        console.error("Failed to sync favorite tokens with backend", e);
+        // We don't need to notify the user, local storage is the source of truth
+    }
 }

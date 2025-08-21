@@ -1,18 +1,39 @@
 
-export type Language = 'en' | 'es' | 'zh' | 'hi' | 'fr' | 'ar' | 'bn' | 'ru' | 'pt' | 'id';
+export type Language = 'en' | 'es';
 
-export const supportedLanguages: Language[] = ['en', 'es', 'zh', 'hi', 'fr', 'ar', 'bn', 'ru', 'pt', 'id'];
+export const supportedLanguages: Language[] = ['en', 'es'];
 
 const translationsData = {
   en: {
     // New UI
-    chat: 'Chat',
+    chat: 'Chats',
     wallet: 'Wallet',
     settings: 'Settings',
     search: 'Search...',
     appearance: 'Appearance',
     theme: 'Theme',
     themeDescription: 'Select the theme for the app.',
+    profile: 'Profile',
+    contacts: 'Contacts',
+    editProfile: 'Edit Profile',
+    publicAddress: 'Public EVM Address',
+    publicAddressDesc: 'This is your public address for receiving cryptocurrency.',
+    recentActivity: 'Recent Activity',
+    transactions: 'Transactions',
+
+    // Favorites
+    favoritesTitle: 'Favorites',
+    editFavoritesButton: 'Edit Favorites',
+    editFavoritesTitle: 'Edit Favorite Assets',
+    editFavoritesDesc: 'Select the assets you want to see on your dashboard.',
+    doneButton: 'Done',
+    noFavoritesText: 'You have no favorite assets yet. Click "Edit Favorites" to add some.',
+
+    // Dashboard
+    loadingPrices: 'Loading prices...',
+    loadingPricesError: 'Could not load asset prices.',
+    dashboardTitle: 'Wallet Dashboard',
+
     // Existing translations
     mainTitle: 'Strawberry Wallet',
     mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
@@ -53,7 +74,6 @@ const translationsData = {
     secretPhraseTitle: 'Your Secret Phrase',
     secretPhraseDesc: 'Write this down and store it somewhere safe. This is the only time you will see it.',
     neverShareWarning: 'NEVER share this phrase with anyone. Anyone with this phrase can take your assets forever.',
-    dashboardTitle: 'Wallet Dashboard',
     disconnectButton: 'Disconnect',
     dashboardDesc: 'Send private transactions on the Sepolia testnet.',
     yourWalletAddressLabel: 'Your Wallet Address',
@@ -229,13 +249,34 @@ const translationsData = {
   },
   es: {
     // New UI
-    chat: 'Chat',
+    chat: 'Chats',
     wallet: 'Billetera',
     settings: 'Ajustes',
     search: 'Buscar...',
     appearance: 'Apariencia',
     theme: 'Tema',
     themeDescription: 'Selecciona el tema para la aplicación.',
+    profile: 'Perfil',
+    contacts: 'Contactos',
+    editProfile: 'Editar Perfil',
+    publicAddress: 'Dirección Pública EVM',
+    publicAddressDesc: 'Esta es tu dirección pública para recibir criptomonedas.',
+    recentActivity: 'Actividad Reciente',
+    transactions: 'Transacciones',
+
+    // Favorites
+    favoritesTitle: 'Favoritos',
+    editFavoritesButton: 'Editar Favoritos',
+    editFavoritesTitle: 'Editar Activos Favoritos',
+    editFavoritesDesc: 'Selecciona los activos que quieres ver en tu panel.',
+    doneButton: 'Hecho',
+    noFavoritesText: 'Aún no tienes activos favoritos. Haz clic en "Editar Favoritos" para añadir algunos.',
+
+    // Dashboard
+    loadingPrices: 'Cargando precios...',
+    loadingPricesError: 'No se pudieron cargar los precios de los activos.',
+    dashboardTitle: 'Panel de la Billetera',
+
     // Existing translations
     mainTitle: 'Strawberry Wallet',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
@@ -276,7 +317,6 @@ const translationsData = {
     secretPhraseTitle: 'Tu Frase Secreta',
     secretPhraseDesc: 'Escribe esto y guárdalo en un lugar seguro. Esta es la única vez que la verás.',
     neverShareWarning: 'NUNCA compartas esta frase con nadie. Cualquiera con esta frase puede tomar tus activos para siempre.',
-    dashboardTitle: 'Panel de la Billetera',
     disconnectButton: 'Desconectar',
     dashboardDesc: 'Envía transacciones privadas en la testnet de Sepolia.',
     yourWalletAddressLabel: 'Dirección de tu Billetera',
@@ -402,26 +442,15 @@ const translationsData = {
     // Feedback Surveys
     feedback: {
         anonymousDisclaimer: "Tu respuesta es anónima y solo se usa para mejorar la app.",
-
-        // Receive Funds
         receiveFlowEaseTitle: "🎉 ¡Recibiste tu primer envío!",
         receiveFlowEaseQuestion: "¿Qué tan fácil fue recibirlo?",
-        
-        // Send First Transaction
         sendFlowFeelingTitle: "💸 Tu envío está en camino.",
         sendFlowFeelingQuestion: "¿Cómo te sentiste con el proceso?",
-
-        // Seed Confirmation
         seedClarityTitle: "🔐 Un último paso",
         seedClarityQuestion: "Acabas de confirmar tu frase de seguridad. ¿Fue claro este paso?",
-        
-        // Overall CSAT
         overallCsatTitle: "🍓 Has usado Violet Vault varias veces.",
         overallCsatQuestion: "¿Cómo calificarías tu experiencia general?",
-
-        // Options
         options: {
-            // These keys are used to look up the translated text below
             receiveFlowEase: [
                 { value: 'super_easy', labelKey: 'super_easy_label' },
                 { value: 'good_improvable', labelKey: 'good_improvable_label' },
@@ -437,8 +466,6 @@ const translationsData = {
                 { value: 'understood_but_difficult', labelKey: 'understood_but_difficult_label' },
                 { value: 'did_not_understand_well', labelKey: 'did_not_understand_well_label' },
             ],
-
-            // Option labels (the translated text)
             super_easy_label: "Súper fácil",
             good_improvable_label: "Bien, pero mejorable",
             difficult_label: "Fue difícil",
@@ -453,15 +480,31 @@ const translationsData = {
   },
 };
 
-// Function to get the correct translations, falling back to English
-const getTranslatedStrings = (lang: Language) => {
-    const base = translationsData.en;
-    const selected = translationsData[lang] || base;
-    return {...base, ...selected, feedback: {...base.feedback, ...selected.feedback}};
+const base = translationsData.en;
+type BaseTranslations = typeof base;
+
+// Function to merge translations, ensuring all keys from 'en' are present
+const mergeTranslations = (langTranslations: Partial<BaseTranslations>): BaseTranslations => {
+    const merged = { ...base };
+
+    // A simple deep merge for one level (e.g., feedback.options)
+    for (const key in base) {
+        const typedKey = key as keyof BaseTranslations;
+        if (langTranslations[typedKey]) {
+            if (typeof base[typedKey] === 'object' && base[typedKey] !== null && !Array.isArray(base[typedKey])) {
+                // @ts-ignore
+                merged[typedKey] = { ...base[typedKey], ...langTranslations[typedKey] };
+            } else {
+                 // @ts-ignore
+                merged[typedKey] = langTranslations[typedKey];
+            }
+        }
+    }
+    return merged;
 };
 
 // Pre-calculate all translations
-export const translations = supportedLanguages.reduce((acc, lang) => {
-    acc[lang] = getTranslatedStrings(lang);
-    return acc;
-}, {} as Record<Language, typeof translationsData.en>);
+export const translations: Record<Language, BaseTranslations> = {
+    en: base,
+    es: mergeTranslations(translationsData.es),
+};

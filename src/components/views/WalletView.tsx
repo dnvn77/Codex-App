@@ -3,11 +3,10 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteTokens, setFavoriteTokens } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
@@ -22,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
   Dialog,
@@ -57,8 +55,10 @@ import { TransactionHistory } from '@/components/shared/TransactionHistory';
 import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
-import { useTelegram } from '@/hooks/useTelegram';
 import { ReceiptView } from './ReceiptView';
+import { FavoriteAssetChart } from '../shared/FavoriteAssetChart';
+import { useTelegram } from '@/hooks/useTelegram';
+import { Skeleton } from '../ui/skeleton';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -111,6 +111,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
+  const { user } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -149,7 +150,24 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
   const [isContactsOpen, setContactsOpen] = useState(false);
   
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
+  
+  const [favoriteTokens, setLocalFavoriteTokens] = useState<string[]>([]);
+  const [isFavoritesEditing, setIsFavoritesEditing] = useState(false);
 
+  useEffect(() => {
+    // Load favorites from local storage on component mount
+    setLocalFavoriteTokens(getFavoriteTokens());
+  }, []);
+
+  const handleToggleFavorite = (ticker: string) => {
+    const newFavorites = favoriteTokens.includes(ticker)
+      ? favoriteTokens.filter(t => t !== ticker)
+      : [...favoriteTokens, ticker];
+    setLocalFavoriteTokens(newFavorites);
+    setFavoriteTokens(user?.id ? String(user.id) : 'local_user', newFavorites); // Persist changes
+  };
+
+  // Mock balances for demonstration. In a real app, this data would come from an on-chain query.
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
     'USDC': 1520.75,
@@ -189,6 +207,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
           const combinedAssets = priceData.map(asset => ({
               ...asset,
               balance: mockBalances[asset.ticker] || 0,
+              isFavorite: favoriteTokens.includes(asset.ticker),
           })).sort((a, b) => {
               const valueA = a.balance * a.priceUSD;
               const valueB = b.balance * b.priceUSD;
@@ -197,7 +216,11 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
           });
           setAssets(combinedAssets);
       }
-  }, [priceData, mockBalances]);
+  }, [priceData, mockBalances, favoriteTokens]);
+
+  const favoriteAssets = useMemo(() => {
+    return assets.filter(a => a.isFavorite).sort((a, b) => favoriteTokens.indexOf(a.ticker) - favoriteTokens.indexOf(b.ticker));
+  }, [assets, favoriteTokens]);
 
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
@@ -322,6 +345,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
   };
 
   const persistTransaction = async (tx: Transaction) => {
+    if (!user?.id) return;
     try {
         const response = await fetch('/api/tx/log', {
             method: 'POST',
@@ -390,7 +414,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
     });
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
       const tx = sendTransaction(wallet, finalAddress, amountInEth, selectedAsset.ticker, selectedAsset.icon);
       
       await persistTransaction(tx);
@@ -553,286 +577,329 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
   }
 
   return (
-    <>
-      <Card className="w-full shadow-lg">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>{t.dashboardTitle}</CardTitle>
-              <CardDescription>{t.dashboardDesc}</CardDescription>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={onDisconnect}>
-                <LogOut className="mr-2 h-4 w-4"/>
-                {t.disconnectButton}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
-                <div className="flex justify-between items-center mb-2">
-                    <div />
-                    <Button variant="ghost" size="icon" onClick={() => { logEvent('balance_visibility_toggled', { visible: !showBalances }); setShowBalances(!showBalances); }} className="h-8 w-8">
-                      {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </Button>
-                </div>
-               <div className='flex justify-between items-center'>
-                <div>
-                  <Label>{t.totalBalanceLabel}</Label>
-                   <div className="flex items-center gap-2">
-                    <p className="text-2xl font-bold">
-                       {showBalances ? `$${totalBalanceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-               <div className="flex items-center justify-between">
-                <Label>{t.yourWalletAddressLabel}</Label>
+    <div className='space-y-4'>
+          <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+              <div className="flex justify-between items-center">
+                <p className="font-semibold text-lg">{t.yourWalletAddressLabel}</p>
                 <div className="flex items-center">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => logEvent('show_qr_code_clicked')}>
-                         <QrCode className="h-5 w-5" />
-                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-xs">
-                       <DialogHeader>
-                         <DialogTitle>{t.receiveFundsTitle}</DialogTitle>
-                       </DialogHeader>
-                       <div className="flex flex-col items-center justify-center p-4 gap-4">
-                         <div className="p-2 bg-white rounded-lg">
-                            <Image 
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallet.address}`}
-                              width={200}
-                              height={200}
-                              alt="Wallet Address QR Code"
-                              data-ai-hint="qr code"
-                            />
-                         </div>
-                         <p className="text-xs text-muted-foreground break-all text-center">{wallet.address}</p>
-                         <Button onClick={handleCopyAddress} className="w-full">
-                           <Copy className="mr-2 h-4 w-4" />
-                           {t.copyAddressButton}
-                         </Button>
-                       </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm font-mono text-primary text-right">{truncatedAddress}</p>
-            </div>
-             <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
-                        <History className="mr-2 h-4 w-4" />
-                        Transaction History
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md h-[80vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Transaction History</DialogTitle>
-                        <DialogDescription>
-                            Your recent transaction activity from the network.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <TransactionHistory walletAddress={wallet.address} />
-                </DialogContent>
-            </Dialog>
-            
-            <Separator />
-            
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-lg">{t.assetsTitle}</h3>
-                 <div className="flex items-center space-x-2">
-                  <Label htmlFor="hide-zero" className="text-sm text-muted-foreground">{t.hideZeroBalancesLabel}</Label>
-                  <Switch
-                    id="hide-zero"
-                    checked={hideZeroBalances}
-                    onCheckedChange={(checked) => { logEvent('hide_zero_balances_toggled', { enabled: checked }); setHideZeroBalances(checked); }}
-                  />
-                </div>
-              </div>
-              {assetStatus === 'loading' && (
-                <div className="text-center py-8">
-                    <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
-                    <p className="text-muted-foreground mt-2">Cargando precios...</p>
-                </div>
-              )}
-              {assetStatus === 'error' && (
-                <div className="text-center py-8 text-destructive">
-                    <AlertTriangle className="h-8 w-8 mx-auto" />
-                    <p className="mt-2">No se pudieron cargar los activos.</p>
-                </div>
-              )}
-              {assetStatus === 'success' && (
-                <AssetList 
-                  assets={assets} 
-                  showBalances={showBalances} 
-                  hideZeroBalances={hideZeroBalances} 
-                  t={t} 
-                  onRefresh={updateAssetPrices} 
-                  isRefreshing={assetStatus === 'loading'}
-                />
-              )}
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2 pt-4">
-               <div className="flex justify-between items-start">
-                <h3 className="text-lg font-medium">{t.sendTxTitle}</h3>
-                <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} t={t} />
-               </div>
-              <div className="space-y-1">
-                <Label htmlFor="toAddress">{t.destinationAddressLabel}</Label>
-                <div className="flex items-center gap-2">
-                    <Input
-                      id="toAddress"
-                      placeholder="0x... or vitalik.eth"
-                      value={toAddress}
-                      onChange={(e) => setToAddress(e.target.value)}
-                      disabled={isSending}
-                      className="flex-grow"
-                    />
-                    <Dialog open={isContactsOpen} onOpenChange={setContactsOpen}>
-                       <DialogTrigger asChild>
-                         <Button variant="outline" size="icon" disabled={isSending}>
-                            <User className="h-5 w-5" />
-                         </Button>
-                       </DialogTrigger>
-                       <DialogContent>
-                          <ContactsList onContactSelect={handleContactSelect} />
-                       </DialogContent>
-                    </Dialog>
-                    <Dialog open={isScannerOpen} onOpenChange={setScannerOpen}>
+                    <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="icon" disabled={isSending} onClick={() => logEvent('qr_scanner_opened')}>
-                          <QrCode className="h-5 w-5" />
-                        </Button>
+                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => logEvent('show_qr_code_clicked')}>
+                           <QrCode className="h-5 w-5" />
+                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-sm">
-                        <DialogHeader>
-                          <DialogTitle>{t.scanQrTitle}</DialogTitle>
-                        </DialogHeader>
-                        <QRScanner onScan={handleQrScan} t={t} />
+                      <DialogContent className="max-w-xs">
+                         <DialogHeader>
+                           <DialogTitle>{t.receiveFundsTitle}</DialogTitle>
+                         </DialogHeader>
+                         <div className="flex flex-col items-center justify-center p-4 gap-4">
+                           <div className="p-2 bg-white rounded-lg">
+                              <Image 
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallet.address}`}
+                                width={200}
+                                height={200}
+                                alt="Wallet Address QR Code"
+                                data-ai-hint="qr code"
+                              />
+                           </div>
+                           <p className="text-xs text-muted-foreground break-all text-center">{wallet.address}</p>
+                           <Button onClick={handleCopyAddress} className="w-full">
+                             <Copy className="mr-2 h-4 w-4" />
+                             {t.copyAddressButton}
+                           </Button>
+                         </div>
                       </DialogContent>
                     </Dialog>
-                </div>
-                 {ensResolution.status !== 'idle' && (
-                  <div className="text-xs pt-1 flex items-center gap-2">
-                    {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>{t.resolvingEns}</>}
-                    {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
-                    {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">{t.ensResolutionError}</span></>}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyAddress}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
               </div>
-
-               <div className="grid grid-cols-5 gap-2 items-end pt-2">
-                <div className="col-span-3 space-y-1">
-                    <div className="flex justify-between items-end h-6 mb-1">
-                        <Label htmlFor="amount">{t.amountLabel}</Label>
-                         <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
-                          {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                            id="amount"
-                            type="number"
-                            placeholder="10.00"
-                            value={amount}
-                            onChange={handleAmountChange}
-                            disabled={isSending || selectedAssetTicker !== 'ETH'}
-                            className="pl-6"
-                        />
-                         {amount && selectedAssetTicker === 'ETH' && !amountError && (
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                ({amountInEth.toFixed(5)} ETH)
-                            </span>
-                        )}
-                    </div>
-                </div>
-
-                <div className="col-span-2 space-y-1">
-                    <div className="h-6 flex items-end">
-                      <Label htmlFor="asset">{t.assetLabel}</Label>
-                    </div>
-                     <Popover open={isAssetSelectorOpen} onOpenChange={setAssetSelectorOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={isAssetSelectorOpen}
-                            className="w-full justify-between h-10"
-                            disabled={isSending}
-                            >
-                            <div className="flex items-center gap-2">
-                                {selectedAsset ? (
-                                    <Image src={selectedAsset.icon} alt={selectedAsset.name} width={20} height={20} className="rounded-full" />
-                                ) : <div className="w-5 h-5"/>}
-                                {selectedAsset ? selectedAsset.ticker : t.selectAssetLabel}
-                            </div>
-                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-0">
-                            <Command>
-                            <CommandInput placeholder={t.searchAssetPlaceholder} />
-                            <CommandList>
-                                <CommandEmpty>{t.noAssetFound}</CommandEmpty>
-                                <CommandGroup>
-                                {allAssetsWithIcons.map((asset) => (
-                                    <CommandItem
-                                    key={asset.ticker}
-                                    value={asset.name}
-                                    onSelect={() => {
-                                        logEvent('asset_selected_for_send', { asset: asset.ticker });
-                                        setSelectedAssetTicker(asset.ticker);
-                                        setAmount('');
-                                        setAmountError('');
-                                        setAssetSelectorOpen(false);
-                                    }}
-                                    >
-                                     <CheckCircle
-                                        className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedAssetTicker === asset.ticker ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
-                                     <div className="flex items-center gap-2">
-                                        <Image src={asset.icon} alt={asset.name} width={20} height={20} className="rounded-full" />
-                                        <span>{asset.ticker}</span>
-                                      </div>
-                                    </CommandItem>
-                                ))}
-                                </CommandGroup>
-                            </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                </div>
-              </div>
+            <p className="text-sm font-mono text-primary text-right">{truncatedAddress}</p>
+            <Separator className='my-2 bg-border/50'/>
+             <div className='flex justify-between items-center'>
               <div>
-                {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
-                {selectedAssetTicker !== 'ETH' && (
-                    <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
-                        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <p>{t.tokenPortalInfo}</p>
-                    </div>
-                )}
+                <Label>{t.totalBalanceLabel}</Label>
+                 <div className="flex items-center gap-2">
+                  <p className="text-3xl font-bold">
+                     {showBalances ? `$${totalBalanceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
+                  </p>
+                </div>
               </div>
+                <Button variant="ghost" size="icon" onClick={() => { logEvent('balance_visibility_toggled', { visible: !showBalances }); setShowBalances(!showBalances); }} className="h-8 w-8 self-end">
+                    {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </Button>
             </div>
           </div>
-        </CardContent>
-        <CardFooter>
+           <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+              <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
+                      <History className="mr-2 h-4 w-4" />
+                      Transaction History
+                  </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md h-[80vh] flex flex-col">
+                  <DialogHeader>
+                      <DialogTitle>Transaction History</DialogTitle>
+                      <DialogDescription>
+                          Your recent transaction activity from the network.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <TransactionHistory walletAddress={wallet.address} />
+              </DialogContent>
+          </Dialog>
+          
+          <Separator />
+
+          <div>
+             <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-lg">{t.favoritesTitle}</h3>
+                <Dialog open={isFavoritesEditing} onOpenChange={setIsFavoritesEditing}>
+                    <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={() => logEvent('edit_favorites_opened')}>
+                            <Star className="mr-2 h-4 w-4"/>
+                            {t.editFavoritesButton}
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{t.editFavoritesTitle}</DialogTitle>
+                            <DialogDescription>{t.editFavoritesDesc}</DialogDescription>
+                        </DialogHeader>
+                        <div className="py-2 max-h-96 overflow-y-auto">
+                            <div className="space-y-2">
+                                {assets.map(asset => (
+                                    <div key={asset.ticker} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                                        <div className="flex items-center gap-3">
+                                            <Image src={asset.icon} alt={asset.name} width={32} height={32} className="rounded-full" />
+                                            <div>
+                                                <p className="font-bold">{asset.ticker}</p>
+                                                <p className="text-xs text-muted-foreground">{asset.name}</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => handleToggleFavorite(asset.ticker)}>
+                                            <Star className={cn("h-6 w-6 text-muted-foreground transition-colors", asset.isFavorite && "text-amber-400 fill-amber-400")}/>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                         <DialogFooter>
+                            <Button onClick={() => setIsFavoritesEditing(false)}>{t.doneButton}</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {assetStatus === 'loading' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className='h-40 w-full' />
+                    <Skeleton className='h-40 w-full' />
+                </div>
+            )}
+             {assetStatus === 'success' && (
+                favoriteAssets.length > 0 ? (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {favoriteAssets.map(asset => (
+                            <button key={asset.ticker} onClick={() => setDetailedChartAsset(asset)} className="text-left">
+                                <FavoriteAssetChart asset={asset} />
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center text-muted-foreground py-8">
+                        <p>{t.noFavoritesText}</p>
+                    </div>
+                )
+             )}
+          </div>
+          
+          <Separator />
+          
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-lg">{t.assetsTitle}</h3>
+               <div className="flex items-center space-x-2">
+                <Label htmlFor="hide-zero" className="text-sm text-muted-foreground">{t.hideZeroBalancesLabel}</Label>
+                <Switch
+                  id="hide-zero"
+                  checked={hideZeroBalances}
+                  onCheckedChange={(checked) => { logEvent('hide_zero_balances_toggled', { enabled: checked }); setHideZeroBalances(checked); }}
+                />
+              </div>
+            </div>
+            {assetStatus === 'loading' && (
+              <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+                  <p className="text-muted-foreground mt-2">{t.loadingPrices}</p>
+              </div>
+            )}
+            {assetStatus === 'error' && (
+              <div className="text-center py-8 text-destructive">
+                  <AlertTriangle className="h-8 w-8 mx-auto" />
+                  <p className="mt-2">{t.loadingPricesError}</p>
+              </div>
+            )}
+            {assetStatus === 'success' && (
+              <AssetList 
+                assets={assets} 
+                showBalances={showBalances} 
+                hideZeroBalances={hideZeroBalances} 
+                t={t} 
+                onRefresh={updateAssetPrices} 
+                isRefreshing={assetStatus === 'loading'}
+              />
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2 pt-4">
+             <div className="flex justify-between items-start">
+              <h3 className="text-lg font-medium">{t.sendTxTitle}</h3>
+              <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} t={t} />
+             </div>
+            <div className="space-y-1">
+              <Label htmlFor="toAddress">{t.destinationAddressLabel}</Label>
+              <div className="flex items-center gap-2">
+                  <Input
+                    id="toAddress"
+                    placeholder="0x... or vitalik.eth"
+                    value={toAddress}
+                    onChange={(e) => setToAddress(e.target.value)}
+                    disabled={isSending}
+                    className="flex-grow"
+                  />
+                  <Dialog open={isContactsOpen} onOpenChange={setContactsOpen}>
+                     <DialogTrigger asChild>
+                       <Button variant="outline" size="icon" disabled={isSending}>
+                          <User className="h-5 w-5" />
+                       </Button>
+                     </DialogTrigger>
+                     <DialogContent>
+                        <ContactsList onContactSelect={handleContactSelect} />
+                     </DialogContent>
+                  </Dialog>
+                  <Dialog open={isScannerOpen} onOpenChange={setScannerOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="icon" disabled={isSending} onClick={() => logEvent('qr_scanner_opened')}>
+                        <QrCode className="h-5 w-5" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-sm">
+                      <DialogHeader>
+                        <DialogTitle>{t.scanQrTitle}</DialogTitle>
+                      </DialogHeader>
+                      <QRScanner onScan={handleQrScan} t={t} />
+                    </DialogContent>
+                  </Dialog>
+              </div>
+               {ensResolution.status !== 'idle' && (
+                <div className="text-xs pt-1 flex items-center gap-2">
+                  {ensResolution.status === 'loading' && <> <Loader2 className="h-3 w-3 animate-spin"/>{t.resolvingEns}</>}
+                  {ensResolution.status === 'success' && <><CheckCircle className="h-4 w-4 text-green-500" /> <span className="font-mono text-muted-foreground">{ensResolution.address}</span></>}
+                  {ensResolution.status === 'error' && <><XCircle className="h-4 w-4 text-destructive" /> <span className="text-destructive">{t.ensResolutionError}</span></>}
+                </div>
+              )}
+            </div>
+
+             <div className="grid grid-cols-5 gap-2 items-end pt-2">
+              <div className="col-span-3 space-y-1">
+                  <div className="flex justify-between items-end h-6 mb-1">
+                      <Label htmlFor="amount">{t.amountLabel}</Label>
+                       <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
+                        {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
+                      </button>
+                  </div>
+                  <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <Input
+                          id="amount"
+                          type="number"
+                          placeholder="10.00"
+                          value={amount}
+                          onChange={handleAmountChange}
+                          disabled={isSending || selectedAssetTicker !== 'ETH'}
+                          className="pl-6"
+                      />
+                       {amount && selectedAssetTicker === 'ETH' && !amountError && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                              ({amountInEth.toFixed(5)} ETH)
+                          </span>
+                      )}
+                  </div>
+              </div>
+
+              <div className="col-span-2 space-y-1">
+                  <div className="h-6 flex items-end">
+                    <Label htmlFor="asset">{t.assetLabel}</Label>
+                  </div>
+                   <Popover open={isAssetSelectorOpen} onOpenChange={setAssetSelectorOpen}>
+                      <PopoverTrigger asChild>
+                          <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={isAssetSelectorOpen}
+                          className="w-full justify-between h-10"
+                          disabled={isSending}
+                          >
+                          <div className="flex items-center gap-2">
+                              {selectedAsset ? (
+                                  <Image src={selectedAsset.icon} alt={selectedAsset.name} width={20} height={20} className="rounded-full" />
+                              ) : <div className="w-5 h-5"/>}
+                              {selectedAsset ? selectedAsset.ticker : t.selectAssetLabel}
+                          </div>
+                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0">
+                          <Command>
+                          <CommandInput placeholder={t.searchAssetPlaceholder} />
+                          <CommandList>
+                              <CommandEmpty>{t.noAssetFound}</CommandEmpty>
+                              <CommandGroup>
+                              {allAssetsWithIcons.map((asset) => (
+                                  <CommandItem
+                                  key={asset.ticker}
+                                  value={asset.name}
+                                  onSelect={() => {
+                                      logEvent('asset_selected_for_send', { asset: asset.ticker });
+                                      setSelectedAssetTicker(asset.ticker);
+                                      setAmount('');
+                                      setAmountError('');
+                                      setAssetSelectorOpen(false);
+                                  }}
+                                  >
+                                   <CheckCircle
+                                      className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedAssetTicker === asset.ticker ? "opacity-100" : "opacity-0"
+                                      )}
+                                  />
+                                   <div className="flex items-center gap-2">
+                                      <Image src={asset.icon} alt={asset.name} width={20} height={20} className="rounded-full" />
+                                      <span>{asset.ticker}</span>
+                                    </div>
+                                  </CommandItem>
+                              ))}
+                              </CommandGroup>
+                          </CommandList>
+                          </Command>
+                      </PopoverContent>
+                  </Popover>
+              </div>
+            </div>
+            <div>
+              {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
+              {selectedAssetTicker !== 'ETH' && (
+                  <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
+                      <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <p>{t.tokenPortalInfo}</p>
+                  </div>
+              )}
+            </div>
+          </div>
+        <div className="mt-4">
           <Button className="w-full" onClick={handleSendClick} disabled={isSendDisabled}>
               {isSending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t.sendingButton}</>
@@ -840,125 +907,124 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
                   <><Send className="mr-2 h-4 w-4" /> {t.sendPrivatelyButton}</>
               )}
           </Button>
-        </CardFooter>
-        
-        <AlertDialog open={showHighGasConfirm} onOpenChange={setShowHighGasConfirm}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="text-destructive" />
-                {t.highGasWarningTitle}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t.highGasWarningDesc}
-                <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
-                    <span className="font-semibold">{t.averageFee}:</span>
-                    <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
-                    <span className="font-semibold text-destructive">{t.currentFee}:</span>
-                    <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleHighGasCancel}>{t.cancelButton}</AlertDialogCancel>
-              <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
-                {t.sendAnywayButton}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        
-        <AlertDialog open={isAmountConfirmOpen} onOpenChange={setAmountConfirmOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <ShieldAlert className="text-primary" />
-                Confirm Transaction
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                You are about to send a significant amount. Please confirm the details below.
-                <div className="my-4 space-y-2 text-foreground break-all">
-                  <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
-                  <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => { setAmountConfirmOpen(false); gasCost > averageGas ? setShowHighGasConfirm(true) : executeSend(); }}>
-                Confirm & Send
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <Dialog open={isPasswordConfirmOpen} onOpenChange={setPasswordConfirmOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <ShieldCheck className="text-destructive" />
-                        Password Required for High-Value Transaction
-                    </DialogTitle>
-                    <DialogDescription>
-                        For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="confirm_password">Password</Label>
-                    <Input 
-                        id="confirm_password" 
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => {
-                            setConfirmPassword(e.target.value);
-                            setConfirmPasswordError('');
-                        }}
-                    />
-                    {confirmPasswordError && <p className="text-destructive text-sm mt-1">{confirmPasswordError}</p>}
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handlePasswordConfirm} disabled={isSending || !confirmPassword}>
-                        {isSending ? <Loader2 className="animate-spin" /> : 'Authorize & Send'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-        
-        <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                      <BellRing className="text-primary"/>
-                      {t.getNotifiedTitle}
-                  </DialogTitle>
-                  <AlertDialogDescription>
-                      {t.getNotifiedDesc}
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>{t.noThanksButton}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleSetupGasNotification}>
-                      {t.yesNotifyMeButton}
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </Card>
+        </div>
+      <AlertDialog open={showHighGasConfirm} onOpenChange={setShowHighGasConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="text-destructive" />
+              {t.highGasWarningTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.highGasWarningDesc}
+              <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
+                  <span className="font-semibold">{t.averageFee}:</span>
+                  <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                  <span className="font-semibold text-destructive">{t.currentFee}:</span>
+                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleHighGasCancel}>{t.cancelButton}</AlertDialogCancel>
+            <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
+              {t.sendAnywayButton}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
-       <Dialog open={!!detailedChartAsset} onOpenChange={() => setDetailedChartAsset(null)}>
-        <DialogContent className="max-w-2xl">
-            <DialogHeader>
-                <DialogTitle>
-                    {detailedChartAsset?.name} ({detailedChartAsset?.ticker})
+      <AlertDialog open={isAmountConfirmOpen} onOpenChange={setAmountConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="text-primary" />
+              Confirm Transaction
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to send a significant amount. Please confirm the details below.
+              <div className="my-4 space-y-2 text-foreground break-all">
+                <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
+                <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setAmountConfirmOpen(false); gasCost > averageGas ? setShowHighGasConfirm(true) : executeSend(); }}>
+              Confirm & Send
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isPasswordConfirmOpen} onOpenChange={setPasswordConfirmOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                      <ShieldCheck className="text-destructive" />
+                      Password Required for High-Value Transaction
+                  </DialogTitle>
+                  <DialogDescription>
+                      For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                  <Label htmlFor="confirm_password">Password</Label>
+                  <Input 
+                      id="confirm_password" 
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          setConfirmPasswordError('');
+                      }}
+                  />
+                  {confirmPasswordError && <p className="text-destructive text-sm mt-1">{confirmPasswordError}</p>}
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                  <Button onClick={handlePasswordConfirm} disabled={isSending || !confirmPassword}>
+                      {isSending ? <Loader2 className="animate-spin" /> : 'Authorize & Send'}
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <BellRing className="text-primary"/>
+                    {t.getNotifiedTitle}
                 </DialogTitle>
-            </DialogHeader>
-            <div className="h-96 w-full">
-                {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
-            </div>
-        </DialogContent>
+                <AlertDialogDescription>
+                    {t.getNotifiedDesc}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{t.noThanksButton}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSetupGasNotification}>
+                    {t.yesNotifyMeButton}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    
+     <Dialog open={!!detailedChartAsset} onOpenChange={() => setDetailedChartAsset(null)}>
+      <DialogContent className="max-w-2xl">
+          <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                  {detailedChartAsset?.icon && <Image src={detailedChartAsset.icon} alt={detailedChartAsset.name} width={24} height={24} />}
+                  {detailedChartAsset?.name} ({detailedChartAsset?.ticker})
+              </DialogTitle>
+          </DialogHeader>
+          <div className="h-96 w-full">
+              {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
+          </div>
+      </DialogContent>
     </Dialog>
-    </>
+    </div>
   );
 }

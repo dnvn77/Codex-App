@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Search, Send, MessageSquare } from "lucide-react";
-import Image from "next/image";
 
 const chats = [
   { id: 1, name: "Alice", avatar: "https://placehold.co/100x100.png", lastMessage: "Hey, how are you?", time: "3:45 PM", unread: 2 },
@@ -28,7 +27,7 @@ export function ChatView() {
   const selectedChat = chats[0];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-2rem)]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
       {/* Chat List */}
       <div className="md:col-span-1 bg-card border rounded-lg p-4 flex flex-col">
         <div className="relative mb-4">
