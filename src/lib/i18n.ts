@@ -5,6 +5,15 @@ export const supportedLanguages: Language[] = ['en', 'es', 'zh', 'hi', 'fr', 'ar
 
 const translationsData = {
   en: {
+    // New UI
+    chat: 'Chat',
+    wallet: 'Wallet',
+    settings: 'Settings',
+    search: 'Search...',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    themeDescription: 'Select the theme for the app.',
+    // Existing translations
     mainTitle: 'Strawberry Wallet',
     mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
     createWalletButton: 'Create New Wallet',
@@ -219,6 +228,15 @@ const translationsData = {
     }
   },
   es: {
+    // New UI
+    chat: 'Chat',
+    wallet: 'Billetera',
+    settings: 'Ajustes',
+    search: 'Buscar...',
+    appearance: 'Apariencia',
+    theme: 'Tema',
+    themeDescription: 'Selecciona el tema para la aplicación.',
+    // Existing translations
     mainTitle: 'Strawberry Wallet',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
     createWalletButton: 'Crear Nueva Billetera',
@@ -437,21 +455,9 @@ const translationsData = {
 
 // Function to get the correct translations, falling back to English
 const getTranslatedStrings = (lang: Language) => {
-    const base = translationsData['en'];
+    const base = translationsData.en;
     const selected = translationsData[lang] || base;
-
-    // A simple deep merge. For a real app, a library like lodash.merge would be better.
-    const merge = (target: any, source: any) => {
-        for (const key in source) {
-            if (source[key] instanceof Object && key in target) {
-                Object.assign(source[key], merge(target[key], source[key]));
-            }
-        }
-        Object.assign(target || {}, source);
-        return target;
-    }
-
-    return merge(base, selected);
+    return {...base, ...selected, feedback: {...base.feedback, ...selected.feedback}};
 };
 
 // Pre-calculate all translations
@@ -459,5 +465,3 @@ export const translations = supportedLanguages.reduce((acc, lang) => {
     acc[lang] = getTranslatedStrings(lang);
     return acc;
 }, {} as Record<Language, typeof translationsData.en>);
-
-    

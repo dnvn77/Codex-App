@@ -45,6 +45,10 @@ const nextConfig = {
         hostname: 's2.coinmarketcap.com',
         port: '',
         pathname: '/static/img/coins/64x64/**',
+      },
+       {
+        protocol: 'https',
+        hostname: 'pro-api.coinmarketcap.com',
       }
     ],
     dangerouslyAllowSVG: true,
