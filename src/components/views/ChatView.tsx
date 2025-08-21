@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/hooks/useTranslations";
-import { Search, Send } from "lucide-react";
+import { Search, Send, MessageSquare } from "lucide-react";
 import Image from "next/image";
 
 const chats = [

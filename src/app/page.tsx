@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppContainer } from '@/components/AppContainer';
 import { ConnectView } from '@/components/views/ConnectView';
 import type { Wallet, StoredWallet } from '@/lib/types';
@@ -15,7 +15,13 @@ import { ChatView } from '@/components/views/ChatView';
 export default function Home() {
   const [activeView, setActiveView] = useState<'wallet' | 'chat' | 'settings'>('wallet');
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(getStoredWallet());
+  const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
+
+  useEffect(() => {
+    // Access localStorage only on the client side
+    setStoredWalletInfo(getStoredWallet());
+  }, []);
+
 
   const handleWalletConnected = (newWallet: Wallet) => {
     setWallet(newWallet);
