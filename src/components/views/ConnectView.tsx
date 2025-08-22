@@ -354,11 +354,8 @@ export function ConnectView({
 
   const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
-    // We open the "Create" dialog but immediately move to the set password step.
-    // This re-uses the password setting and finalization logic.
     setImportDialogOpen(false); 
-    await handleGoToSetPassword(importSeedPhrase);
-    setCreateDialogOpen(true);
+    onLoginComplete(await importWalletFromSeed(importSeedPhrase));
   };
   
   const handleCloseCreateDialog = () => {
@@ -395,7 +392,7 @@ export function ConnectView({
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-             <Image src="/codex-logo.svg" alt="Codex App Logo" width={40} height={40} className="text-primary" data-ai-hint="codex app logo"/>
+             <Image src="/codex-logo.svg" alt="Codex App Logo" width={40} height={40} className="text-primary" data-ai-hint="aztec calendar"/>
           </div>
           <CardTitle className="font-sans text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>
