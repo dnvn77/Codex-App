@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
-import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
-import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
+import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -56,31 +55,14 @@ import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 import { ReceiptView } from './ReceiptView';
-import { FavoriteAssetChart } from '../shared/FavoriteAssetChart';
-import { useTelegram } from '@/hooks/useTelegram';
-import { Skeleton } from '../ui/skeleton';
 
 interface WalletViewProps {
   wallet: Wallet;
+  assets: Asset[];
+  onTransactionSuccess: (ticker: string, amount: number, gasCost: number) => void;
+  assetStatus: 'loading' | 'success' | 'error';
+  onRefreshPrices: () => void;
 }
-
-const ALL_EVM_ASSETS = [
-    { name: 'Ethereum', ticker: 'ETH', id: 1027 },
-    { name: 'USD Coin', ticker: 'USDC', id: 3408 },
-    { name: 'Tether', ticker: 'USDT', id: 825 },
-    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717 },
-    { name: 'Chainlink', ticker: 'LINK', id: 1975 },
-    { name: 'Uniswap', ticker: 'UNI', id: 7083 },
-    { name: 'Dai', ticker: 'DAI', id: 4943 },
-    { name: 'Lido DAO', ticker: 'LDO', id: 22353 },
-    { name: 'Arbitrum', ticker: 'ARB', id: 25163 },
-    { name: 'Optimism', ticker: 'OP', id: 22312 },
-    { name: 'Aave', ticker: 'AAVE', id: 7278 },
-    { name: 'Maker', ticker: 'MKR', id: 1518 },
-    { name: 'The Sandbox', ticker: 'SAND', id: 6210 },
-    { name: 'Decentraland', ticker: 'MANA', id: 1966 },
-    { name: 'Codex Token', ticker: 'CDX', id: 0 }
-];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
   const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
@@ -106,11 +88,10 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   );
 };
 
-export function WalletView({ wallet }: WalletViewProps) {
+export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, onRefreshPrices }: WalletViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
-  const { user } = useTelegram();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -133,10 +114,6 @@ export function WalletView({ wallet }: WalletViewProps) {
   const [showBalances, setShowBalances] = useState(true);
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
   
-  const [assets, setAssets] = useState<Asset[]>([]); 
-  const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [priceData, setPriceData] = useState<AssetPriceOutput>([]);
-  
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
   
   const [isAmountConfirmOpen, setAmountConfirmOpen] = useState(false);
@@ -150,56 +127,9 @@ export function WalletView({ wallet }: WalletViewProps) {
   
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
   
-  // Mock balances for demonstration. In a real app, this data would come from an on-chain query.
-  const [mockBalances, setMockBalances] = useState<Record<string, number>>({
-    'ETH': wallet.balance,
-    'USDC': 1520.75,
-    'WBTC': 0.03,
-    'CDX': 12500,
-    'LINK': 150.2,
-    'UNI': 300,
-  });
-  
   const ethPrice = useMemo(() => {
-    return priceData.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
-  }, [priceData]);
-
-  const updateAssetPrices = useCallback(async () => {
-    setAssetStatus('loading');
-    try {
-        const fetchedPriceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
-        setPriceData(fetchedPriceData);
-        setAssetStatus('success');
-    } catch (error) {
-        console.error("Failed to fetch asset prices:", error);
-        toast({
-            title: t.error,
-            description: 'Could not load asset prices. Please try again later.',
-            variant: 'destructive',
-        });
-        setAssetStatus('error');
-    }
-  }, [toast, t]);
-
-  useEffect(() => {
-    updateAssetPrices();
-  }, [updateAssetPrices]);
-  
-  useEffect(() => {
-      if (priceData.length > 0) {
-          const combinedAssets = priceData.map(asset => ({
-              ...asset,
-              balance: mockBalances[asset.ticker] || 0,
-              isFavorite: false, // Favorites removed
-          })).sort((a, b) => {
-              const valueA = a.balance * a.priceUSD;
-              const valueB = b.balance * b.priceUSD;
-              if (valueB !== valueA) return valueB - valueA;
-              return a.ticker.localeCompare(b.ticker);
-          });
-          setAssets(combinedAssets);
-      }
-  }, [priceData, mockBalances]);
+    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
+  }, [assets]);
 
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
@@ -324,7 +254,6 @@ export function WalletView({ wallet }: WalletViewProps) {
   };
 
   const persistTransaction = async (tx: Transaction) => {
-    if (!user?.id) return;
     try {
         const response = await fetch('/api/tx/log', {
             method: 'POST',
@@ -355,10 +284,6 @@ export function WalletView({ wallet }: WalletViewProps) {
     if (isNaN(numericAmount) || ethPrice === 0) return 0;
     return numericAmount / ethPrice;
   }, [amount, ethPrice]);
-  
-  const onTransactionSent = (transaction: Transaction) => {
-    setSentTransaction(transaction);
-  }
 
   const executeSend = async () => {
     setAmountConfirmOpen(false);
@@ -398,26 +323,8 @@ export function WalletView({ wallet }: WalletViewProps) {
       
       await persistTransaction(tx);
 
-      setMockBalances(prevBalances => {
-          const newBalances = { ...prevBalances };
-          
-          if (newBalances[selectedAsset.ticker] !== undefined) {
-              newBalances[selectedAsset.ticker] = Math.max(0, newBalances[selectedAsset.ticker] - amountInEth);
-          }
-
-          if (newBalances['ETH'] !== undefined) {
-              newBalances['ETH'] = Math.max(0, newBalances['ETH'] - gasCost);
-          }
-          
-          const updatedWallet: Wallet = {
-              ...wallet,
-              balance: newBalances['ETH']
-          };
-          
-          onTransactionSent({ ...tx, wallet: updatedWallet });
-
-          return newBalances;
-      });
+      onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
+      setSentTransaction({ ...tx, wallet }); // Show receipt view
 
       if (txSentFirstTime) {
         localStorage.setItem('has_sent_tx', 'true');
@@ -535,16 +442,6 @@ export function WalletView({ wallet }: WalletViewProps) {
     const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress) && ensResolution.status !== 'success');
     return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid || selectedAssetTicker !== 'ETH';
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution, selectedAssetTicker]);
-
-  const allAssetsWithIcons = useMemo(() => {
-    return ALL_EVM_ASSETS.map(asset => {
-        const priceInfo = priceData.find(p => p.ticker === asset.ticker);
-        return {
-            ...asset,
-            icon: priceInfo?.icon || '/codex-logo.svg',
-        };
-    });
-  }, [priceData]);
   
   const handleContactSelect = (contact: Contact) => {
       setToAddress(contact.address);
@@ -660,7 +557,7 @@ export function WalletView({ wallet }: WalletViewProps) {
                 showBalances={showBalances} 
                 hideZeroBalances={hideZeroBalances} 
                 t={t} 
-                onRefresh={updateAssetPrices} 
+                onRefresh={onRefreshPrices}
                 isRefreshing={assetStatus === 'loading'}
               />
             )}
@@ -772,7 +669,7 @@ export function WalletView({ wallet }: WalletViewProps) {
                           <CommandList>
                               <CommandEmpty>{t.noAssetFound}</CommandEmpty>
                               <CommandGroup>
-                              {allAssetsWithIcons.map((asset) => (
+                              {assets.map((asset) => (
                                   <CommandItem
                                   key={asset.ticker}
                                   value={asset.name}

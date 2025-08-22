@@ -18,7 +18,6 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
-import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 import * as htmlToImage from 'html-to-image';
 import { TransactionReceiptMessage } from './TransactionReceiptMessage';
 
@@ -62,10 +61,12 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
 
 interface ChatViewProps {
     wallet: Wallet;
+    assets: Asset[];
+    onTransactionSuccess: (ticker: string, amount: number, gasCost: number) => void;
 }
 
 
-export function ChatView({ wallet }: ChatViewProps) {
+export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
   const [chats, setChats] = useState(initialChats);
@@ -86,9 +87,6 @@ export function ChatView({ wallet }: ChatViewProps) {
   const [gasCost, setGasCost] = useState(0.00042);
   const [averageGas, setAverageGas] = useState(0.00045);
   const [isCalculatingGas, setIsCalculatingGas] = useState(true);
-  const [assets, setAssets] = useState<Asset[]>([]); 
-  const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [priceData, setPriceData] = useState<AssetPriceOutput>([]);
   const [isAssetSelectorOpen, setAssetSelectorOpen] = useState(false);
   const [isAmountConfirmOpen, setAmountConfirmOpen] = useState(false);
   const [isPasswordConfirmOpen, setPasswordConfirmOpen] = useState(false);
@@ -96,39 +94,12 @@ export function ChatView({ wallet }: ChatViewProps) {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [showHighGasConfirm, setShowHighGasConfirm] = useState(false);
   const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
-  
-   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
-    'ETH': wallet.balance,
-    'USDC': 1520.75,
-    'WBTC': 0.03,
-    'CDX': 12500,
-    'LINK': 150.2,
-    'UNI': 300,
-  });
 
   const filteredChats = useMemo(() => {
     return chats.filter(chat =>
       chat.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [chats, searchQuery]);
-
-  const updateAssetPrices = useCallback(async () => {
-    setAssetStatus('loading');
-    try {
-        const ALL_EVM_ASSETS = [
-            { name: 'Ethereum', ticker: 'ETH', id: 1027 },
-            { name: 'USD Coin', ticker: 'USDC', id: 3408 },
-            { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717 },
-            { name: 'Codex Token', ticker: 'CDX', id: 0 }
-        ];
-        const fetchedPriceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
-        setPriceData(fetchedPriceData);
-        setAssetStatus('success');
-    } catch (error) {
-        console.error("Failed to fetch asset prices:", error);
-        setAssetStatus('error');
-    }
-  }, []);
 
   useEffect(() => {
     // Set initial chat on desktop
@@ -137,33 +108,13 @@ export function ChatView({ wallet }: ChatViewProps) {
     }
   }, [selectedChat]);
 
-  useEffect(() => {
-    updateAssetPrices();
-  }, [updateAssetPrices]);
-  
-  useEffect(() => {
-      if (priceData.length > 0) {
-          const combinedAssets = priceData.map(asset => ({
-              ...asset,
-              balance: mockBalances[asset.ticker] || 0,
-              isFavorite: false,
-          })).sort((a, b) => {
-              const valueA = a.balance * a.priceUSD;
-              const valueB = b.balance * a.priceUSD;
-              if (valueB !== valueA) return valueB - valueA;
-              return a.ticker.localeCompare(b.ticker);
-          });
-          setAssets(combinedAssets);
-      }
-  }, [priceData, mockBalances]);
-
   const selectedAsset = useMemo(() => {
     return assets.find(a => a.ticker === selectedAssetTicker) || null;
   }, [assets, selectedAssetTicker]);
   
   const ethPrice = useMemo(() => {
-    return priceData.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
-  }, [priceData]);
+    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
+  }, [assets]);
   
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
@@ -288,11 +239,7 @@ export function ChatView({ wallet }: ChatViewProps) {
 
       setMessages([...messages, receiptMessage, linkMessage]);
 
-      setMockBalances(prev => ({
-          ...prev,
-          [selectedAsset.ticker]: Math.max(0, (prev[selectedAsset.ticker] || 0) - amountInEth),
-          ETH: Math.max(0, (prev.ETH || 0) - gasCost)
-      }));
+      onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
       
       toast({ title: "Transaction Sent", description: `You sent ${amountInEth.toFixed(4)} ${selectedAsset.ticker} to ${selectedChat.name}` });
 
@@ -355,13 +302,6 @@ export function ChatView({ wallet }: ChatViewProps) {
   };
 
   const isSendDisabled = isSending || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || selectedAssetTicker !== 'ETH';
-  
-  const allAssetsWithIcons = useMemo(() => {
-    return assets.map(asset => ({
-        ...asset,
-        icon: asset.icon || '/strawberry-logo.svg',
-    }));
-  }, [assets]);
   
   const handleSelectChat = (chat: typeof initialChats[0]) => {
       setSelectedChat(chat);
@@ -506,7 +446,7 @@ export function ChatView({ wallet }: ChatViewProps) {
                                       <CommandList>
                                           <CommandEmpty>{t.noAssetFound}</CommandEmpty>
                                           <CommandGroup>
-                                          {allAssetsWithIcons.map((asset) => (
+                                          {assets.map((asset) => (
                                               <CommandItem
                                               key={asset.ticker}
                                               value={asset.name}
@@ -719,4 +659,3 @@ export function ChatView({ wallet }: ChatViewProps) {
     </div>
   );
 }
-

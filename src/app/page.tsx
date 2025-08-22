@@ -1,29 +1,101 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MainNav } from '@/components/views/MainNav';
 import { WalletView } from '@/components/views/WalletView';
 import { SettingsView } from '@/components/views/SettingsView';
 import { ChatView } from '@/components/views/ChatView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ContactsView } from '@/components/views/ContactsView';
-import type { Wallet, StoredWallet } from '@/lib/types';
+import type { Wallet, StoredWallet, Asset } from '@/lib/types';
 import { getStoredWallet, unlockWallet, clearStoredWallet } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
 import { logEvent } from '@/lib/analytics';
+import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
+
+const ALL_EVM_ASSETS = [
+    { name: 'Ethereum', ticker: 'ETH', id: 1027 },
+    { name: 'USD Coin', ticker: 'USDC', id: 3408 },
+    { name: 'Tether', ticker: 'USDT', id: 825 },
+    { name: 'Wrapped BTC', ticker: 'WBTC', id: 3717 },
+    { name: 'Chainlink', ticker: 'LINK', id: 1975 },
+    { name: 'Uniswap', ticker: 'UNI', id: 7083 },
+    { name: 'Dai', ticker: 'DAI', id: 4943 },
+    { name: 'Lido DAO', ticker: 'LDO', id: 22353 },
+    { name: 'Arbitrum', ticker: 'ARB', id: 25163 },
+    { name: 'Optimism', ticker: 'OP', id: 22312 },
+    { name: 'Aave', ticker: 'AAVE', id: 7278 },
+    { name: 'Maker', ticker: 'MKR', id: 1518 },
+    { name: 'The Sandbox', ticker: 'SAND', id: 6210 },
+    { name: 'Decentraland', ticker: 'MANA', id: 1966 },
+    { name: 'Codex Token', ticker: 'CDX', id: 0 }
+];
+
 
 export default function Home() {
   const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('wallet');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [priceData, setPriceData] = useState<AssetPriceOutput>([]);
+  const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
+
+  const [mockBalances, setMockBalances] = useState<Record<string, number>>({});
+
   const { toast } = useToast();
 
+  const updateAssetPrices = useCallback(async () => {
+    setAssetStatus('loading');
+    try {
+        const fetchedPriceData = await fetchAssetPrices({ symbols: ALL_EVM_ASSETS.map(a => a.ticker) });
+        setPriceData(fetchedPriceData);
+        setAssetStatus('success');
+    } catch (error) {
+        console.error("Failed to fetch asset prices:", error);
+        toast({
+            title: "Error",
+            description: 'Could not load asset prices. Please try again later.',
+            variant: 'destructive',
+        });
+        setAssetStatus('error');
+    }
+  }, [toast]);
+
   useEffect(() => {
-    // This now correctly runs only on the client
+    if (wallet) {
+      updateAssetPrices();
+       setMockBalances({
+        'ETH': wallet.balance,
+        'USDC': 1520.75,
+        'WBTC': 0.03,
+        'CDX': 12500,
+        'LINK': 150.2,
+        'UNI': 300,
+      });
+    }
+  }, [wallet, updateAssetPrices]);
+
+  useEffect(() => {
+    if (priceData.length > 0 && wallet) {
+        const combinedAssets = priceData.map(asset => ({
+            ...asset,
+            balance: mockBalances[asset.ticker] || 0,
+            isFavorite: false,
+        })).sort((a, b) => {
+            const valueA = a.balance * a.priceUSD;
+            const valueB = b.balance * b.priceUSD;
+            if (valueB !== valueA) return valueB - valueA;
+            return a.ticker.localeCompare(b.ticker);
+        });
+        setAssets(combinedAssets);
+    }
+  }, [priceData, mockBalances, wallet]);
+
+  useEffect(() => {
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
   }, []);
@@ -36,7 +108,7 @@ export default function Home() {
     if (isNewUser) {
         logEvent('first_login_complete');
         setIsFirstLogin(true);
-        setActiveView('profile'); // Switch to profile to show the edit modal
+        setActiveView('profile');
     }
   };
   
@@ -64,6 +136,28 @@ export default function Home() {
     setIsFirstLogin(false);
   }
 
+  const handleTransactionSuccess = (ticker: string, amount: number, gasCost: number) => {
+    setMockBalances(prevBalances => {
+        const newBalances = { ...prevBalances };
+        if (newBalances[ticker] !== undefined) {
+            newBalances[ticker] = Math.max(0, newBalances[ticker] - amount);
+        }
+        if (newBalances['ETH'] !== undefined) {
+            newBalances['ETH'] = Math.max(0, newBalances['ETH'] - gasCost);
+        }
+        return newBalances;
+    });
+
+    // Also update the main wallet object if ETH balance changed
+    setWallet(prevWallet => {
+        if (!prevWallet) return null;
+        return {
+            ...prevWallet,
+            balance: Math.max(0, prevWallet.balance - gasCost)
+        };
+    });
+  };
+
   if (!storedWalletInfo) {
     return (
       <main className="flex min-h-[100dvh] flex-col items-center justify-center p-4">
@@ -89,8 +183,8 @@ export default function Home() {
     <div className="flex flex-col h-screen">
       <main className="flex-1 p-2 md:p-4 overflow-y-auto mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
-        {activeView === 'chats' && <ChatView wallet={wallet}/>}
-        {activeView === 'wallet' && <WalletView wallet={wallet}/>}
+        {activeView === 'chats' && <ChatView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} />}
+        {activeView === 'wallet' && <WalletView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} assetStatus={assetStatus} onRefreshPrices={updateAssetPrices} />}
         {activeView === 'settings' && <SettingsView onDisconnect={handleDisconnect} />}
         {activeView === 'contacts' && <ContactsView />}
       </main>
