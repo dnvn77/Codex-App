@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -105,6 +106,78 @@ const WordInput = ({
       )}
     </div>
   );
+};
+
+const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
+    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
+      {met ? <Check className="h-3 w-3 mr-1.5" /> : <X className="h-3 w-3 mr-1.5" />}
+      {label}
+    </div>
+);
+
+const PasswordStepView = ({ onFinalize, onCancel, t, passwordProps }: { onFinalize: () => void; onCancel: () => void; t: any, passwordProps: any }) => {
+    const {
+        password,
+        confirmPassword,
+        passwordError,
+        passwordValidation,
+        showPassword,
+        handlePasswordChange,
+        setConfirmPassword,
+        setPasswordError,
+        setShowPassword,
+        isSetPasswordDisabled
+    } = passwordProps;
+    
+    return (
+       <>
+           <DialogHeader>
+             <DialogTitle>{t.setPasswordTitle}</DialogTitle>
+             <DialogDescription>{t.setPasswordDesc}</DialogDescription>
+           </DialogHeader>
+           <div className="py-4 space-y-4">
+             <div>
+               <Label htmlFor="password">{t.passwordLabel}</Label>
+               <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+               </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                    <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
+                    <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
+                    <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
+                    <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
+                    <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
+                    <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
+                </div>
+             </div>
+             <div>
+               <Label htmlFor="confirmPassword">{t.confirmPasswordLabel}</Label>
+               <Input
+                 id="confirmPassword"
+                 type={showPassword ? "text" : "password"}
+                 value={confirmPassword}
+                 onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+               />
+             </div>
+             {passwordError && (
+               <p className="text-destructive text-sm">{passwordError}</p>
+             )}
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={onCancel}>{t.cancelButton}</Button>
+             <Button onClick={onFinalize} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
+           </DialogFooter>
+         </>
+    );
 };
 
 
@@ -397,62 +470,18 @@ export function ConnectView({
   const isImportDisabled = seedWords.some(word => word.trim() === '');
   const isSetPasswordDisabled = !password || !confirmPassword || !Object.values(passwordValidation).every(v => v);
 
-  const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
-    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
-      {met ? <Check className="h-3 w-3 mr-1.5" /> : <X className="h-3 w-3 mr-1.5" />}
-      {label}
-    </div>
-  );
-  
-  const PasswordStepView = ({ onFinalize, onCancel }: { onFinalize: () => void; onCancel: () => void; }) => (
-       <>
-           <DialogHeader>
-             <DialogTitle>{t.setPasswordTitle}</DialogTitle>
-             <DialogDescription>{t.setPasswordDesc}</DialogDescription>
-           </DialogHeader>
-           <div className="py-4 space-y-4">
-             <div>
-               <Label htmlFor="password">{t.passwordLabel}</Label>
-               <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    className="pr-10"
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-               </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-                    <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
-                    <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
-                    <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
-                    <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
-                    <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
-                    <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
-                </div>
-             </div>
-             <div>
-               <Label htmlFor="confirmPassword">{t.confirmPasswordLabel}</Label>
-               <Input
-                 id="confirmPassword"
-                 type={showPassword ? "text" : "password"}
-                 value={confirmPassword}
-                 onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-               />
-             </div>
-             {passwordError && (
-               <p className="text-destructive text-sm">{passwordError}</p>
-             )}
-           </div>
-           <DialogFooter>
-             <Button variant="outline" onClick={onCancel}>{t.cancelButton}</Button>
-             <Button onClick={onFinalize} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
-           </DialogFooter>
-         </>
-  );
+  const passwordProps = {
+    password,
+    confirmPassword,
+    passwordError,
+    passwordValidation,
+    showPassword,
+    handlePasswordChange,
+    setConfirmPassword,
+    setPasswordError,
+    setShowPassword,
+    isSetPasswordDisabled
+  };
 
 
   return (
@@ -552,6 +581,8 @@ export function ConnectView({
              <PasswordStepView 
                 onFinalize={() => handleFinalizeOnboarding(newWallet, true)}
                 onCancel={handleCloseCreateDialog}
+                t={t}
+                passwordProps={passwordProps}
              />
           )}
 
@@ -621,6 +652,8 @@ export function ConnectView({
                  <PasswordStepView 
                     onFinalize={() => handleFinalizeOnboarding(newWallet, !isForExistingAccount)}
                     onCancel={handleCloseImportDialog}
+                    t={t}
+                    passwordProps={passwordProps}
                  />
             )}
         </DialogContent>

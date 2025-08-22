@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -95,15 +96,21 @@ const WordInput = ({
   );
 };
 
+const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
+    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
+        {met ? <Check className="h-3 w-3 mr-1.5" /> : <X className="h-3 w-3 mr-1.5" />}
+        {label}
+    </div>
+);
+
 // A stripped-down version of ConnectView's password step for recovery
-const ResetPasswordView = ({ onPasswordReset, seedPhrase }: { onPasswordReset: (wallet: Wallet) => void; seedPhrase: string; }) => {
+const ResetPasswordView = ({ onPasswordReset, seedPhrase, t }: { onPasswordReset: (wallet: Wallet) => void; seedPhrase: string; t: any }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [passwordValidation, setPasswordValidation] = useState({ length: false, uppercase: false, lowercase: false, number: false, special: false, common: true });
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
-    const t = useTranslations();
 
     const handlePasswordChange = (pass: string) => {
         setPassword(pass);
@@ -133,13 +140,6 @@ const ResetPasswordView = ({ onPasswordReset, seedPhrase }: { onPasswordReset: (
     };
 
     const isSetPasswordDisabled = !password || !confirmPassword || !Object.values(passwordValidation).every(v => v);
-
-    const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
-        <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
-            {met ? <Check className="h-3 w-3 mr-1.5" /> : <X className="h-3 w-3 mr-1.5" />}
-            {label}
-        </div>
-    );
     
     return (
         <>
@@ -446,6 +446,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLogin
                         handleCloseRecovery();
                         onLoginComplete(wallet);
                     }}
+                    t={t}
                 />
             )}
         </DialogContent>
