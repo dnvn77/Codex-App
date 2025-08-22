@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 interface ContactsListProps {
   onContactSelect: (contact: Contact) => void;
@@ -171,11 +172,17 @@ export function ContactsList({ onContactSelect, isDialog = true }: ContactsListP
             <div className="space-y-2 pr-4">
               {contacts.map((contact) => (
                 <div key={contact.address} className="group flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                    <button className="flex-1 text-left" onClick={() => onContactSelect(contact)}>
-                        <p className="font-semibold">{contact.name}</p>
-                        <p className="text-sm text-muted-foreground font-mono">
-                            {contact.address.slice(0, 6)}...{contact.address.slice(-4)}
-                        </p>
+                    <button className="flex-1 flex items-center gap-3 text-left" onClick={() => onContactSelect(contact)}>
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={contact.avatar} alt={contact.name} data-ai-hint={`${contact.name} avatar`}/>
+                            <AvatarFallback>{contact.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <p className="font-semibold">{contact.name}</p>
+                            <p className="text-sm text-muted-foreground font-mono">
+                                {contact.address.slice(0, 6)}...{contact.address.slice(-4)}
+                            </p>
+                        </div>
                     </button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={() => setContactToDelete(contact)}>
                         <Trash2 className="h-4 w-4 text-destructive" />

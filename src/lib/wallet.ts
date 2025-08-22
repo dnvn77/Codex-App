@@ -556,14 +556,21 @@ export function getContacts(): Contact[] {
     return data ? JSON.parse(data) : [];
 }
 
-export function saveContact(newContact: Contact): Contact[] {
+export function saveContact(newContact: Omit<Contact, 'avatar'>): Contact[] {
     const contacts = getContacts();
     const existingIndex = contacts.findIndex(c => c.address.toLowerCase() === newContact.address.toLowerCase());
     
+    const contactToSave: Contact = {
+        ...newContact,
+        avatar: `https://placehold.co/100x100.png`
+    }
+
     if (existingIndex > -1) {
-        contacts[existingIndex].name = newContact.name;
+        // Preserve avatar if it exists, otherwise assign new one
+        contactToSave.avatar = contacts[existingIndex].avatar || `https://placehold.co/100x100.png`;
+        contacts[existingIndex] = contactToSave;
     } else {
-        contacts.push(newContact);
+        contacts.push(contactToSave);
     }
     contacts.sort((a, b) => a.name.localeCompare(b.name));
     

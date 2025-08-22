@@ -54,4 +54,5 @@ export interface TransactionHistoryItem {
 export interface Contact {
   name: string;
   address: string;
+  avatar?: string;
 }
