@@ -465,7 +465,6 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
         ...encryptedData,
         address: wallet.address,
         balance: wallet.balance,
-        favoriteTokens: ['ETH', 'WBTC', 'USDC', 'CDX']
     };
     localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(storedWallet));
 }
@@ -589,46 +588,11 @@ export function deleteContact(address: string): Contact[] {
 
 // Favorite Tokens Management
 export function getFavoriteTokens(): string[] {
-    if (typeof window === 'undefined') return ['ETH', 'WBTC', 'USDC', 'CDX']; // Default for SSR
-    
-    const storedWallet = getStoredWallet();
-    // Use user-specific key if available, otherwise fallback to wallet-specific, then default.
-    const key = storedWallet?.address ? `${FAVORITE_TOKENS_KEY_PREFIX}${storedWallet.address}` : null;
-    
-    if (key) {
-        const data = localStorage.getItem(key);
-        if(data) return JSON.parse(data);
-    }
-    
-    // Fallback to reading from the main wallet object for migration purposes
-    if (storedWallet?.favoriteTokens) {
-        // Migrate to new system
-        if(key) setFavoriteTokens(storedWallet.address, storedWallet.favoriteTokens);
-        return storedWallet.favoriteTokens;
-    }
-
-    return ['ETH', 'WBTC', 'USDC', 'CDX']; // Default favorites
+    if (typeof window === 'undefined') return [];
+    return [];
 }
 
 export async function setFavoriteTokens(userId: string, tokens: string[]): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const key = `${FAVORITE_TOKENS_KEY_PREFIX}${userId}`;
-    localStorage.setItem(key, JSON.stringify(tokens));
-    
-    // Also try to sync with backend
-    if (!process.env.NEXT_PUBLIC_API_KEY_BACKEND) return;
-
-    try {
-        await fetch('/api/wallet/favorites', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND,
-            },
-            body: JSON.stringify({ userId, favoriteTokens: tokens }),
-        });
-    } catch (e) {
-        console.error("Failed to sync favorite tokens with backend", e);
-        // We don't need to notify the user, local storage is the source of truth
-    }
+    // This function is now a no-op as favorites are removed.
+    return;
 }

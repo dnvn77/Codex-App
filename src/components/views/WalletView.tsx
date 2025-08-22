@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet, getFavoriteTokens, setFavoriteTokens } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 import { Send, Copy, LogOut, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Star, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
@@ -150,22 +150,6 @@ export function WalletView({ wallet }: WalletViewProps) {
   
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
   
-  const [favoriteTokens, setLocalFavoriteTokens] = useState<string[]>([]);
-  const [isFavoritesEditing, setIsFavoritesEditing] = useState(false);
-
-  useEffect(() => {
-    // Load favorites from local storage on component mount
-    setLocalFavoriteTokens(getFavoriteTokens());
-  }, []);
-
-  const handleToggleFavorite = (ticker: string) => {
-    const newFavorites = favoriteTokens.includes(ticker)
-      ? favoriteTokens.filter(t => t !== ticker)
-      : [...favoriteTokens, ticker];
-    setLocalFavoriteTokens(newFavorites);
-    setFavoriteTokens(user?.id ? String(user.id) : 'local_user', newFavorites); // Persist changes
-  };
-
   // Mock balances for demonstration. In a real app, this data would come from an on-chain query.
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
@@ -206,7 +190,7 @@ export function WalletView({ wallet }: WalletViewProps) {
           const combinedAssets = priceData.map(asset => ({
               ...asset,
               balance: mockBalances[asset.ticker] || 0,
-              isFavorite: favoriteTokens.includes(asset.ticker),
+              isFavorite: false, // Favorites removed
           })).sort((a, b) => {
               const valueA = a.balance * a.priceUSD;
               const valueB = b.balance * b.priceUSD;
@@ -215,11 +199,7 @@ export function WalletView({ wallet }: WalletViewProps) {
           });
           setAssets(combinedAssets);
       }
-  }, [priceData, mockBalances, favoriteTokens]);
-
-  const favoriteAssets = useMemo(() => {
-    return assets.filter(a => a.isFavorite).sort((a, b) => favoriteTokens.indexOf(a.ticker) - favoriteTokens.indexOf(b.ticker));
-  }, [assets, favoriteTokens]);
+  }, [priceData, mockBalances]);
 
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
@@ -353,12 +333,12 @@ export function WalletView({ wallet }: WalletViewProps) {
               'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
             },
             body: JSON.stringify({
-                from_address: tx.from,
-                to_address: tx.to,
-                tx_hash: tx.txHash,
-                network: 'monad_testnet',
+                from: tx.from,
+                to: tx.to,
+                txHash: tx.txHash,
+                ticker: tx.ticker,
                 amount: tx.amount,
-                status: 'sent'
+                blockNumber: tx.l1SettlementBlock
             })
         });
         if (!response.ok) {
@@ -561,7 +541,7 @@ export function WalletView({ wallet }: WalletViewProps) {
         const priceInfo = priceData.find(p => p.ticker === asset.ticker);
         return {
             ...asset,
-            icon: priceInfo?.icon || '/strawberry-logo.svg',
+            icon: priceInfo?.icon || '/codex-logo.svg',
         };
     });
   }, [priceData]);
@@ -647,71 +627,6 @@ export function WalletView({ wallet }: WalletViewProps) {
                   <TransactionHistory walletAddress={wallet.address} />
               </DialogContent>
           </Dialog>
-          
-          <Separator />
-
-          <div>
-             <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-lg">{t.favoritesTitle}</h3>
-                <Dialog open={isFavoritesEditing} onOpenChange={setIsFavoritesEditing}>
-                    <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => logEvent('edit_favorites_opened')}>
-                            <Star className="mr-2 h-4 w-4"/>
-                            {t.editFavoritesButton}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{t.editFavoritesTitle}</DialogTitle>
-                            <DialogDescription>{t.editFavoritesDesc}</DialogDescription>
-                        </DialogHeader>
-                        <div className="py-2 max-h-96 overflow-y-auto">
-                            <div className="space-y-2">
-                                {assets.map(asset => (
-                                    <div key={asset.ticker} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                                        <div className="flex items-center gap-3">
-                                            <Image src={asset.icon} alt={asset.name} width={32} height={32} className="rounded-full" />
-                                            <div>
-                                                <p className="font-bold">{asset.ticker}</p>
-                                                <p className="text-xs text-muted-foreground">{asset.name}</p>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => handleToggleFavorite(asset.ticker)}>
-                                            <Star className={cn("h-6 w-6 text-muted-foreground transition-colors", asset.isFavorite && "text-amber-400 fill-amber-400")}/>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                         <DialogFooter>
-                            <Button onClick={() => setIsFavoritesEditing(false)}>{t.doneButton}</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            {assetStatus === 'loading' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Skeleton className='h-40 w-full' />
-                    <Skeleton className='h-40 w-full' />
-                </div>
-            )}
-             {assetStatus === 'success' && (
-                favoriteAssets.length > 0 ? (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {favoriteAssets.map(asset => (
-                            <button key={asset.ticker} onClick={() => setDetailedChartAsset(asset)} className="text-left">
-                                <FavoriteAssetChart asset={asset} />
-                            </button>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                        <p>{t.noFavoritesText}</p>
-                    </div>
-                )
-             )}
-          </div>
           
           <Separator />
           

@@ -51,7 +51,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
   };
 
   const TransactionItem = ({ tx }: { tx: TransactionHistoryOutput[0] }) => {
-    const isClickable = tx.origin === 'strawberry';
+    const isClickable = tx.origin === 'codex';
     const isPrivate = tx.amount === null;
     const Icon = tx.type === 'out' ? ArrowUpRight : ArrowDownLeft;
     const color = tx.type === 'out' ? 'text-destructive' : 'text-green-500';
@@ -135,7 +135,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
             <DialogHeader>
               <DialogTitle>Transaction Details</DialogTitle>
               <DialogDescription>
-                Details for transaction made with Strawberry Wallet.
+                Details for transaction made with Codex App.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-4 text-sm">

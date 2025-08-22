@@ -23,6 +23,7 @@ export const PositiveNumberStringSchema = z.string().refine(val => !isNaN(parseF
 // POST /wallet/create
 export const CreateWalletRequestSchema = z.object({
   userId: z.string().min(1, 'El campo userId es requerido.'),
+  walletAddress: EthAddressSchema,
 });
 export type CreateWalletRequest = z.infer<typeof CreateWalletRequestSchema>;
 
@@ -50,14 +51,14 @@ export type SendTransactionRequest = z.infer<typeof SendTransactionRequestSchema
 
 // POST /tx/log
 export const LogTransactionRequestSchema = z.object({
-    from_address: EthAddressSchema,
-    to_address: EthAddressSchema,
-    tx_hash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash.'),
-    network: z.string().min(1),
+    from: EthAddressSchema,
+    to: EthAddressSchema,
+    txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash.'),
+    ticker: z.string().min(1),
     amount: z.number().positive(),
-    status: z.enum(['sent', 'confirmed', 'failed']),
+    blockNumber: z.number().positive(),
 });
-export type LogTransactionRequest = z.infer<typeof LogTransactionRequestSchema>;
+export type TransactionLogData = z.infer<typeof LogTransactionRequestSchema>;
 
 // GET /prices
 export const PriceResponseSchema = z.array(

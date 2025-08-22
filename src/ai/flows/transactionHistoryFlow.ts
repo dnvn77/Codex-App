@@ -20,7 +20,7 @@ const TransactionHistoryOutputSchema = z.array(z.object({
     amount: z.number().nullable(), // Nullable for private transactions
     ticker: z.string(),
     type: z.enum(['in', 'out']),
-    origin: z.enum(['strawberry', 'other']),
+    origin: z.enum(['codex', 'other']),
     blockNumber: z.number(),
     status: z.enum(['confirmed', 'pending', 'failed']),
 }));
@@ -40,7 +40,7 @@ const fetchMockHistory = (address: string): TransactionHistoryOutput => {
   for (let i = 0; i < 25; i++) {
     const randomTimestamp = new Date(oneMonthAgo.getTime() + Math.random() * (now.getTime() - oneMonthAgo.getTime()));
     const type = Math.random() > 0.5 ? 'in' : 'out';
-    const origin = Math.random() > 0.3 ? 'strawberry' : 'other';
+    const origin = Math.random() > 0.3 ? 'codex' : 'other';
     const ticker = assets[Math.floor(Math.random() * assets.length)];
     
     // Simulate ZKP privacy: about 40% of transactions have a hidden amount

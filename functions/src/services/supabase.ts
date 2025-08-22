@@ -8,22 +8,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
-import type { LogTransactionRequest } from '../types';
+import type { TransactionLogData } from '../types';
 
 // Cliente de Supabase con privilegios de administrador.
 // Usar solo en el backend.
 const supabaseAdmin = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY);
 
 /**
- * Crea o recupera un usuario de la aplicación.
- * @param {string} telegramUserId - El ID de usuario de Telegram.
+ * Busca un usuario por su dirección de wallet, y si no existe, lo crea.
+ * @param {string} walletAddress - La dirección de la wallet del usuario.
  * @returns {Promise<any>} El objeto de usuario de la BD.
  */
-async function findOrCreateUser(telegramUserId: string) {
+export async function findOrCreateUserByWallet(walletAddress: string) {
     let { data: user, error: userError } = await supabaseAdmin
-        .from('users_app')
+        .from('users')
         .select('*')
-        .eq('telegram_user_id', telegramUserId)
+        .eq('wallet_address', walletAddress)
         .single();
 
     if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -33,9 +33,10 @@ async function findOrCreateUser(telegramUserId: string) {
     
     if (!user) {
         const { data: newUser, error: newUserError } = await supabaseAdmin
-            .from('users_app')
+            .from('users')
             .insert({ 
-                telegram_user_id: telegramUserId
+                wallet_address: walletAddress,
+                username: `user_${walletAddress.slice(0, 8)}` // Default username
             })
             .select()
             .single();
@@ -49,110 +50,28 @@ async function findOrCreateUser(telegramUserId: string) {
     return user;
 }
 
-/**
- * Crea o recupera una billetera para un usuario.
- * @param {string} userId - El ID del usuario de la app (UUID de la tabla users_app).
- * @param {string} walletAddress - La dirección de la smart account.
- * @param {string} provider - El proveedor de la billetera.
- * @returns {Promise<any>} El objeto de la billetera de la BD.
- */
-async function findOrCreateWallet(userId: string, walletAddress: string, provider: string) {
-    let { data: wallet, error: walletError } = await supabaseAdmin
-        .from('wallets')
-        .select('*')
-        .eq('address', walletAddress)
-        .single();
-    
-    if (walletError && walletError.code !== 'PGRST116') {
-        console.error('Error al buscar billetera:', walletError);
-        throw new Error('Error al interactuar con la base de datos de billeteras.');
-    }
-
-    if (!wallet) {
-        const { data: newWallet, error: newWalletError } = await supabaseAdmin
-            .from('wallets')
-            .insert({
-                user_id: userId,
-                address: walletAddress,
-                wallet_provider: provider
-            })
-            .select()
-            .single();
-        
-        if (newWalletError) {
-            console.error('Error al crear billetera:', newWalletError);
-            throw new Error('No se pudo crear el registro de la billetera.');
-        }
-        wallet = newWallet;
-    }
-    return wallet;
-}
-
-
-/**
- * Crea o recupera un usuario y su billetera asociada, asegurando que ambos existan.
- * @param {string} telegramUserId - El ID de usuario de Telegram.
- * @param {string} walletAddress - La dirección de la smart account.
- * @param {string} provider - El proveedor de la billetera (ej. 'zerodev').
- * @returns {Promise<{user: any, wallet: any}>} El usuario y la billetera de la BD.
- */
-export async function createOrRetrieveUserAndWallet(telegramUserId: string, walletAddress: string, provider: string) {
-    const user = await findOrCreateUser(telegramUserId);
-    const wallet = await findOrCreateWallet(user.id, walletAddress, provider);
-    return { user, wallet };
-}
-
-/**
- * Actualiza la lista de tokens favoritos de un usuario.
- * @param {string} telegramUserId - El ID de usuario de Telegram.
- * @param {string[]} favoriteTokens - El array de tickers de tokens favoritos.
- * @returns {Promise<any>} El objeto de usuario actualizado.
- */
-export async function updateUserFavoriteTokens(telegramUserId: string, favoriteTokens: string[]) {
-    const { data: user, error } = await supabaseAdmin
-        .from('users_app')
-        .update({ favorite_tokens: favoriteTokens })
-        .eq('telegram_user_id', telegramUserId)
-        .select()
-        .single();
-    
-    if (error) {
-        console.error('Error al actualizar tokens favoritos:', error);
-        throw new Error('No se pudieron actualizar los tokens favoritos.');
-    }
-
-    return user;
-}
-
 
 /**
  * Registra una transacción en la base de datos.
- * @param {LogTransactionRequest} txData - Los datos de la transacción a registrar.
+ * @param {TransactionLogData} txData - Los datos de la transacción a registrar.
  * @returns {Promise<any>} El registro de la transacción creada.
  */
-export async function logTransaction(txData: LogTransactionRequest) {
-    // Primero, obtener el ID de la billetera a partir de la dirección.
-    const { data: wallet, error: walletError } = await supabaseAdmin
-        .from('wallets')
-        .select('id')
-        .eq('address', txData.from_address)
-        .single();
+export async function logTransaction(txData: TransactionLogData) {
     
-    if (walletError || !wallet) {
-        console.error('Error buscando la billetera para registrar la TX:', walletError);
-        throw new Error('La billetera de origen no se encuentra en la base de datos.');
-    }
+    const transactionToInsert = {
+        sender: txData.from,
+        recipient: txData.to,
+        token: txData.ticker,
+        amount: txData.amount,
+        tx_hash: txData.txHash,
+        block_number: txData.blockNumber,
+        status: 'confirmed',
+        is_private: false, // Assuming public transactions for now
+    };
 
     const { data: loggedTx, error: txError } = await supabaseAdmin
-        .from('txs')
-        .insert({
-            wallet_id: wallet.id,
-            tx_hash: txData.tx_hash,
-            network: txData.network,
-            to_address: txData.to_address,
-            amount: txData.amount,
-            status: txData.status
-        })
+        .from('transactions')
+        .insert(transactionToInsert)
         .select()
         .single();
     

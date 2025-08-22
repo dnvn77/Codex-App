@@ -331,12 +331,12 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
             },
             body: JSON.stringify({
-                from_address: tx.from,
-                to_address: tx.to,
-                tx_hash: tx.txHash,
-                network: 'scroll_sepolia',
+                from: tx.from,
+                to: tx.to,
+                txHash: tx.txHash,
+                ticker: tx.ticker,
                 amount: tx.amount,
-                status: 'sent'
+                blockNumber: tx.l1SettlementBlock
             })
         });
         if (!response.ok) {
@@ -535,7 +535,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
         const priceInfo = priceData.find(p => p.ticker === asset.ticker);
         return {
             ...asset,
-            icon: priceInfo?.icon || '/strawberry-logo.svg', // Use fetched icon, fallback to default
+            icon: priceInfo?.icon || '/codex-logo.svg', // Use fetched icon, fallback to default
         };
     });
   }, [priceData]);
@@ -822,7 +822,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
                 {selectedAssetTicker !== 'ETH' && (
                     <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
                         <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <p>Sending non-ETH assets is not yet supported.</p>
+                        <p>{t.tokenPortalInfo}</p>
                     </div>
                 )}
               </div>

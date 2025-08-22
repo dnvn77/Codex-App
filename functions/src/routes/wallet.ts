@@ -7,7 +7,7 @@ import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
 import { CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema } from '../types';
-import { createOrRetrieveUserAndWallet } from '../services/supabase';
+import { findOrCreateUserByWallet } from '../services/supabase';
 import { getWalletAddress } from '../services/portal';
 
 const router = Router();
@@ -19,17 +19,21 @@ const router = Router();
  */
 router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async (req, res, next) => {
   try {
-    const { userId } = req.body;
+    const { userId, walletAddress } = req.body;
     
     // Obtener la dirección de la wallet MPC para el usuario
-    const walletAddress = await getWalletAddress(userId);
+    const addressFromPortal = await getWalletAddress(userId);
 
-    // Guardar el mapeo userId -> address en Supabase.
-    const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'portal_mpc');
+    if (addressFromPortal.toLowerCase() !== walletAddress.toLowerCase()) {
+        return res.status(400).json({ error: { code: 'ADDRESS_MISMATCH', message: 'Wallet address does not match Portal records.' } });
+    }
+
+    // Guardar el usuario en Supabase usando la dirección de la wallet.
+    const user = await findOrCreateUserByWallet(walletAddress);
 
     res.status(200).json({
-      address: wallet.address,
-      message: `✅ MPC Wallet creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
+      address: user.wallet_address,
+      message: `✅ Usuario con wallet ${user.wallet_address} creado/obtenido.`,
     });
   } catch (error) {
     next(error);
