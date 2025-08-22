@@ -18,7 +18,6 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet, encryptMessage, decryptMessage, getMessagingKeys, type MessagingKeys } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
-import * as htmlToImage from 'html-to-image';
 import { TransactionReceiptMessage } from './TransactionReceiptMessage';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
@@ -32,6 +31,7 @@ interface MockMessage {
   timestamp: string;
   type: 'text' | 'receipt' | 'link';
   isEncrypted: boolean;
+  transactionDetails?: Transaction; // For receipt type
 }
 
 const mockContacts = [
@@ -276,29 +276,16 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
       await new Promise(resolve => setTimeout(resolve, 1500));
       const tx = sendTransaction(wallet, selectedChat.address, amountInEth, selectedAsset.ticker, selectedAsset.icon);
       
-      const receiptNode = document.createElement('div');
-      receiptNode.style.width = '350px';
-      document.body.appendChild(receiptNode);
-
-      const receiptComponent = <TransactionReceiptMessage transaction={tx} contactName={selectedChat.name} />;
-      const tempRoot = (await import('react-dom/client')).createRoot(receiptNode);
-      tempRoot.render(receiptComponent);
-      
-      await new Promise(r => setTimeout(r, 100));
-
-      const dataUrl = await htmlToImage.toPng(receiptNode, { quality: 0.95 });
-      
-      document.body.removeChild(receiptNode);
-      
       const receiptMessage: MockMessage = {
         id: allMessages.length + 1,
         conversationId: selectedChat.id,
         senderAddress: wallet.address,
         recipientAddress: selectedChat.address,
-        content: dataUrl,
+        content: `Transaction receipt for ${tx.amount} ${tx.ticker}`,
+        transactionDetails: tx,
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
         type: 'receipt',
-        isEncrypted: false, // Transaction receipts are not encrypted
+        isEncrypted: false,
       };
       
       const linkMessage: MockMessage = {
@@ -309,10 +296,10 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
         content: `https://testnet.monadexplorer.com/tx/${tx.txHash}`,
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
         type: 'link',
-        isEncrypted: false, // Transaction links are not encrypted
+        isEncrypted: false,
       }
 
-      setAllMessages([...allMessages, receiptMessage, linkMessage]);
+      setAllMessages(prev => [...prev, receiptMessage, linkMessage]);
 
       onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
       
@@ -594,13 +581,13 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                          {message.decryptedContent ? <p>{message.decryptedContent}</p> : <p className="flex items-center gap-2 italic text-muted-foreground"><Lock size={12}/>Encrypted Message</p>}
                        </div>
                     )}
-                     {message.type === 'receipt' && message.decryptedContent && (
-                        <img src={message.decryptedContent} alt="Transaction Receipt" className="rounded-lg border border-primary/20 w-full max-w-xs" />
+                     {message.type === 'receipt' && message.transactionDetails && (
+                        <TransactionReceiptMessage transaction={message.transactionDetails} contactName={selectedChat.name} />
                      )}
                      {message.type === 'link' && message.decryptedContent && (
-                         <div className="p-3 rounded-lg max-w-xs bg-primary text-primary-foreground">
-                            <a href={message.decryptedContent} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
-                                {message.decryptedContent}
+                         <div className="p-3 rounded-lg max-w-xs bg-secondary">
+                            <a href={message.decryptedContent} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                                View transaction on explorer
                             </a>
                          </div>
                      )}
