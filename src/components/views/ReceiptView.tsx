@@ -79,7 +79,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
         buttons.forEach(btn => (btn as HTMLElement).style.display = '');
 
         const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'strawberry-receipt.png', { type: blob.type });
+        const file = new File([blob], 'codex-receipt.png', { type: blob.type });
 
         const shareData = {
             title: t.shareTxTitle,

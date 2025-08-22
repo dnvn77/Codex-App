@@ -80,7 +80,7 @@ const ALL_EVM_ASSETS = [
     { name: 'Maker', ticker: 'MKR', id: 1518 },
     { name: 'The Sandbox', ticker: 'SAND', id: 6210 },
     { name: 'Decentraland', ticker: 'MANA', id: 1966 },
-    { name: 'Strawberry Token', ticker: 'STRW', id: 0 }
+    { name: 'Codex Token', ticker: 'CDX', id: 0 }
 ];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
@@ -172,7 +172,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
     'ETH': wallet.balance,
     'USDC': 1520.75,
     'WBTC': 0.03,
-    'STRW': 12500,
+    'CDX': 12500,
     'LINK': 150.2,
     'UNI': 300,
   });

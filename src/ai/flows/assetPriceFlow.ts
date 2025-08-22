@@ -28,7 +28,7 @@ const AssetPriceOutputSchema = z.array(
 export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
 const getIconPath = (assetId: number): string => {
-    if (assetId === 0) { // Handle Strawberry Token case
+    if (assetId === 0) { // Handle Codex Token case
       return '/strawberry-logo.svg';
     }
     return `https://s2.coinmarketcap.com/static/img/coins/64x64/${assetId}.png`;
@@ -49,7 +49,7 @@ const mockPrices: Record<string, { name: string, id: number, price: number, chan
     MKR: { name: 'Maker', id: 1518, price: 2890.00, change: 5.60 },
     SAND: { name: 'The Sandbox', id: 6210, price: 0.45, change: -1.80 },
     MANA: { name: 'Decentraland', id: 1966, price: 0.48, change: 0.25 },
-    STRW: { name: 'Strawberry Token', id: 0, price: 0.05, change: 5.5 },
+    CDX: { name: 'Codex Token', id: 0, price: 0.05, change: 5.5 },
 };
 
 

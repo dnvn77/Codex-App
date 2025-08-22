@@ -1,12 +1,12 @@
 
-"use client"
+"use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, UserPlus, X, Trash2 } from 'lucide-react';
+import { Loader2, UserPlus, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, saveContact, deleteContact, resolveEnsName } from '@/lib/wallet';
@@ -21,12 +21,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 interface ContactsListProps {
   onContactSelect: (contact: Contact) => void;
+  isDialog?: boolean;
 }
 
-export function ContactsList({ onContactSelect }: ContactsListProps) {
+export function ContactsList({ onContactSelect, isDialog = true }: ContactsListProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isAddContactOpen, setAddContactOpen] = useState(false);
   const [newContactName, setNewContactName] = useState('');
@@ -52,12 +54,7 @@ export function ContactsList({ onContactSelect }: ContactsListProps) {
   };
   
   const handleNameChange = (value: string) => {
-      let finalValue = value;
-      // Autocomplete .eth
-      if (/^[a-zA-Z0-9-]*$/.test(value) && !value.endsWith('.') && !newContactAddress) {
-        // This is a rough heuristic. If user types a potential ens name start.
-      }
-      setNewContactName(finalValue);
+      setNewContactName(value);
   };
 
   const handleSaveContact = async () => {
@@ -110,66 +107,67 @@ export function ContactsList({ onContactSelect }: ContactsListProps) {
   };
 
   const isSaveDisabled = !newContactName || !newContactAddress || isLoading;
+  
+  const headerClass = isDialog ? "" : "flex justify-between items-center";
 
   return (
     <>
-      <DialogHeader>
-        <div className="flex justify-between items-center">
-            <DialogTitle>Contacts</DialogTitle>
-            <Dialog open={isAddContactOpen} onOpenChange={setAddContactOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <UserPlus className="h-5 w-5" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Add New Contact</DialogTitle>
-                        <DialogDescription>
-                            Save an address for quick access later. ENS names will be resolved.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <div>
-                            <Label htmlFor="contact-name">Name</Label>
-                            <Input
-                                id="contact-name"
-                                value={newContactName}
-                                onChange={(e) => handleNameChange(e.target.value)}
-                                placeholder="e.g., Vitalik"
-                            />
-                        </div>
-                         <div>
-                            <Label htmlFor="contact-address">Address or ENS Name</Label>
-                            <Input
-                                id="contact-address"
-                                value={newContactAddress}
-                                onChange={(e) => handleAddressChange(e.target.value)}
-                                placeholder="0x... or vitalik.eth"
-                            />
-                             {addressError && <p className="text-sm text-destructive mt-1">{addressError}</p>}
-                        </div>
+      <div className={headerClass}>
+        {isDialog && <DialogTitle>Contacts</DialogTitle>}
+        <Dialog open={isAddContactOpen} onOpenChange={setAddContactOpen}>
+            <DialogTrigger asChild>
+                <Button variant={isDialog ? "ghost" : "default"} size={isDialog ? "icon" : "sm"}>
+                    <UserPlus className="h-5 w-5" />
+                    {!isDialog && <span className="ml-2">Add Contact</span>}
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Add New Contact</DialogTitle>
+                    <DialogDescription>
+                        Save an address for quick access later. ENS names will be resolved.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <div>
+                        <Label htmlFor="contact-name">Name</Label>
+                        <Input
+                            id="contact-name"
+                            value={newContactName}
+                            onChange={(e) => handleNameChange(e.target.value)}
+                            placeholder="e.g., Vitalik"
+                        />
                     </div>
-                    <DialogFooter>
-                         <Button variant="outline" onClick={() => setAddContactOpen(false)}>Cancel</Button>
-                         <Button onClick={handleSaveContact} disabled={isSaveDisabled}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Contact
-                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-      </DialogHeader>
+                     <div>
+                        <Label htmlFor="contact-address">Address or ENS Name</Label>
+                        <Input
+                            id="contact-address"
+                            value={newContactAddress}
+                            onChange={(e) => handleAddressChange(e.target.value)}
+                            placeholder="0x... or vitalik.eth"
+                        />
+                         {addressError && <p className="text-sm text-destructive mt-1">{addressError}</p>}
+                    </div>
+                </div>
+                <DialogFooter>
+                     <Button variant="outline" onClick={() => setAddContactOpen(false)}>Cancel</Button>
+                     <Button onClick={handleSaveContact} disabled={isSaveDisabled}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Contact
+                     </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      </div>
       
-      <div className="py-4">
+      <div className={cn(isDialog && "py-4")}>
         {contacts.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <p>You have no saved contacts yet.</p>
             <p className="text-sm">Click the <UserPlus className="inline h-4 w-4 mx-1" /> icon to add one.</p>
           </div>
         ) : (
-          <ScrollArea className="h-72">
+          <ScrollArea className="h-full">
             <div className="space-y-2 pr-4">
               {contacts.map((contact) => (
                 <div key={contact.address} className="group flex items-center justify-between p-2 rounded-md hover:bg-accent">

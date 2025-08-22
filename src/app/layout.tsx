@@ -12,7 +12,7 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: 'Strawberry Wallet',
+  title: 'Codex App',
   description: 'Your private wallet on Telegram',
 };
 

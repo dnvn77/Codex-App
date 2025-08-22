@@ -35,7 +35,7 @@ const translationsData = {
     dashboardTitle: 'Wallet Dashboard',
 
     // Existing translations
-    mainTitle: 'Strawberry Wallet',
+    mainTitle: 'Codex App',
     mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
     createWalletButton: 'Create New Wallet',
     importWalletButton: 'Import Wallet',
@@ -154,7 +154,7 @@ const translationsData = {
     
     // Lock screen fields
     unlockWalletTitle: 'Unlock Your Wallet',
-    unlockWalletDesc: 'Enter your password to access your Strawberry Wallet.',
+    unlockWalletDesc: 'Enter your password to access your Codex App.',
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
@@ -213,7 +213,7 @@ const translationsData = {
         seedClarityQuestion: "You just confirmed your security phrase. Was this step clear?",
         
         // Overall CSAT
-        overallCsatTitle: "🍓 You've used Violet Vault a few times.",
+        overallCsatTitle: "🍓 You've used Codex App a few times.",
         overallCsatQuestion: "How would you rate your overall experience?",
 
         // Options
@@ -278,7 +278,7 @@ const translationsData = {
     dashboardTitle: 'Panel de la Billetera',
 
     // Existing translations
-    mainTitle: 'Strawberry Wallet',
+    mainTitle: 'Codex App',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
     createWalletButton: 'Crear Nueva Billetera',
     importWalletButton: 'Importar Billetera',
@@ -397,7 +397,7 @@ const translationsData = {
 
     // Lock screen fields
     unlockWalletTitle: 'Desbloquear tu Billetera',
-    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Strawberry Wallet.',
+    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Codex App.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',
@@ -448,7 +448,7 @@ const translationsData = {
         sendFlowFeelingQuestion: "¿Cómo te sentiste con el proceso?",
         seedClarityTitle: "🔐 Un último paso",
         seedClarityQuestion: "Acabas de confirmar tu frase de seguridad. ¿Fue claro este paso?",
-        overallCsatTitle: "🍓 Has usado Violet Vault varias veces.",
+        overallCsatTitle: "🍓 Has usado Codex App varias veces.",
         overallCsatQuestion: "¿Cómo calificarías tu experiencia general?",
         options: {
             receiveFlowEase: [

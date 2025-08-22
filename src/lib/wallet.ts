@@ -266,8 +266,8 @@ export const bip39Wordlist: string[] = [
 ];
 
 
-const WALLET_STORAGE_KEY = 'strawberry_wallet';
-const CONTACTS_STORAGE_KEY = 'strawberry_contacts';
+const WALLET_STORAGE_KEY = 'codex_wallet';
+const CONTACTS_STORAGE_KEY = 'codex_contacts';
 const FAVORITE_TOKENS_KEY_PREFIX = 'favorite_tokens_';
 
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
@@ -465,7 +465,7 @@ export async function storeWallet(wallet: Wallet, password: string): Promise<voi
         ...encryptedData,
         address: wallet.address,
         balance: wallet.balance,
-        favoriteTokens: ['ETH', 'WBTC', 'USDC', 'STRW']
+        favoriteTokens: ['ETH', 'WBTC', 'USDC', 'CDX']
     };
     localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(storedWallet));
 }
@@ -580,7 +580,7 @@ export function deleteContact(address: string): Contact[] {
 
 // Favorite Tokens Management
 export function getFavoriteTokens(): string[] {
-    if (typeof window === 'undefined') return ['ETH', 'WBTC', 'USDC', 'STRW']; // Default for SSR
+    if (typeof window === 'undefined') return ['ETH', 'WBTC', 'USDC', 'CDX']; // Default for SSR
     
     const storedWallet = getStoredWallet();
     // Use user-specific key if available, otherwise fallback to wallet-specific, then default.
@@ -598,7 +598,7 @@ export function getFavoriteTokens(): string[] {
         return storedWallet.favoriteTokens;
     }
 
-    return ['ETH', 'WBTC', 'USDC', 'STRW']; // Default favorites
+    return ['ETH', 'WBTC', 'USDC', 'CDX']; // Default favorites
 }
 
 export async function setFavoriteTokens(userId: string, tokens: string[]): Promise<void> {

@@ -1,25 +1,29 @@
 
-"use client";
+"use client"
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useTranslations } from "@/hooks/useTranslations";
-import { Users } from "lucide-react";
+import { ContactsList } from './ContactsList';
 
 export function ContactsView() {
   const t = useTranslations();
+  
+  // A dummy function because on this view, selecting a contact doesn't do anything.
+  const handleSelect = () => {};
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">{t.contacts}</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Coming Soon</CardTitle>
+          <CardTitle>Contact Book</CardTitle>
           <CardDescription>
-            This is where your contacts will be displayed.
+            Manage your saved addresses here for quick access.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-48 text-muted-foreground">
-          <Users className="h-16 w-16" />
+        <CardContent className="h-[calc(100vh-20rem)]">
+           <ContactsList onContactSelect={handleSelect} isDialog={false}/>
         </CardContent>
       </Card>
     </div>
