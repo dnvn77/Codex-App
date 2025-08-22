@@ -32,15 +32,15 @@ export function MainNav({ activeView, setActiveView }: MainNavProps) {
               variant="ghost"
               size="sm"
               className={cn(
-                "h-auto rounded-full px-2 md:px-3 py-1.5 text-xs font-normal transition-colors",
+                "h-auto rounded-full px-3 md:px-3 py-1.5 text-xs font-normal transition-colors",
                 activeView === item.view
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "text-muted-foreground hover:bg-secondary-foreground/10"
               )}
               onClick={() => setActiveView(item.view)}
             >
-              <item.icon className="mr-1.5 h-4 w-4" />
-              {item.label}
+              <item.icon className="h-4 w-4 md:mr-1.5" />
+              <span className="hidden md:inline">{item.label}</span>
             </Button>
           ))}
         </div>
