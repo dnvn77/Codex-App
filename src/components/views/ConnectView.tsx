@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield, MessageSquare, Wallet as WalletIcon } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -183,30 +183,47 @@ export function ConnectView({
     }
   };
   
-  const handleGoToSetPassword = () => {
-    if (newWallet) {
-      const correctWords = newWallet.seedPhrase.split(' ');
-      const newErrors = ['', '', ''];
-      let allCorrect = true;
+  const handleGoToSetPassword = async (importedSeedPhrase?: string) => {
+    let finalSeed = '';
 
-      randomWordIndices.forEach((wordIndex, arrayIndex) => {
-        if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
-          newErrors[arrayIndex] = t.incorrectWordError;
-          allCorrect = false;
+    if (importedSeedPhrase) {
+        finalSeed = importedSeedPhrase;
+    } else if (newWallet) {
+        const correctWords = newWallet.seedPhrase.split(' ');
+        const newErrors = ['', '', ''];
+        let allCorrect = true;
+
+        randomWordIndices.forEach((wordIndex, arrayIndex) => {
+            if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
+                newErrors[arrayIndex] = t.incorrectWordError;
+                allCorrect = false;
+            }
+        });
+
+        setConfirmationErrors(newErrors);
+
+        if (!allCorrect) {
+            logEvent('create_wallet_seed_verification_failed', { error_code: 'seed_verification_failed' });
+            return;
         }
-      });
-      
-      setConfirmationErrors(newErrors);
-
-      if (allCorrect) {
-        logEvent('create_wallet_seed_verified');
-        triggerFeedbackEvent('seed_confirmed');
-        setCreationStep('setPassword');
-      } else {
-        logEvent('create_wallet_seed_verification_failed', { error_code: 'seed_verification_failed' });
-      }
+        finalSeed = newWallet.seedPhrase;
     }
-  };
+
+    if (finalSeed) {
+        try {
+            const wallet = await importWalletFromSeed(finalSeed);
+            setNewWallet(wallet);
+            logEvent('create_wallet_seed_verified');
+            setCreationStep('setPassword');
+        } catch (error) {
+             toast({
+                title: t.importErrorTitle,
+                description: (error as Error).message || t.importErrorDesc,
+                variant: "destructive",
+            });
+        }
+    }
+};
 
   const persistWalletData = async (wallet: Wallet) => {
     if (!user?.id) {
@@ -337,21 +354,11 @@ export function ConnectView({
 
   const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
-    try {
-      const wallet = await importWalletFromSeed(importSeedPhrase);
-      setNewWallet(wallet); 
-      logEvent('import_wallet_seed_verified');
-      setCreationStep('setPassword'); 
-      setImportDialogOpen(false); 
-      setCreateDialogOpen(true); 
-    } catch (error) {
-      logEvent('import_wallet_fail', { reason: (error as Error).message, error_code: 'invalid_seed' });
-      toast({
-        title: t.importErrorTitle,
-        description: (error as Error).message || t.importErrorDesc,
-        variant: "destructive",
-      });
-    }
+    // We open the "Create" dialog but immediately move to the set password step.
+    // This re-uses the password setting and finalization logic.
+    setImportDialogOpen(false); 
+    await handleGoToSetPassword(importSeedPhrase);
+    setCreateDialogOpen(true);
   };
   
   const handleCloseCreateDialog = () => {
@@ -394,20 +401,12 @@ export function ConnectView({
           <CardDescription>{t.mainDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-4">
-           {/* Option 1: Create Wallet & Account */}
           <Button size="lg" onClick={handleCreateWallet}>
-            <WalletIcon />
+            <PlusCircle />
             {t.createWalletAndAccountButton}
           </Button>
           
-          {/* Option 2: Create Account Only (for future implementation, currently links to full flow) */}
-          <Button size="lg" variant="secondary" onClick={handleCreateWallet}>
-            <MessageSquare />
-            {t.createAccountButton}
-          </Button>
-          
-          {/* Option 3: Login / Import */}
-          <Button size="lg" variant="outline" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
+          <Button size="lg" variant="secondary" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
             <KeyRound />
             {t.loginButton}
           </Button>
@@ -474,7 +473,7 @@ export function ConnectView({
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={handleBackToShowSeed}>{t.backButton}</Button>
-                <Button onClick={handleGoToSetPassword} disabled={isConfirmationDisabled}>{t.continueButton}</Button>
+                <Button onClick={() => handleGoToSetPassword()} disabled={isConfirmationDisabled}>{t.continueButton}</Button>
               </DialogFooter>
             </>
           )}
@@ -583,7 +582,7 @@ export function ConnectView({
               <Button variant="outline">{t.cancelButton}</Button>
             </DialogClose>
             <Button onClick={handleImportWallet} disabled={isImportDisabled}>
-              {t.continueButton}
+              {t.importButton}
             </Button>
           </DialogFooter>
         </DialogContent>

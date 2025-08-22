@@ -97,6 +97,7 @@ export default function Home() {
                 storedWallet={storedWalletInfo}
                 onWalletUnlocked={handleWalletUnlocked}
                 onDisconnect={handleDisconnect}
+                onLoginComplete={handleLoginComplete}
             />
         </main>
     )

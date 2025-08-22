@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock, Eye, EyeOff, LogOut, AlertTriangle } from 'lucide-react';
-import { unlockWallet, verifySeedPhrase, bip39Wordlist, importWalletFromSeed, storeWallet } from '@/lib/wallet';
+import { Loader2, Lock, Eye, EyeOff, LogOut, AlertTriangle, Check, X } from 'lucide-react';
+import { unlockWallet, verifySeedPhrase, bip39Wordlist, importWalletFromSeed, storeWallet, validatePassword } from '@/lib/wallet';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTranslations } from '@/hooks/useTranslations';
 import {
@@ -25,8 +25,9 @@ import Image from 'next/image';
 
 interface LockViewProps {
   storedWallet: StoredWallet;
-  onWalletUnlocked: (password: string) => void;
+  onWalletUnlocked: (wallet: Wallet) => void;
   onDisconnect: () => void;
+  onLoginComplete: (wallet: Wallet) => void;
 }
 
 type RecoveryStep = 'enterSeed' | 'resetPassword';
@@ -179,7 +180,7 @@ const ResetPasswordView = ({ onPasswordReset, seedPhrase }: { onPasswordReset: (
 };
 
 
-export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockViewProps) {
+export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLoginComplete }: LockViewProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -206,8 +207,13 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
 
     try {
         await new Promise(resolve => setTimeout(resolve, 500));
-        await onWalletUnlocked(password);
-        logEvent('unlock_success');
+        const unlockedWallet = await unlockWallet(password);
+        if (unlockedWallet) {
+            onWalletUnlocked(unlockedWallet);
+            logEvent('unlock_success');
+        } else {
+            throw new Error("Unlock failed");
+        }
     } catch {
       setError(t.wrongPasswordError);
       logEvent('unlock_fail');
@@ -361,7 +367,10 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
                   {t.unlockingButton}
                 </>
               ) : (
-                t.unlockButton
+                <>
+                 <Lock className="mr-2 h-4 w-4" />
+                 {t.unlockButton}
+                </>
               )}
             </Button>
             <div className="flex items-center justify-between w-full text-xs text-muted-foreground border-t pt-3 mt-2">
@@ -436,9 +445,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
                     seedPhrase={fullSeedForReset}
                     onPasswordReset={(wallet) => {
                         handleCloseRecovery();
-                        // This uses the existing `onWalletUnlocked` to signal a successful login,
-                        // as the password has been reset and the wallet is effectively "unlocked".
-                        onWalletUnlocked(password); 
+                        onLoginComplete(wallet);
                     }}
                 />
             )}
