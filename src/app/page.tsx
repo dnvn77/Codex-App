@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -27,20 +26,23 @@ export default function Home() {
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
     
-    // Check if this is the very first time (no wallet stored)
-    // This helps decide the initial state without causing hydration issues
-    if (!stored) {
-        // This is a new user, so any subsequent wallet connection will be a "first login"
+    const isNewUser = !stored;
+    // We use sessionStorage to ensure this flag is only true for the initial session load.
+    // If the user refreshes, it should persist, but it will be cleared on closing the tab.
+    if (isNewUser) {
         sessionStorage.setItem('isNewUser', 'true');
     }
   }, []);
 
   const handleLoginComplete = (newWallet: Wallet) => {
     setWallet(newWallet);
-    setStoredWalletInfo(getStoredWallet());
+    const newStoredInfo = getStoredWallet();
+    setStoredWalletInfo(newStoredInfo);
     
     const isNew = sessionStorage.getItem('isNewUser');
     if (isNew) {
+        // This is a "first login" in the sense that they just created/imported
+        // a wallet for the first time in this session.
         logEvent('first_login_complete');
         setIsFirstLogin(true);
         setActiveView('profile'); // Switch to profile to show the edit modal

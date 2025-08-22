@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'es';
 
 export const supportedLanguages: Language[] = ['en', 'es'];
@@ -45,7 +44,9 @@ const translationsData = {
     // Existing translations
     mainTitle: 'Welcome to Codex App',
     mainDescription: 'Your private, self-custody wallet for the Scroll Network, integrated with secure messaging.',
-    createWalletAndAccountButton: 'Create New Wallet',
+    createWalletAndAccountButton: 'Create New Wallet & Account',
+    createAccountWithWalletButton: 'Create Account with Existing Wallet',
+    importExistingAccountButton: 'Import Existing Account',
     loginButton: 'Import Existing Wallet',
     testnetDisclaimer: 'Transactions are on the Sepolia Testnet.',
     createWalletTitle: 'Create Your Wallet',
@@ -60,6 +61,8 @@ const translationsData = {
     confirmAndCreateButton: 'Confirm & Create',
     importWalletTitle: 'Import Wallet',
     importWalletDesc: 'Enter your secret phrase to restore your wallet.',
+    importToCreateAccountDesc: 'Import your existing wallet to create your new Codex App account.',
+    importExistingAccountDesc: 'Import your wallet to log into your existing Codex App account.',
     securityWarningTitle: 'Security Warning',
     securityWarningDesc: 'Never share your secret phrase. Anyone with it can take control of your assets.',
     seedPhraseLengthLabel: 'Seed Phrase Length',
@@ -296,7 +299,9 @@ const translationsData = {
     // Existing translations
     mainTitle: 'Bienvenido a Codex App',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll, integrada con mensajería segura.',
-    createWalletAndAccountButton: 'Crear Nueva Billetera',
+    createWalletAndAccountButton: 'Crear Nueva Billetera y Cuenta',
+    createAccountWithWalletButton: 'Crear Cuenta con Billetera Existente',
+    importExistingAccountButton: 'Importar Cuenta Existente',
     loginButton: 'Importar Billetera Existente',
     testnetDisclaimer: 'Las transacciones se realizan en la Testnet de Sepolia.',
     createWalletTitle: 'Crea Tu Billetera',
@@ -311,6 +316,8 @@ const translationsData = {
     confirmAndCreateButton: 'Confirmar y Crear',
     importWalletTitle: 'Importar Billetera',
     importWalletDesc: 'Ingresa tu frase secreta para restaurar tu billetera.',
+    importToCreateAccountDesc: 'Importa tu billetera existente para crear tu nueva cuenta de Codex App.',
+    importExistingAccountDesc: 'Importa tu billetera para iniciar sesión en tu cuenta de Codex App existente.',
     securityWarningTitle: 'Advertencia de Seguridad',
     securityWarningDesc: 'Nunca compartas tu frase secreta. Cualquiera con ella puede tomar control de tus activos.',
     seedPhraseLengthLabel: 'Longitud de la Frase Semilla',

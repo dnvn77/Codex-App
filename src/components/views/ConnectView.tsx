@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -26,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield, FileInput, UserPlus } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -135,6 +134,8 @@ export function ConnectView({
 
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
+  
+  const [isForExistingAccount, setIsForExistingAccount] = useState(false);
 
   const { toast } = useToast();
   const t = useTranslations();
@@ -157,6 +158,13 @@ export function ConnectView({
     setCreationStep('showSeed');
     setCreateDialogOpen(true);
   };
+  
+  const handleOpenImportDialog = (existingAccount: boolean) => {
+      setIsForExistingAccount(existingAccount);
+      const event = existingAccount ? 'import_account_start' : 'create_account_from_wallet_start';
+      logEvent(event);
+      setImportDialogOpen(true);
+  }
   
   const generateRandomIndices = useCallback((seed: string) => {
     const indices = new Set<number>();
@@ -354,8 +362,13 @@ export function ConnectView({
 
   const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
+    // TODO: Here you would check if an account for this wallet already exists
+    // on your backend. For now, we will simulate this by assuming if `isForExistingAccount`
+    // is false, it's a new account creation.
+    const importedWallet = await importWalletFromSeed(importSeedPhrase);
+    
     setImportDialogOpen(false); 
-    onLoginComplete(await importWalletFromSeed(importSeedPhrase));
+    onLoginComplete(importedWallet); // The parent `page.tsx` will handle the "first login" logic
   };
   
   const handleCloseCreateDialog = () => {
@@ -374,6 +387,14 @@ export function ConnectView({
         setConfirmationErrors(['', '', '']);
         setRandomWordIndices([]);
     }, 300);
+  }
+  
+  const handleCloseImportDialog = () => {
+      setImportDialogOpen(false);
+      setTimeout(() => {
+          setSeedLength(12);
+          setSeedWords(Array(12).fill(''));
+      }, 300);
   }
 
   const isConfirmationDisabled = confirmationWords.some(word => word.trim() === '');
@@ -403,9 +424,14 @@ export function ConnectView({
             {t.createWalletAndAccountButton}
           </Button>
           
-          <Button size="lg" variant="secondary" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
-            <KeyRound />
-            {t.loginButton}
+           <Button size="lg" variant="secondary" onClick={() => handleOpenImportDialog(false)}>
+            <UserPlus />
+            {t.createAccountWithWalletButton}
+          </Button>
+
+          <Button size="lg" variant="outline" onClick={() => handleOpenImportDialog(true)}>
+            <FileInput />
+            {t.importExistingAccountButton}
           </Button>
         </CardContent>
         <CardFooter>
@@ -528,11 +554,11 @@ export function ConnectView({
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+      <Dialog open={isImportDialogOpen} onOpenChange={handleCloseImportDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t.importWalletTitle}</DialogTitle>
-            <DialogDescription>{t.importWalletDesc}</DialogDescription>
+            <DialogDescription>{isForExistingAccount ? t.importExistingAccountDesc : t.importToCreateAccountDesc}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
