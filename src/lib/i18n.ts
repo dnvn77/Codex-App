@@ -43,10 +43,11 @@ const translationsData = {
     dashboardTitle: 'Wallet Dashboard',
 
     // Existing translations
-    mainTitle: 'Codex App',
-    mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
-    createWalletButton: 'Create New Account & Wallet',
-    importWalletButton: 'I Already Have a Seed Phrase',
+    mainTitle: 'Welcome to Codex App',
+    mainDescription: 'Your private, self-custody wallet for the Scroll Network, integrated with secure messaging.',
+    createWalletAndAccountButton: 'Create Wallet & Account',
+    createAccountButton: 'Create Account (for Chat)',
+    loginButton: 'Log In / Import Wallet',
     testnetDisclaimer: 'Transactions are on the Sepolia Testnet.',
     createWalletTitle: 'Create Your Wallet',
     createWalletDesc: 'Write down your secret phrase and store it securely. This is the only way to recover your wallet.',
@@ -294,10 +295,11 @@ const translationsData = {
     dashboardTitle: 'Panel de la Billetera',
 
     // Existing translations
-    mainTitle: 'Codex App',
-    mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
-    createWalletButton: 'Crear Nueva Cuenta y Billetera',
-    importWalletButton: 'Ya Tengo una Frase Semilla',
+    mainTitle: 'Bienvenido a Codex App',
+    mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll, integrada con mensajería segura.',
+    createWalletAndAccountButton: 'Crear Wallet y Cuenta',
+    createAccountButton: 'Crear Cuenta (para Chat)',
+    loginButton: 'Iniciar Sesión / Importar Wallet',
     testnetDisclaimer: 'Las transacciones se realizan en la Testnet de Sepolia.',
     createWalletTitle: 'Crea Tu Billetera',
     createWalletDesc: 'Anota tu frase secreta y guárdala en un lugar seguro. Esta es la única forma de recuperar tu billetera.',

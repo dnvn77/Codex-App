@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield, MessageSquare, Wallet as WalletIcon } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -394,13 +394,22 @@ export function ConnectView({
           <CardDescription>{t.mainDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-4">
+           {/* Option 1: Create Wallet & Account */}
           <Button size="lg" onClick={handleCreateWallet}>
-            <PlusCircle />
-            {t.createWalletButton}
+            <WalletIcon />
+            {t.createWalletAndAccountButton}
           </Button>
-          <Button size="lg" variant="secondary" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
+          
+          {/* Option 2: Create Account Only (for future implementation, currently links to full flow) */}
+          <Button size="lg" variant="secondary" onClick={handleCreateWallet}>
+            <MessageSquare />
+            {t.createAccountButton}
+          </Button>
+          
+          {/* Option 3: Login / Import */}
+          <Button size="lg" variant="outline" onClick={() => { logEvent('import_wallet_start'); setImportDialogOpen(true); }}>
             <KeyRound />
-            {t.importWalletButton}
+            {t.loginButton}
           </Button>
         </CardContent>
         <CardFooter>
