@@ -62,7 +62,6 @@ import { Skeleton } from '../ui/skeleton';
 
 interface WalletViewProps {
   wallet: Wallet;
-  onDisconnect: () => void;
 }
 
 const ALL_EVM_ASSETS = [
@@ -107,7 +106,7 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   );
 };
 
-export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
+export function WalletView({ wallet }: WalletViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
@@ -357,7 +356,7 @@ export function WalletView({ wallet, onDisconnect }: WalletViewProps) {
                 from_address: tx.from,
                 to_address: tx.to,
                 tx_hash: tx.txHash,
-                network: 'scroll_sepolia',
+                network: 'monad_testnet',
                 amount: tx.amount,
                 status: 'sent'
             })
