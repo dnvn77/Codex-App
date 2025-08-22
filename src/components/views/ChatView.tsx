@@ -3,12 +3,12 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/hooks/useTranslations";
-import { Search, Send, MessageSquare, ArrowLeft, DollarSign, Loader2, CheckCircle, XCircle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Search, Send, MessageSquare, ArrowLeft, DollarSign, Loader2, CheckCircle, XCircle, ShieldAlert, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -94,6 +94,8 @@ export function ChatView({ wallet }: ChatViewProps) {
   const [isPasswordConfirmOpen, setPasswordConfirmOpen] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [showHighGasConfirm, setShowHighGasConfirm] = useState(false);
+  const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
   
    const [mockBalances, setMockBalances] = useState<Record<string, number>>({
     'ETH': wallet.balance,
@@ -241,11 +243,11 @@ export function ChatView({ wallet }: ChatViewProps) {
   };
   
   const executeSend = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !selectedAsset) return;
+    
     setAmountConfirmOpen(false);
     setPasswordConfirmOpen(false);
-    
-    if (!selectedAsset) return;
+    setShowHighGasConfirm(false);
 
     setIsSending(true);
     try {
@@ -289,7 +291,7 @@ export function ChatView({ wallet }: ChatViewProps) {
       setMockBalances(prev => ({
           ...prev,
           [selectedAsset.ticker]: Math.max(0, (prev[selectedAsset.ticker] || 0) - amountInEth),
-          ETH: Math.max(0, prev.ETH - gasCost)
+          ETH: Math.max(0, (prev.ETH || 0) - gasCost)
       }));
       
       toast({ title: "Transaction Sent", description: `You sent ${amountInEth.toFixed(4)} ${selectedAsset.ticker} to ${selectedChat.name}` });
@@ -314,7 +316,11 @@ export function ChatView({ wallet }: ChatViewProps) {
     } else if (usdValue >= 1000) {
         setAmountConfirmOpen(true);
     } else {
-        executeSend();
+       if (gasCost > averageGas) {
+            setShowHighGasConfirm(true);
+        } else {
+            executeSend();
+        }
     }
   };
 
@@ -333,6 +339,21 @@ export function ChatView({ wallet }: ChatViewProps) {
     }
   };
   
+  const handleHighGasCancel = () => {
+    setShowHighGasConfirm(false);
+    setTimeout(() => {
+      setShowGasNotifyPrompt(true);
+    }, 150);
+  };
+
+  const handleSetupGasNotification = () => {
+    toast({
+        title: t.gasAlertSetTitle,
+        description: t.gasAlertSetDesc(amount, selectedAssetTicker, selectedChat?.name || 'contact'),
+    });
+    setShowGasNotifyPrompt(false);
+  };
+
   const isSendDisabled = isSending || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || selectedAssetTicker !== 'ETH';
   
   const allAssetsWithIcons = useMemo(() => {
@@ -610,7 +631,7 @@ export function ChatView({ wallet }: ChatViewProps) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={executeSend}>
+              <AlertDialogAction onClick={() => { setAmountConfirmOpen(false); gasCost > averageGas ? setShowHighGasConfirm(true) : executeSend(); }}>
                 Confirm & Send
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -649,6 +670,53 @@ export function ChatView({ wallet }: ChatViewProps) {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <AlertDialog open={showHighGasConfirm} onOpenChange={setShowHighGasConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive" />
+                {t.highGasWarningTitle}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t.highGasWarningDesc}
+                <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
+                    <span className="font-semibold">{t.averageFee}:</span>
+                    <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                    <span className="font-semibold text-destructive">{t.currentFee}:</span>
+                    <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleHighGasCancel}>{t.cancelButton}</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSend} className={cn(buttonVariants({variant: "destructive"}))}>
+                {t.sendAnywayButton}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+         <AlertDialog open={showGasNotifyPrompt} onOpenChange={setShowGasNotifyPrompt}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                      <BellRing className="text-primary"/>
+                      {t.getNotifiedTitle}
+                  </DialogTitle>
+                  <AlertDialogDescription>
+                      {t.getNotifiedDesc}
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>{t.noThanksButton}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSetupGasNotification}>
+                      {t.yesNotifyMeButton}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }
+
