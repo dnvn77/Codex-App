@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -87,15 +88,15 @@ export default function Home() {
                 storedWallet={storedWalletInfo}
                 onWalletUnlocked={handleWalletUnlocked}
                 onDisconnect={handleDisconnect}
-                onLoginComplete={(wallet) => handleLoginComplete(wallet, false)}
+                onLoginComplete={(wallet, isNew) => handleLoginComplete(wallet, isNew)}
             />
         </main>
     )
   }
   
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1 p-4 md:p-6 mb-16">
+    <div className="flex flex-col h-screen">
+      <main className="flex-1 p-2 md:p-4 overflow-y-auto mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet}/>}
         {activeView === 'wallet' && <WalletView wallet={wallet}/>}

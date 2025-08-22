@@ -23,78 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 import { logEvent } from '@/lib/analytics';
 import Image from 'next/image';
 
-interface LockViewProps {
-  storedWallet: StoredWallet;
-  onWalletUnlocked: (wallet: Wallet) => void;
-  onDisconnect: () => void;
-  onLoginComplete: (wallet: Wallet) => void;
-}
-
-type RecoveryStep = 'enterSeed' | 'resetPassword';
-type SeedLength = 12 | 15 | 18 | 24;
-
-const WordInput = ({
-  index,
-  value,
-  onChange,
-  onPaste,
-  onSuggestionClick,
-}: {
-  index: number;
-  value: string;
-  onChange: (index: number, value: string) => void;
-  onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
-  onSuggestionClick: (index: number, word: string) => void;
-}) => {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const typedValue = e.target.value.toLowerCase();
-    onChange(index, typedValue);
-    if (typedValue.length > 1) {
-      const filtered = bip39Wordlist.filter(word => word.startsWith(typedValue));
-      setSuggestions(filtered.slice(0, 5));
-    } else {
-      setSuggestions([]);
-    }
-  };
-
-  const handleSuggestion = (word: string) => {
-    onSuggestionClick(index, word);
-    setSuggestions([]);
-  };
-
-  return (
-    <div className="relative">
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
-      <Input
-        type="text"
-        value={value}
-        onChange={handleInputChange}
-        onPaste={onPaste}
-        className="pl-6 text-center"
-        autoComplete="off"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck="false"
-        onBlur={() => setTimeout(() => setSuggestions([]), 100)} // Hide on blur
-      />
-      {suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-32 overflow-y-auto">
-          {suggestions.map(word => (
-            <div
-              key={word}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent"
-              onMouseDown={() => handleSuggestion(word)}
-            >
-              {word}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
     <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
@@ -178,6 +106,79 @@ const ResetPasswordView = ({ onPasswordReset, seedPhrase, t }: { onPasswordReset
     );
 };
 
+
+const WordInput = ({
+  index,
+  value,
+  onChange,
+  onPaste,
+  onSuggestionClick,
+}: {
+  index: number;
+  value: string;
+  onChange: (index: number, value: string) => void;
+  onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+  onSuggestionClick: (index: number, word: string) => void;
+}) => {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const typedValue = e.target.value.toLowerCase();
+    onChange(index, typedValue);
+    if (typedValue.length > 1) {
+      const filtered = bip39Wordlist.filter(word => word.startsWith(typedValue));
+      setSuggestions(filtered.slice(0, 5));
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestion = (word: string) => {
+    onSuggestionClick(index, word);
+    setSuggestions([]);
+  };
+
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{index + 1}</span>
+      <Input
+        type="text"
+        value={value}
+        onChange={handleInputChange}
+        onPaste={onPaste}
+        className="pl-6 text-center"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck="false"
+        onBlur={() => setTimeout(() => setSuggestions([]), 100)} // Hide on blur
+      />
+      {suggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-32 overflow-y-auto">
+          {suggestions.map(word => (
+            <div
+              key={word}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent"
+              onMouseDown={() => handleSuggestion(word)}
+            >
+              {word}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface LockViewProps {
+  storedWallet: StoredWallet;
+  onWalletUnlocked: (wallet: Wallet) => void;
+  onDisconnect: () => void;
+  onLoginComplete: (wallet: Wallet, isNewUser: boolean) => void;
+}
+
+type RecoveryStep = 'enterSeed' | 'resetPassword';
+type SeedLength = 12 | 15 | 18 | 24;
 
 export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLoginComplete }: LockViewProps) {
   const [password, setPassword] = useState('');
@@ -444,7 +445,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLogin
                     seedPhrase={fullSeedForReset}
                     onPasswordReset={(wallet) => {
                         handleCloseRecovery();
-                        onLoginComplete(wallet);
+                        onLoginComplete(wallet, false);
                     }}
                     t={t}
                 />

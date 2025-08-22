@@ -69,11 +69,14 @@ export function ChatView({ wallet }: ChatViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
   const [chats, setChats] = useState(initialChats);
-  const [selectedChat, setSelectedChat] = useState(chats[0]);
+  const [selectedChat, setSelectedChat] = useState<typeof initialChats[0] | null>(null);
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Mobile view state
+  const [mobileView, setMobileView] = useState<'list' | 'conversation'>('list');
+
   // Wallet state
   const [isTxDialogOpen, setTxDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
@@ -124,6 +127,13 @@ export function ChatView({ wallet }: ChatViewProps) {
         setAssetStatus('error');
     }
   }, []);
+
+  useEffect(() => {
+    // Set initial chat on desktop
+    if (window.innerWidth >= 768 && !selectedChat) {
+      setSelectedChat(initialChats[0]);
+    }
+  }, [selectedChat]);
 
   useEffect(() => {
     updateAssetPrices();
@@ -231,6 +241,7 @@ export function ChatView({ wallet }: ChatViewProps) {
   };
   
   const executeSend = async () => {
+    if (!selectedChat) return;
     setAmountConfirmOpen(false);
     setPasswordConfirmOpen(false);
     
@@ -241,7 +252,6 @@ export function ChatView({ wallet }: ChatViewProps) {
       await new Promise(resolve => setTimeout(resolve, 1500));
       const tx = sendTransaction(wallet, selectedChat.address, amountInEth, selectedAsset.ticker, selectedAsset.icon);
       
-      // Create receipt component in memory
       const receiptNode = document.createElement('div');
       receiptNode.style.width = '350px';
       document.body.appendChild(receiptNode);
@@ -250,7 +260,6 @@ export function ChatView({ wallet }: ChatViewProps) {
       const tempRoot = (await import('react-dom/client')).createRoot(receiptNode);
       tempRoot.render(receiptComponent);
       
-      // Give it a moment to render before taking a screenshot
       await new Promise(r => setTimeout(r, 100));
 
       const dataUrl = await htmlToImage.toPng(receiptNode, { quality: 0.95 });
@@ -332,11 +341,19 @@ export function ChatView({ wallet }: ChatViewProps) {
         icon: asset.icon || '/strawberry-logo.svg',
     }));
   }, [assets]);
+  
+  const handleSelectChat = (chat: typeof initialChats[0]) => {
+      setSelectedChat(chat);
+      setMobileView('conversation');
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
       {/* Chat List */}
-      <div className="md:col-span-1 bg-card border rounded-lg p-4 flex flex-col">
+      <div className={cn(
+          "md:col-span-1 bg-card border rounded-lg p-4 flex-col",
+          mobileView === 'list' ? 'flex' : 'hidden md:flex'
+      )}>
         <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 
@@ -346,8 +363,8 @@ export function ChatView({ wallet }: ChatViewProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <ScrollArea className="flex-1">
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 -mx-4">
+          <div className="space-y-1 px-4">
             {filteredChats.map((chat) => (
               <Button
                 key={chat.id}
@@ -356,7 +373,7 @@ export function ChatView({ wallet }: ChatViewProps) {
                   "w-full justify-start h-auto p-2",
                   selectedChat?.id === chat.id && "bg-accent"
                 )}
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => handleSelectChat(chat)}
               >
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src={chat.avatar} alt={chat.name} data-ai-hint="person avatar"/>
@@ -374,15 +391,15 @@ export function ChatView({ wallet }: ChatViewProps) {
       </div>
 
       {/* Message View */}
-      <div className="md:col-span-2 bg-card border rounded-lg flex flex-col h-full">
+       <div className={cn(
+        "md:col-span-2 bg-card border rounded-lg flex-col h-full",
+        mobileView === 'conversation' ? 'flex' : 'hidden md:flex'
+      )}>
         {selectedChat ? (
           <>
             <div className="p-4 border-b flex items-center justify-between">
               <div className='flex items-center'>
-                 <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => {
-                     // This is a placeholder for back navigation on mobile
-                     console.log("Back button clicked");
-                 }}>
+                 <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setMobileView('list')}>
                     <ArrowLeft className="h-5 w-5" />
                  </Button>
                 <Avatar className="h-10 w-10 mr-3">
@@ -569,7 +586,8 @@ export function ChatView({ wallet }: ChatViewProps) {
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <MessageSquare className="h-16 w-16 mb-4" />
-            <p>Select a chat to start messaging</p>
+            <p className='hidden md:block'>Select a chat to start messaging</p>
+            <p className='md:hidden'>Select a chat</p>
           </div>
         )}
       </div>
@@ -586,7 +604,7 @@ export function ChatView({ wallet }: ChatViewProps) {
                 <div className="my-4 space-y-2 text-foreground break-all">
                   <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
                   <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p><b>To:</b> {selectedChat.name} ({selectedChat.address})</p>
+                  <p><b>To:</b> {selectedChat?.name} ({selectedChat?.address})</p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
