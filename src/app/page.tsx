@@ -15,7 +15,7 @@ import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
-  const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('profile');
+  const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('chats');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
   const { toast } = useToast();
@@ -83,7 +83,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 p-4 md:p-6 mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} />}
-        {activeView === 'chats' && <ChatView />}
+        {activeView === 'chats' && <ChatView wallet={wallet}/>}
         {activeView === 'wallet' && <WalletView wallet={wallet} onDisconnect={handleDisconnect}/>}
         {activeView === 'settings' && <SettingsView />}
         {activeView === 'contacts' && <ContactsView />}
