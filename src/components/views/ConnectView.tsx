@@ -263,6 +263,11 @@ export function ConnectView({
     }
     if (newWallet?.seedPhrase) {
       logEvent('create_wallet_seed_confirmed');
+      const hasConfirmedSeedBefore = localStorage.getItem('has_confirmed_seed');
+      if (!hasConfirmedSeedBefore) {
+          triggerFeedbackEvent('seed_confirmed');
+          localStorage.setItem('has_confirmed_seed', 'true');
+      }
       setRandomWordIndices(generateRandomIndices(newWallet.seedPhrase));
       setCreationStep('confirmSeed');
     }

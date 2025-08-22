@@ -20,6 +20,8 @@ import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset } from '@/lib/types';
 import * as htmlToImage from 'html-to-image';
 import { TransactionReceiptMessage } from './TransactionReceiptMessage';
+import { logEvent } from '@/lib/analytics';
+import { useFeedback } from '@/hooks/useFeedback';
 
 
 const initialChats = [
@@ -69,6 +71,7 @@ interface ChatViewProps {
 export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
+  const { triggerFeedbackEvent } = useFeedback();
   const [chats, setChats] = useState(initialChats);
   const [selectedChat, setSelectedChat] = useState<typeof initialChats[0] | null>(null);
   const [messages, setMessages] = useState<any[]>(initialMessages);
@@ -201,6 +204,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
     setShowHighGasConfirm(false);
 
     setIsSending(true);
+    const txSentFirstTime = !localStorage.getItem('has_sent_tx');
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       const tx = sendTransaction(wallet, selectedChat.address, amountInEth, selectedAsset.ticker, selectedAsset.icon);
@@ -243,8 +247,15 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
       
       toast({ title: "Transaction Sent", description: `You sent ${amountInEth.toFixed(4)} ${selectedAsset.ticker} to ${selectedChat.name}` });
 
+      if (txSentFirstTime) {
+        localStorage.setItem('has_sent_tx', 'true');
+        triggerFeedbackEvent('tx_sent_first_time');
+      }
+      logEvent('send_transaction_success', { tx_hash: tx.txHash });
+
     } catch (error) {
       toast({ title: t.txFailedTitle, description: (error as Error).message, variant: 'destructive' });
+      logEvent('send_transaction_fail', { error_message: (error as Error).message });
     } finally {
       setIsSending(false);
       setTxDialogOpen(false);
