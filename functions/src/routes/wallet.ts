@@ -1,36 +1,35 @@
-
-
 /**
- * @fileoverview Rutas de Express para la gestión de billeteras (smart accounts).
+ * @fileoverview Rutas de Express para la gestión de billeteras MPC con PortalHQ.
  * Define los endpoints para crear billeteras y consultar balances.
  */
 
 import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema} from '../types'
+import { CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema } from '../types';
 import { createOrRetrieveUserAndWallet } from '../services/supabase';
-
+import { getWalletAddress } from '../services/portal';
 
 const router = Router();
 
 /**
  * @route   POST /wallet/create
- * @desc    Crea una nueva smart account con ZeroDev para un User ID y la guarda en la BD.
+ * @desc    Crea o recupera una MPC wallet con PortalHQ para un User ID y la guarda en la BD.
  * @access  Privado (requiere API Key)
- *
- * Documentación de ZeroDev SDK: https://docs.zerodev.app/sdk/getting-started
  */
 router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async (req, res, next) => {
   try {
-    const { userId, walletAddress } = req.body;
+    const { userId } = req.body;
+    
+    // Obtener la dirección de la wallet MPC para el usuario
+    const walletAddress = await getWalletAddress(userId);
 
     // Guardar el mapeo userId -> address en Supabase.
-    const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'zerodev');
+    const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'portal_mpc');
 
     res.status(200).json({
       address: wallet.address,
-      message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
+      message: `✅ MPC Wallet creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
     next(error);
@@ -46,7 +45,7 @@ const handleGetBalance = async (address: string, res: any, next: any) => {
         res.status(200).json({
             address: address,
             balanceEth: balance,
-            message: `🔍 Balance de ${shortAddress}:\n*${balance} ETH* (Scroll Sepolia)`,
+            message: `🔍 Balance de ${shortAddress}:\n*${balance} MONAD* (Testnet)`,
         });
     } catch (error) {
         next(error);
@@ -56,7 +55,7 @@ const handleGetBalance = async (address: string, res: any, next: any) => {
 
 /**
  * @route   GET /wallet/balance/:address
- * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde la URL).
+ * @desc    Consulta el balance de una dirección en la Testnet de Monad (desde la URL).
  * @access  Privado (requiere API Key)
  */
 router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema}), async (req, res, next) => {
@@ -65,7 +64,7 @@ router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema
 
 /**
  * @route   POST /wallet/balance
- * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde el body).
+ * @desc    Consulta el balance de una dirección en la Testnet de Monad (desde el body).
  * @access  Privado (requiere API Key)
  */
 router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (req, res, next) => {
@@ -74,6 +73,3 @@ router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (re
 
 
 export default router;
-
-
-

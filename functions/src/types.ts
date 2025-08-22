@@ -1,20 +1,16 @@
-
-
 /**
  * @fileoverview Define los esquemas de validación de Zod y los tipos de TypeScript.
  * Centraliza las definiciones de datos para mantener la consistencia en toda la aplicación.
- *
- * Documentación de Zod: https://zod.dev/
  */
 
 import { z } from 'zod';
 
-// Expresión regular para validar direcciones de Ethereum.
+// Expresión regular para validar direcciones de Ethereum/EVM.
 const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
-// Esquema para validar una dirección de Ethereum.
+// Esquema para validar una dirección de EVM.
 export const EthAddressSchema = z.string().regex(ethAddressRegex, {
-  message: 'La dirección proporcionada no es una dirección de Ethereum válida.',
+  message: 'La dirección proporcionada no es una dirección de EVM válida.',
 });
 
 // Esquema para validar un número como string y positivo.
@@ -27,7 +23,6 @@ export const PositiveNumberStringSchema = z.string().refine(val => !isNaN(parseF
 // POST /wallet/create
 export const CreateWalletRequestSchema = z.object({
   userId: z.string().min(1, 'El campo userId es requerido.'),
-  walletAddress: EthAddressSchema,
 });
 export type CreateWalletRequest = z.infer<typeof CreateWalletRequestSchema>;
 
@@ -64,15 +59,6 @@ export const LogTransactionRequestSchema = z.object({
 });
 export type LogTransactionRequest = z.infer<typeof LogTransactionRequestSchema>;
 
-
-// POST /zk/verify
-export const VerifyProofRequestSchema = z.object({
-  proof: z.object({}).nonstrict(), // Placeholder, ajustar según la estructura real de la prueba
-  publicSignals: z.array(z.any()), // Placeholder, ajustar según los signals reales
-});
-export type VerifyProofRequest = z.infer<typeof VerifyProofRequestSchema>;
-
-
 // GET /prices
 export const PriceResponseSchema = z.array(
     z.object({
@@ -84,11 +70,3 @@ export const PriceResponseSchema = z.array(
     })
 );
 export type PriceResponse = z.infer<typeof PriceResponseSchema>;
-
-
-// POST /wallet/favorites
-export const UpdateFavoritesRequestSchema = z.object({
-    userId: z.string().min(1, 'El campo userId es requerido.'),
-    favoriteTokens: z.array(z.string()).min(1, 'Debe haber al menos un token favorito.'),
-});
-export type UpdateFavoritesRequest = z.infer<typeof UpdateFavoritesRequestSchema>;

@@ -1,5 +1,3 @@
-
-
 /**
  * @fileoverview Configuración principal de la aplicación Express.
  * Este archivo instancia Express, aplica middlewares globales (CORS, body-parser,
@@ -12,8 +10,7 @@ import { rateLimit } from 'express-rate-limit';
 import { authenticateApiKey } from './middleware/auth';
 import walletRoutes from './routes/wallet';
 import txRoutes from './routes/tx';
-import zkRoutes from './routes/zk';
-import priceRoutes from './routes/prices'; // Importar la nueva ruta de precios
+import priceRoutes from './routes/prices';
 import { errorHandler } from './middleware/errorHandler';
 
 
@@ -39,10 +36,9 @@ const apiLimiter = rateLimit({
 
 // --- Rutas de la API ---
 
-// Las rutas de wallet, tx y zk requieren autenticación por API Key
+// Las rutas de wallet y tx requieren autenticación por API Key
 app.use('/wallet', apiLimiter, authenticateApiKey, walletRoutes);
 app.use('/tx', apiLimiter, authenticateApiKey, txRoutes);
-app.use('/zk', apiLimiter, authenticateApiKey, zkRoutes);
 // La ruta de precios es pública y solo usa el rate limiter
 app.use('/prices', apiLimiter, priceRoutes);
 
@@ -52,4 +48,3 @@ app.use('/prices', apiLimiter, priceRoutes);
 app.use(errorHandler);
 
 export default app;
-

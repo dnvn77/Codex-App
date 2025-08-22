@@ -1,10 +1,7 @@
-
 /**
  * @fileoverview Carga y valida las variables de entorno.
  * Centraliza el acceso a la configuración para asegurar que todas las variables
  * requeridas estén presentes al iniciar la aplicación.
- *
- * Documentación de dotenv: https://github.com/motdotla/dotenv
  */
 
 import * as dotenv from 'dotenv';
@@ -16,13 +13,11 @@ dotenv.config();
 // Define un esquema para validar las variables de entorno requeridas
 const envSchema = z.object({
   API_KEY_BACKEND: z.string().min(1, 'API_KEY_BACKEND es requerida.'),
-  ZERODEV_PROJECT_ID: z.string().uuid('ZERODEV_PROJECT_ID debe ser un UUID válido.'),
-  SCROLL_SEPOLIA_RPC: z.string().url('SCROLL_SEPOLIA_RPC debe ser una URL válida.'),
+  PORTAL_API_KEY: z.string().min(1, 'PORTAL_API_KEY es requerido.'),
+  PORTAL_GATEWAY_URL: z.string().url('PORTAL_GATEWAY_URL debe ser una URL válida.'),
+  MONAD_RPC_URL: z.string().url('MONAD_RPC_URL debe ser una URL válida.'),
   SUPABASE_URL: z.string().url('SUPABASE_URL debe ser una URL válida.'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY es requerida.'),
-  
-  // ZK_VERIFIER_ADDRESS es opcional
-  ZK_VERIFIER_ADDRESS: z.string().optional(),
 });
 
 // Valida las variables de entorno al cargar el módulo

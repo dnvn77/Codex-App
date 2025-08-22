@@ -1,16 +1,13 @@
 /**
- * @fileoverview Servicio para interactuar con la blockchain (Scroll Sepolia).
+ * @fileoverview Servicio para interactuar con la blockchain (Monad Testnet).
  * Contiene utilidades como obtener el proveedor de ethers y consultar balances.
- *
- * Documentación de ethers.js v6: https://docs.ethers.org/v6/
- * Documentación de Scroll: https://docs.scroll.io/en/developers
  */
 
 import { ethers } from 'ethers';
 import { config } from '../config';
 
-// URL del RPC para Scroll Sepolia, obtenida desde la configuración.
-const RPC_URL = config.SCROLL_SEPOLIA_RPC;
+// URL del RPC para Monad Testnet, obtenida desde la configuración.
+const RPC_URL = config.MONAD_RPC_URL;
 
 // Crea una instancia única del proveedor para reutilizarla.
 const provider = new ethers.JsonRpcProvider(RPC_URL);
@@ -24,14 +21,14 @@ export function getProvider(): ethers.JsonRpcProvider {
 }
 
 /**
- * Consulta el balance de una dirección en la red de Scroll Sepolia.
+ * Consulta el balance de una dirección en la red de Monad.
  * @param {string} address - La dirección a consultar.
- * @returns {Promise<string>} El balance formateado como una cadena en ETH.
+ * @returns {Promise<string>} El balance formateado como una cadena en MONAD.
  */
 export async function getBalance(address: string): Promise<string> {
   try {
     const balanceWei = await provider.getBalance(address);
-    // Formatea el balance de Wei a ETH.
+    // Formatea el balance de Wei a la unidad principal (MONAD).
     return ethers.formatEther(balanceWei);
   } catch (error) {
     console.error(`Error al obtener el balance para ${address}:`, error);
@@ -48,11 +45,10 @@ export async function getBalance(address: string): Promise<string> {
 }
 
 /**
- * Construye la URL del explorador de Scroll Sepolia para un hash de transacción.
+ * Construye la URL del explorador de Monad Testnet para un hash de transacción.
  * @param {string} txHash - El hash de la transacción.
  * @returns {string} La URL completa para ver la transacción en el explorador.
  */
 export function getExplorerUrl(txHash: string): string {
-  // Explorador de Scroll Sepolia: https://sepolia.scrollscan.com
-  return `https://sepolia.scrollscan.com/tx/${txHash}`;
+  return `https://testnet.monadexplorer.com/tx/${txHash}`;
 }
