@@ -596,3 +596,64 @@ export async function setFavoriteTokens(userId: string, tokens: string[]): Promi
     // This function is now a no-op as favorites are removed.
     return;
 }
+
+
+// --- E2EE Messaging Logic (Simulated) ---
+
+export interface MessagingKeys {
+    publicKey: string;
+    privateKey: string;
+}
+
+/**
+ * Derives a stable key pair for messaging from the master key.
+ * In a real E2EE system, this would use a proper cryptographic derivation
+ * function like HKDF and a standard like libsignal's X3DH.
+ */
+export function getMessagingKeys(masterKey: string): MessagingKeys {
+    const privateKey = mockHash(masterKey + "_messaging_private");
+    const publicKey = mockHash(privateKey + "_messaging_public");
+    return { privateKey, publicKey };
+}
+
+/**
+ * Simulates encrypting a message.
+ * A real implementation would use a hybrid encryption scheme (e.g., ECIES):
+ * 1. Generate a temporary symmetric key (AES).
+ * 2. Encrypt the message content with the AES key.
+ * 3. Encrypt the AES key with the recipient's public key (using an asymmetric algorithm like RSA or ECDH).
+ * 4. Package the encrypted content, the encrypted AES key, and a MAC together.
+ * For this simulation, we just combine the message with the recipient's key and Base64 encode it.
+ */
+export function encryptMessage(content: string, senderPrivateKey: string, recipientPublicKey: string): string {
+    // This is a placeholder for a real encryption algorithm.
+    const payload = `${recipientPublicKey}::${content}`;
+    return bufferToBase64(new TextEncoder().encode(payload));
+}
+
+/**
+ * Simulates decrypting a message.
+ * A real implementation would:
+ * 1. Use the recipient's private key to decrypt the AES key.
+ * 2. Use the decrypted AES key to decrypt the message content.
+ * 3. Verify the MAC.
+ * For this simulation, we just check if the "encrypted" blob was intended for us.
+ */
+export function decryptMessage(encryptedContent: string, recipientPrivateKey: string): string | null {
+    try {
+        const decodedPayload = new TextDecoder().decode(base64ToUint8Array(encryptedContent));
+        const [intendedPublicKey, content] = decodedPayload.split("::");
+        
+        // Simulate checking if this message was meant for us by re-deriving our public key
+        const ourPublicKey = mockHash(recipientPrivateKey + "_messaging_public");
+        
+        if (intendedPublicKey === ourPublicKey) {
+            return content;
+        }
+
+        return null; // Not for us
+    } catch (error) {
+        console.error("Decryption simulation failed:", error);
+        return null; // Malformed content
+    }
+}

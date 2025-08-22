@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/hooks/useTranslations";
-import { Search, Send, MessageSquare, ArrowLeft, DollarSign, Loader2, CheckCircle, XCircle, ShieldAlert, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
+import { Search, Send, MessageSquare, ArrowLeft, DollarSign, Loader2, CheckCircle, XCircle, ShieldAlert, ShieldCheck, AlertTriangle, BellRing, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,25 +16,31 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Label } from '../ui/label';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
-import type { Wallet, Transaction, Asset } from '@/lib/types';
+import { sendTransaction, resolveEnsName, unlockWallet, encryptMessage, decryptMessage, getMessagingKeys, type MessagingKeys } from '@/lib/wallet';
+import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import * as htmlToImage from 'html-to-image';
 import { TransactionReceiptMessage } from './TransactionReceiptMessage';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 
+interface MockMessage {
+  id: number;
+  conversationId: number;
+  senderAddress: string;
+  recipientAddress: string;
+  encryptedContent: string; // Base64 encoded "encrypted" blob
+  decryptedContent?: string; // Optional, only available if decrypted
+  timestamp: string;
+  type: 'text' | 'receipt' | 'link';
+}
 
-const initialChats = [
-  { id: 1, name: "Alice Cooper", address: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", avatar: "https://placehold.co/100x100.png", lastMessage: "I'm doing great! Just sent you some ETH for the dinner we had yesterday which was amazing by the way", time: "17:53", unread: 0 },
-  { id: 2, name: "Bob", address: "0x2B8b3A2C2E0C0E4E6E3b3b3D0A2c2E0C0E4E6E3b", avatar: "https://placehold.co/100x100.png", lastMessage: "See you tomorrow!", time: "1:20 PM", unread: 0 },
-  { id: 3, name: "Charlie", address: "0x3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C", avatar: "https://placehold.co/100x100.png", lastMessage: "Thanks!", time: "Yesterday", unread: 0 },
-  { id: 4, name: "David", address: "0x4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D", avatar: "https://placehold.co/100x100.png", lastMessage: "Sounds good.", time: "Yesterday", unread: 1 },
+const mockContacts = [
+  { id: 1, name: "Alice Cooper", address: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", avatar: "https://placehold.co/100x100.png", lastMessage: "Doing great! Just sent you some ETH.", time: "17:53", unread: 0, publicKey: "pub_alice" },
+  { id: 2, name: "Bob", address: "0x2B8b3A2C2E0C0E4E6E3b3b3D0A2c2E0C0E4E6E3b", avatar: "https://placehold.co/100x100.png", lastMessage: "See you tomorrow!", time: "1:20 PM", unread: 0, publicKey: "pub_bob" },
+  { id: 3, name: "Charlie", address: "0x3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C", avatar: "https://placehold.co/100x100.png", lastMessage: "Thanks!", time: "Yesterday", unread: 0, publicKey: "pub_charlie" },
+  { id: 4, name: "David", address: "0x4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D", avatar: "https://placehold.co/100x100.png", lastMessage: "Sounds good.", time: "Yesterday", unread: 1, publicKey: "pub_david" },
 ];
 
-const initialMessages = [
-  { id: 1, sender: "Alice Cooper", text: "Hey! How are you doing?", time: "17:43", sent: true, type: 'text' },
-  { id: 2, sender: "Me", text: "I'm doing great! Just sent you some ETH for the dinner we had yesterday", time: "17:53", sent: false, type: 'text' },
-];
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
   const colorClass = gasCost > averageGas ? 'text-destructive' : gasCost < averageGas ? 'text-green-500' : 'text-foreground';
@@ -72,9 +78,15 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   const t = useTranslations();
   const { toast } = useToast();
   const { triggerFeedbackEvent } = useFeedback();
-  const [chats, setChats] = useState(initialChats);
-  const [selectedChat, setSelectedChat] = useState<typeof initialChats[0] | null>(null);
-  const [messages, setMessages] = useState<any[]>(initialMessages);
+
+  // E2EE state
+  const [messagingKeys, setMessagingKeys] = useState<MessagingKeys | null>(null);
+  const [allMessages, setAllMessages] = useState<MockMessage[]>([]);
+
+  // UI State
+  const [chats, setChats] = useState(mockContacts);
+  const [selectedChat, setSelectedChat] = useState<typeof chats[0] | null>(null);
+  const [decryptedMessages, setDecryptedMessages] = useState<MockMessage[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -98,6 +110,43 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   const [showHighGasConfirm, setShowHighGasConfirm] = useState(false);
   const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
 
+  // Initialize messaging keys and mock messages on mount
+  useEffect(() => {
+    const keys = getMessagingKeys(wallet.masterKey);
+    setMessagingKeys(keys);
+
+    // Simulate fetching encrypted messages from a backend (Supabase)
+    const initialMessages: MockMessage[] = [
+      { id: 1, conversationId: 1, senderAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", recipientAddress: wallet.address, encryptedContent: encryptMessage("Hey! How are you doing?", keys.privateKey, "pub_alice"), timestamp: "17:43", type: 'text' },
+      { id: 2, conversationId: 1, senderAddress: wallet.address, recipientAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", encryptedContent: encryptMessage("I'm doing great! Just sent you some ETH for the dinner we had yesterday", keys.privateKey, "pub_alice"), timestamp: "17:53", type: 'text' },
+    ];
+    setAllMessages(initialMessages);
+  }, [wallet.masterKey, wallet.address]);
+
+
+  // Decrypt messages for the selected chat
+  useEffect(() => {
+    if (!selectedChat || !messagingKeys) {
+      setDecryptedMessages([]);
+      return;
+    }
+
+    const conversationMessages = allMessages.filter(
+      (msg) =>
+        (msg.senderAddress === wallet.address && msg.recipientAddress === selectedChat.address) ||
+        (msg.senderAddress === selectedChat.address && msg.recipientAddress === wallet.address)
+    );
+
+    const decrypted = conversationMessages.map((msg) => {
+      const decryptedContent = decryptMessage(msg.encryptedContent, messagingKeys.privateKey);
+      return { ...msg, decryptedContent };
+    });
+
+    setDecryptedMessages(decrypted);
+
+  }, [selectedChat, allMessages, messagingKeys, wallet.address]);
+
+
   const filteredChats = useMemo(() => {
     return chats.filter(chat =>
       chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -107,9 +156,9 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   useEffect(() => {
     // Set initial chat on desktop
     if (window.innerWidth >= 768 && !selectedChat) {
-      setSelectedChat(initialChats[0]);
+      setSelectedChat(chats[0]);
     }
-  }, [selectedChat]);
+  }, [selectedChat, chats]);
 
   const selectedAsset = useMemo(() => {
     return assets.find(a => a.ticker === selectedAssetTicker) || null;
@@ -147,16 +196,25 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
 
 
   const handleSendMessage = () => {
-    if (messageInput.trim() === '') return;
-    const newMessage = {
-      id: messages.length + 1,
-      sender: 'Me',
-      text: messageInput.trim(),
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      sent: false,
+    if (messageInput.trim() === '' || !selectedChat || !messagingKeys) return;
+
+    const encryptedContent = encryptMessage(
+        messageInput.trim(),
+        messagingKeys.privateKey,
+        selectedChat.publicKey
+    );
+
+    const newMessage: MockMessage = {
+      id: allMessages.length + 1,
+      conversationId: selectedChat.id,
+      senderAddress: wallet.address,
+      recipientAddress: selectedChat.address,
+      encryptedContent,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       type: 'text'
     };
-    setMessages([...messages, newMessage]);
+    // In a real app, this would be sent to the backend to be stored in Supabase
+    setAllMessages([...allMessages, newMessage]);
     setMessageInput('');
   };
   
@@ -197,7 +255,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   };
   
   const executeSend = async () => {
-    if (!selectedChat || !selectedAsset) return;
+    if (!selectedChat || !selectedAsset || !messagingKeys) return;
     
     setAmountConfirmOpen(false);
     setPasswordConfirmOpen(false);
@@ -223,25 +281,27 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
       
       document.body.removeChild(receiptNode);
       
-      const receiptMessage = {
-        id: messages.length + 1,
-        sender: 'Me',
-        type: 'receipt',
-        receiptData: dataUrl,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        sent: false
+      const receiptMessage: MockMessage = {
+        id: allMessages.length + 1,
+        conversationId: selectedChat.id,
+        senderAddress: wallet.address,
+        recipientAddress: selectedChat.address,
+        encryptedContent: encryptMessage(dataUrl, messagingKeys.privateKey, selectedChat.publicKey),
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        type: 'receipt'
       };
       
-      const linkMessage = {
-        id: messages.length + 2,
-        sender: 'Me',
-        type: 'link',
-        text: `https://testnet.monadexplorer.com/tx/${tx.txHash}`,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        sent: false
+      const linkMessage: MockMessage = {
+        id: allMessages.length + 2,
+        conversationId: selectedChat.id,
+        senderAddress: wallet.address,
+        recipientAddress: selectedChat.address,
+        encryptedContent: encryptMessage(`https://testnet.monadexplorer.com/tx/${tx.txHash}`, messagingKeys.privateKey, selectedChat.publicKey),
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        type: 'link'
       }
 
-      setMessages([...messages, receiptMessage, linkMessage]);
+      setAllMessages([...allMessages, receiptMessage, linkMessage]);
 
       onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
       
@@ -314,7 +374,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
 
   const isSendDisabled = isSending || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || selectedAssetTicker !== 'ETH';
   
-  const handleSelectChat = (chat: typeof initialChats[0]) => {
+  const handleSelectChat = (chat: typeof chats[0]) => {
       setSelectedChat(chat);
       setMobileView('conversation');
   }
@@ -382,7 +442,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                     <h2 className="text-lg font-semibold">{selectedChat.name}</h2>
                     <p className="text-sm text-green-500 flex items-center">
                         <span className="h-2 w-2 bg-green-500 rounded-full mr-1.5"></span>
-                        En línea
+                        Online
                     </p>
                 </div>
               </div>
@@ -391,16 +451,16 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                 <DialogTrigger asChild>
                     <Button>
                         <DollarSign className="h-4 w-4 mr-2" />
-                        Enviar
+                        Send
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Enviar a {selectedChat.name}</DialogTitle>
+                        <DialogTitle>Send to {selectedChat.name}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="flex justify-between items-start">
-                          <h3 className="text-lg font-medium">Detalles</h3>
+                          <h3 className="text-lg font-medium">Details</h3>
                           <GasFeeDisplay gasCost={gasCost} averageGas={averageGas} isLoading={isCalculatingGas} t={t} />
                         </div>
                         <div className="grid grid-cols-5 gap-2 items-end pt-2">
@@ -500,41 +560,41 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
             </div>
             <ScrollArea className="flex-1 p-4 bg-background/90">
               <div className="space-y-4">
-                {messages.map((message) => (
+                {decryptedMessages.map((message) => (
                   <div
                     key={message.id}
                     className={cn(
                       "flex items-end gap-2",
-                      !message.sent ? "justify-end" : "justify-start"
+                      message.senderAddress === wallet.address ? "justify-end" : "justify-start"
                     )}
                   >
-                    {!message.sent && (
-                        <p className="text-xs text-muted-foreground self-end">{message.time}</p>
+                    {message.senderAddress === wallet.address && (
+                        <p className="text-xs text-muted-foreground self-end">{message.timestamp}</p>
                     )}
                     {message.type === 'text' && (
                        <div
                         className={cn(
                           "p-3 rounded-lg max-w-xs",
-                          message.sent
+                          message.senderAddress !== wallet.address
                             ? "bg-secondary"
                             : "bg-primary text-primary-foreground"
                         )}
                        >
-                        <p>{message.text}</p>
+                         {message.decryptedContent ? <p>{message.decryptedContent}</p> : <p className="flex items-center gap-2 italic text-muted-foreground"><Lock size={12}/>Encrypted Message</p>}
                        </div>
                     )}
-                     {message.type === 'receipt' && (
-                        <img src={message.receiptData} alt="Transaction Receipt" className="rounded-lg border border-primary/20 w-full max-w-xs" />
+                     {message.type === 'receipt' && message.decryptedContent && (
+                        <img src={message.decryptedContent} alt="Transaction Receipt" className="rounded-lg border border-primary/20 w-full max-w-xs" />
                      )}
-                     {message.type === 'link' && (
+                     {message.type === 'link' && message.decryptedContent && (
                          <div className="p-3 rounded-lg max-w-xs bg-primary text-primary-foreground">
-                            <a href={message.text} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
-                                {message.text}
+                            <a href={message.decryptedContent} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
+                                {message.decryptedContent}
                             </a>
                          </div>
                      )}
-                     {message.sent && (
-                         <p className="text-xs text-muted-foreground self-end">{message.time}</p>
+                     {message.senderAddress !== wallet.address && (
+                         <p className="text-xs text-muted-foreground self-end">{message.timestamp}</p>
                      )}
                   </div>
                 ))}
