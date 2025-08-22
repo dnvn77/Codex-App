@@ -153,8 +153,8 @@ const translationsData = {
     reqNotCommon: 'Not a common password',
     
     // Lock screen fields
-    unlockWalletTitle: 'Unlock Your Wallet',
-    unlockWalletDesc: 'Enter your password to access your Codex App.',
+    unlockAppTitle: 'Unlock Codex App',
+    unlockAppDesc: 'Enter your password to access your Codex App.',
     unlockButton: 'Unlock',
     unlockingButton: 'Unlocking...',
     wrongPasswordError: 'Wrong password. Please try again.',
@@ -396,8 +396,8 @@ const translationsData = {
     reqNotCommon: 'No ser una contraseña común',
 
     // Lock screen fields
-    unlockWalletTitle: 'Desbloquear tu Billetera',
-    unlockWalletDesc: 'Ingresa tu contraseña para acceder a tu Codex App.',
+    unlockAppTitle: 'Desbloquear Codex App',
+    unlockAppDesc: 'Ingresa tu contraseña para acceder a tu Codex App.',
     unlockButton: 'Desbloquear',
     unlockingButton: 'Desbloqueando...',
     wrongPasswordError: 'Contraseña incorrecta. Por favor, inténtalo de nuevo.',

@@ -24,7 +24,7 @@ import { TransactionReceiptMessage } from './TransactionReceiptMessage';
 
 
 const initialChats = [
-  { id: 1, name: "Alice Cooper", address: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", avatar: "https://placehold.co/100x100.png", lastMessage: "I'm doing great! Just sent you some ETH...", time: "17:53", unread: 0 },
+  { id: 1, name: "Alice Cooper", address: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", avatar: "https://placehold.co/100x100.png", lastMessage: "I'm doing great! Just sent you some ETH for the dinner we had yesterday which was amazing by the way", time: "17:53", unread: 0 },
   { id: 2, name: "Bob", address: "0x2B8b3A2C2E0C0E4E6E3b3b3D0A2c2E0C0E4E6E3b", avatar: "https://placehold.co/100x100.png", lastMessage: "See you tomorrow!", time: "1:20 PM", unread: 0 },
   { id: 3, name: "Charlie", address: "0x3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C", avatar: "https://placehold.co/100x100.png", lastMessage: "Thanks!", time: "Yesterday", unread: 0 },
   { id: 4, name: "David", address: "0x4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D", avatar: "https://placehold.co/100x100.png", lastMessage: "Sounds good.", time: "Yesterday", unread: 1 },
@@ -72,6 +72,7 @@ export function ChatView({ wallet }: ChatViewProps) {
   const [selectedChat, setSelectedChat] = useState(chats[0]);
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [messageInput, setMessageInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Wallet state
   const [isTxDialogOpen, setTxDialogOpen] = useState(false);
@@ -99,6 +100,12 @@ export function ChatView({ wallet }: ChatViewProps) {
     'LINK': 150.2,
     'UNI': 300,
   });
+
+  const filteredChats = useMemo(() => {
+    return chats.filter(chat =>
+      chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [chats, searchQuery]);
 
   const updateAssetPrices = useCallback(async () => {
     setAssetStatus('loading');
@@ -332,17 +339,22 @@ export function ChatView({ wallet }: ChatViewProps) {
       <div className="md:col-span-1 bg-card border rounded-lg p-4 flex flex-col">
         <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t.search} className="pl-8" />
+          <Input 
+            placeholder={t.search} 
+            className="pl-8" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <ScrollArea className="flex-1">
           <div className="space-y-2">
-            {chats.map((chat) => (
+            {filteredChats.map((chat) => (
               <Button
                 key={chat.id}
                 variant="ghost"
                 className={cn(
                   "w-full justify-start h-auto p-2",
-                  selectedChat.id === chat.id && "bg-accent"
+                  selectedChat?.id === chat.id && "bg-accent"
                 )}
                 onClick={() => setSelectedChat(chat)}
               >
@@ -350,11 +362,11 @@ export function ChatView({ wallet }: ChatViewProps) {
                   <AvatarImage src={chat.avatar} alt={chat.name} data-ai-hint="person avatar"/>
                   <AvatarFallback>{chat.name[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold">{chat.name}</p>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="font-semibold truncate">{chat.name}</p>
                   <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
                 </div>
-                <div className="text-xs text-muted-foreground self-start">{chat.time}</div>
+                <div className="text-xs text-muted-foreground self-start ml-2">{chat.time}</div>
               </Button>
             ))}
           </div>

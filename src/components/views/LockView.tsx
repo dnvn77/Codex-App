@@ -22,6 +22,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from "@/hooks/use-toast";
 import { logEvent } from '@/lib/analytics';
+import Image from 'next/image';
 
 interface LockViewProps {
   storedWallet: StoredWallet;
@@ -236,10 +237,10 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
         <form onSubmit={handleUnlock}>
           <CardHeader className="text-center">
             <div className="mx-auto bg-primary/10 p-3 rounded-full mb-2">
-              <Lock className="h-8 w-8 text-primary" />
+               <Image src="/codex-logo.svg" alt="Codex App Logo" width={32} height={32} />
             </div>
-            <CardTitle>{t.unlockWalletTitle}</CardTitle>
-            <CardDescription>{t.unlockWalletDesc}</CardDescription>
+            <CardTitle>{t.unlockAppTitle}</CardTitle>
+            <CardDescription>{t.unlockAppDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
