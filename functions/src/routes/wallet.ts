@@ -1,39 +1,37 @@
+
+
 /**
- * @fileoverview Rutas de Express para la gestión de billeteras MPC con PortalHQ.
+ * @fileoverview Rutas de Express para la gestión de billeteras (smart accounts).
  * Define los endpoints para crear billeteras y consultar balances.
  */
 
 import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import { CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema } from '../types';
-import { findOrCreateUserByWallet } from '../services/supabase';
-import { getWalletAddress } from '../services/portal';
+import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema} from '../types'
+import { createOrRetrieveUserAndWallet } from '../services/supabase';
+
 
 const router = Router();
 
 /**
  * @route   POST /wallet/create
- * @desc    Crea o recupera una MPC wallet con PortalHQ para un User ID y la guarda en la BD.
+ * @desc    Crea una nueva smart account con ZeroDev para un User ID y la guarda en la BD.
  * @access  Privado (requiere API Key)
+ *
+ * Documentación de ZeroDev SDK: https://docs.zerodev.app/sdk/getting-started
  */
 router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async (req, res, next) => {
   try {
     const { userId, walletAddress } = req.body;
-    
-    // Obtener la dirección de la wallet MPC para el usuario
-    const addressFromPortal = await getWalletAddress(userId);
 
-    if (addressFromPortal.toLowerCase() !== walletAddress.toLowerCase()) {
-        return res.status(400).json({ error: { code: 'ADDRESS_MISMATCH', message: 'Wallet address does not match Portal records.' } });
-    }
-
-    // Guardar el usuario en Supabase usando la dirección de la wallet.
-    const user = await findOrCreateUserByWallet(walletAddress);
+    // Guardar el mapeo userId -> address en Supabase.
+    const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'zerodev');
 
     res.status(200).json({
-      address: user.wallet_address,
-      message: `✅ Usuario con wallet ${user.wallet_address} creado/obtenido.`,
+      user,
+      wallet,
+      message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
     next(error);
@@ -59,7 +57,7 @@ const handleGetBalance = async (address: string, res: any, next: any) => {
 
 /**
  * @route   GET /wallet/balance/:address
- * @desc    Consulta el balance de una dirección en la Testnet de Monad (desde la URL).
+ * @desc    Consulta el balance de una dirección en Monad Testnet (desde la URL).
  * @access  Privado (requiere API Key)
  */
 router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema}), async (req, res, next) => {
@@ -68,12 +66,14 @@ router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema
 
 /**
  * @route   POST /wallet/balance
- * @desc    Consulta el balance de una dirección en la Testnet de Monad (desde el body).
+ * @desc    Consulta el balance de una dirección en Monad Testnet (desde el body).
  * @access  Privado (requiere API Key)
  */
 router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (req, res, next) => {
     handleGetBalance(req.body.address, res, next);
 });
 
-
 export default router;
+
+
+

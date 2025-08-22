@@ -55,10 +55,11 @@ export const LogTransactionRequestSchema = z.object({
     to: EthAddressSchema,
     txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash.'),
     ticker: z.string().min(1),
-    amount: z.number().positive(),
+    amount: z.string(), // Amount as a string to handle large numbers
     blockNumber: z.number().positive(),
 });
 export type TransactionLogData = z.infer<typeof LogTransactionRequestSchema>;
+
 
 // GET /prices
 export const PriceResponseSchema = z.array(

@@ -16,38 +16,93 @@ const supabaseAdmin = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_
 
 /**
  * Busca un usuario por su dirección de wallet, y si no existe, lo crea.
+ * También crea una entrada en la tabla 'wallets' si es la primera vez que se ve esa dirección.
+ * @param {string} userId - El ID de usuario (por ejemplo, de Telegram).
  * @param {string} walletAddress - La dirección de la wallet del usuario.
- * @returns {Promise<any>} El objeto de usuario de la BD.
+ * @param {string} walletType - El tipo de wallet (e.g., 'zerodev', 'portal').
+ * @returns {Promise<{user: any, wallet: any}>} El objeto de usuario y el de la wallet de la BD.
  */
-export async function findOrCreateUserByWallet(walletAddress: string) {
+export async function createOrRetrieveUserAndWallet(userId: string, walletAddress: string, walletType: string) {
+    // 1. Buscar o crear el usuario.
     let { data: user, error: userError } = await supabaseAdmin
         .from('users')
         .select('*')
-        .eq('wallet_address', walletAddress)
+        .eq('telegram_user_id', userId)
         .single();
 
     if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('Error al buscar usuario:', userError);
+        console.error('Error al buscar usuario por telegram_user_id:', userError);
         throw new Error('Error al interactuar con la base de datos de usuarios.');
     }
-    
+
     if (!user) {
-        const { data: newUser, error: newUserError } = await supabaseAdmin
+        // Si el usuario no existe por telegram_id, intentamos buscarlo por wallet_address
+        let { data: existingUser, error: existingUserError } = await supabaseAdmin
             .from('users')
+            .select('*')
+            .eq('wallet_address', walletAddress)
+            .single();
+        
+        if (existingUserError && existingUserError.code !== 'PGRST116') {
+            console.error('Error al buscar usuario por wallet_address:', existingUserError);
+            throw new Error('Error al interactuar con la base de datos de usuarios.');
+        }
+        
+        if (existingUser) {
+            // El usuario existe con otra telegram_id, lo cual es un caso borde
+            // Por ahora, simplemente lo usamos
+            user = existingUser;
+        } else {
+            // El usuario realmente no existe, lo creamos
+            const { data: newUser, error: newUserError } = await supabaseAdmin
+                .from('users')
+                .insert({ 
+                    telegram_user_id: userId, 
+                    wallet_address: walletAddress,
+                    username: `user_${userId}` // Default username
+                })
+                .select()
+                .single();
+
+            if (newUserError) {
+                console.error('Error al crear usuario:', newUserError);
+                throw new Error('No se pudo crear el registro de usuario.');
+            }
+            user = newUser;
+        }
+    }
+
+    // 2. Buscar o crear la wallet asociada
+    let { data: wallet, error: walletError } = await supabaseAdmin
+        .from('wallets')
+        .select('*')
+        .eq('address', walletAddress)
+        .single();
+    
+    if (walletError && walletError.code !== 'PGRST116') {
+        console.error('Error al buscar wallet:', walletError);
+        throw new Error('Error al interactuar con la base de datos de wallets.');
+    }
+
+    if (!wallet) {
+        const { data: newWallet, error: newWalletError } = await supabaseAdmin
+            .from('wallets')
             .insert({ 
-                wallet_address: walletAddress,
-                username: `user_${walletAddress.slice(0, 8)}` // Default username
+                user_id: user.id, // Enlace con el UUID del usuario
+                address: walletAddress,
+                wallet_type: walletType,
             })
             .select()
             .single();
-
-        if (newUserError) {
-            console.error('Error al crear usuario:', newUserError);
-            throw new Error('No se pudo crear el registro de usuario.');
+        
+        if (newWalletError) {
+            console.error('Error al crear la wallet:', newWalletError);
+            throw new Error('No se pudo crear el registro de la wallet.');
         }
-        user = newUser;
+        wallet = newWallet;
     }
-    return user;
+
+    return { user, wallet };
 }
 
 
@@ -58,15 +113,27 @@ export async function findOrCreateUserByWallet(walletAddress: string) {
  */
 export async function logTransaction(txData: TransactionLogData) {
     
+    // Primero, encontrar el user_id basado en la dirección del sender.
+    const { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('wallet_address', txData.from)
+        .single();
+
+    if (userError || !user) {
+        console.error('Error al buscar el usuario para la transacción:', userError);
+        throw new Error('No se pudo encontrar el usuario para registrar la transacción.');
+    }
+
     const transactionToInsert = {
-        sender: txData.from,
-        recipient: txData.to,
-        token: txData.ticker,
+        user_id: user.id,
+        hash: txData.txHash,
+        from_address: txData.from,
+        to_address: txData.to,
         amount: txData.amount,
-        tx_hash: txData.txHash,
+        token_symbol: txData.ticker,
         block_number: txData.blockNumber,
         status: 'confirmed',
-        is_private: false, // Assuming public transactions for now
     };
 
     const { data: loggedTx, error: txError } = await supabaseAdmin
