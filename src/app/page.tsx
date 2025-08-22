@@ -40,22 +40,13 @@ export default function Home() {
     }
   };
   
-  const handleWalletUnlocked = async (password: string) => {
-    try {
-        const unlockedWallet = await unlockWallet(password);
-        if(unlockedWallet) {
-            setWallet(unlockedWallet);
-        } else {
-            toast({
-                title: "Unlock Failed",
-                description: "Could not unlock wallet.",
-                variant: "destructive"
-            });
-        }
-    } catch (error) {
+  const handleWalletUnlocked = (unlockedWallet: Wallet) => {
+    if(unlockedWallet) {
+        setWallet(unlockedWallet);
+    } else {
         toast({
             title: "Unlock Failed",
-            description: (error as Error).message,
+            description: "Could not unlock wallet.",
             variant: "destructive"
         });
     }
