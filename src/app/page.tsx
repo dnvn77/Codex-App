@@ -13,6 +13,7 @@ import { getStoredWallet, unlockWallet, clearStoredWallet } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
+import { logEvent } from '@/lib/analytics';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('wallet');
@@ -40,6 +41,7 @@ export default function Home() {
     
     const isNew = sessionStorage.getItem('isNewUser');
     if (isNew) {
+        logEvent('first_login_complete');
         setIsFirstLogin(true);
         setActiveView('profile'); // Switch to profile to show the edit modal
         sessionStorage.removeItem('isNewUser');
@@ -68,6 +70,7 @@ export default function Home() {
   }
 
   const handleDisconnect = () => {
+    logEvent('wallet_disconnected');
     clearStoredWallet();
     setWallet(null);
     setStoredWalletInfo(null);
@@ -105,7 +108,7 @@ export default function Home() {
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet}/>}
         {activeView === 'wallet' && <WalletView wallet={wallet} onDisconnect={handleDisconnect}/>}
-        {activeView === 'settings' && <SettingsView />}
+        {activeView === 'settings' && <SettingsView onDisconnect={handleDisconnect} />}
         {activeView === 'contacts' && <ContactsView />}
       </main>
       <MainNav activeView={activeView} setActiveView={setActiveView} />

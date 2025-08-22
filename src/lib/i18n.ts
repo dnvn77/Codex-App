@@ -21,6 +21,14 @@ const translationsData = {
     recentActivity: 'Recent Activity',
     transactions: 'Transactions',
 
+    account: {
+        title: 'Account',
+        description: 'Manage your account settings and log out.',
+        logoutButton: 'Log Out',
+        logoutConfirmTitle: 'Are you sure you want to log out?',
+        logoutConfirmDescription: 'This will lock the app and you will need to enter your password to access it again.',
+    },
+
     // Favorites
     favoritesTitle: 'Favorites',
     editFavoritesButton: 'Edit Favorites',
@@ -37,8 +45,8 @@ const translationsData = {
     // Existing translations
     mainTitle: 'Codex App',
     mainDescription: 'Your private, self-custody wallet for the Scroll Network on Telegram.',
-    createWalletButton: 'Create New Wallet',
-    importWalletButton: 'Import Wallet',
+    createWalletButton: 'Create New Account & Wallet',
+    importWalletButton: 'I Already Have a Seed Phrase',
     testnetDisclaimer: 'Transactions are on the Sepolia Testnet.',
     createWalletTitle: 'Create Your Wallet',
     createWalletDesc: 'Write down your secret phrase and store it securely. This is the only way to recover your wallet.',
@@ -264,6 +272,14 @@ const translationsData = {
     recentActivity: 'Actividad Reciente',
     transactions: 'Transacciones',
 
+    account: {
+        title: 'Cuenta',
+        description: 'Gestiona la configuración de tu cuenta y cierra sesión.',
+        logoutButton: 'Cerrar Sesión',
+        logoutConfirmTitle: '¿Estás seguro de que quieres cerrar sesión?',
+        logoutConfirmDescription: 'Esto bloqueará la aplicación y necesitarás introducir tu contraseña para acceder de nuevo.',
+    },
+
     // Favorites
     favoritesTitle: 'Favoritos',
     editFavoritesButton: 'Editar Favoritos',
@@ -280,8 +296,8 @@ const translationsData = {
     // Existing translations
     mainTitle: 'Codex App',
     mainDescription: 'Tu billetera privada y de autocustodia para la red Scroll en Telegram.',
-    createWalletButton: 'Crear Nueva Billetera',
-    importWalletButton: 'Importar Billetera',
+    createWalletButton: 'Crear Nueva Cuenta y Billetera',
+    importWalletButton: 'Ya Tengo una Frase Semilla',
     testnetDisclaimer: 'Las transacciones se realizan en la Testnet de Sepolia.',
     createWalletTitle: 'Crea Tu Billetera',
     createWalletDesc: 'Anota tu frase secreta y guárdala en un lugar seguro. Esta es la única forma de recuperar tu billetera.',
@@ -491,9 +507,13 @@ const mergeTranslations = (langTranslations: Partial<BaseTranslations>): BaseTra
     for (const key in base) {
         const typedKey = key as keyof BaseTranslations;
         if (langTranslations[typedKey]) {
-            if (typeof base[typedKey] === 'object' && base[typedKey] !== null && !Array.isArray(base[typedKey])) {
+            if (typeof base[typedKey] === 'object' && base[typedKey] !== null && !Array.isArray(base[typedKey]) && !(base[typedKey] instanceof Function)) {
                 // @ts-ignore
                 merged[typedKey] = { ...base[typedKey], ...langTranslations[typedKey] };
+                 if (key === 'feedback' && langTranslations.feedback?.options) {
+                    // @ts-ignore
+                    merged.feedback.options = { ...base.feedback.options, ...langTranslations.feedback.options };
+                }
             } else {
                  // @ts-ignore
                 merged[typedKey] = langTranslations[typedKey];
@@ -502,6 +522,7 @@ const mergeTranslations = (langTranslations: Partial<BaseTranslations>): BaseTra
     }
     return merged;
 };
+
 
 // Pre-calculate all translations
 export const translations: Record<Language, BaseTranslations> = {
