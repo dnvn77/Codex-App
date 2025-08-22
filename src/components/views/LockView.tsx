@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Lock, Eye, EyeOff, LogOut, AlertTriangle } from 'lucide-react';
-import { unlockWallet, verifySeedPhrase, bip39Wordlist } from '@/lib/wallet';
+import { unlockWallet, verifySeedPhrase, bip39Wordlist, importWalletFromSeed, storeWallet } from '@/lib/wallet';
 import type { Wallet, StoredWallet } from '@/lib/types';
 import { useTranslations } from '@/hooks/useTranslations';
-import { ConnectView } from './ConnectView';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,6 @@ interface LockViewProps {
   storedWallet: StoredWallet;
   onWalletUnlocked: (password: string) => void;
   onDisconnect: () => void;
-  onWalletConnected: (wallet: Wallet) => void; // Used for password reset
 }
 
 type RecoveryStep = 'enterSeed' | 'resetPassword';
@@ -97,8 +95,91 @@ const WordInput = ({
   );
 };
 
+// A stripped-down version of ConnectView's password step for recovery
+const ResetPasswordView = ({ onPasswordReset, seedPhrase }: { onPasswordReset: (wallet: Wallet) => void; seedPhrase: string; }) => {
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordValidation, setPasswordValidation] = useState({ length: false, uppercase: false, lowercase: false, number: false, special: false, common: true });
+    const [showPassword, setShowPassword] = useState(false);
+    const { toast } = useToast();
+    const t = useTranslations();
 
-export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalletConnected }: LockViewProps) {
+    const handlePasswordChange = (pass: string) => {
+        setPassword(pass);
+        setPasswordValidation(validatePassword(pass));
+        if (passwordError) setPasswordError('');
+    };
+
+    const handleFinalizeReset = async () => {
+        if (!Object.values(passwordValidation).every(v => v)) {
+            setPasswordError(t.passwordDoesNotMeetRequirements);
+            return;
+        }
+        if (password !== confirmPassword) {
+            setPasswordError(t.passwordsDoNotMatch);
+            return;
+        }
+
+        try {
+            const walletToSave = await importWalletFromSeed(seedPhrase);
+            await storeWallet(walletToSave, password);
+            logEvent('password_reset_success');
+            toast({ title: t.passwordResetSuccessTitle, description: t.passwordResetSuccessDesc });
+            onPasswordReset(walletToSave);
+        } catch (error) {
+            toast({ title: t.error, description: (error as Error).message, variant: "destructive" });
+        }
+    };
+
+    const isSetPasswordDisabled = !password || !confirmPassword || !Object.values(passwordValidation).every(v => v);
+
+    const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
+        <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
+            {met ? <Check className="h-3 w-3 mr-1.5" /> : <X className="h-3 w-3 mr-1.5" />}
+            {label}
+        </div>
+    );
+    
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>{t.setNewPasswordDesc}</DialogTitle>
+                <DialogDescription>{t.setPasswordDesc}</DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+                <div>
+                    <Label htmlFor="password">{t.newPasswordLabel}</Label>
+                    <div className="relative">
+                        <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => handlePasswordChange(e.target.value)} className="pr-10" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    </div>
+                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                        <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
+                        <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
+                        <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
+                        <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
+                        <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
+                        <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
+                    </div>
+                </div>
+                <div>
+                    <Label htmlFor="confirmPassword">{t.confirmNewPasswordLabel}</Label>
+                    <Input id="confirmPassword" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }} />
+                </div>
+                {passwordError && <p className="text-destructive text-sm">{passwordError}</p>}
+            </div>
+            <DialogFooter>
+                <Button onClick={handleFinalizeReset} disabled={isSetPasswordDisabled} className="w-full">{t.resetPasswordButton}</Button>
+            </DialogFooter>
+        </>
+    );
+};
+
+
+export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockViewProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -351,11 +432,14 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onWalle
               </>
             )}
             {recoveryStep === 'resetPassword' && fullSeedForReset && (
-                <ConnectView 
-                    isRecoveryMode={true} 
-                    onPasswordReset={onWalletConnected}
-                    recoverySeedPhrase={fullSeedForReset}
-                    onWalletConnected={onWalletConnected} // This prop is required by ConnectView
+                <ResetPasswordView 
+                    seedPhrase={fullSeedForReset}
+                    onPasswordReset={(wallet) => {
+                        handleCloseRecovery();
+                        // This uses the existing `onWalletUnlocked` to signal a successful login,
+                        // as the password has been reset and the wallet is effectively "unlocked".
+                        onWalletUnlocked(password); 
+                    }}
                 />
             )}
         </DialogContent>

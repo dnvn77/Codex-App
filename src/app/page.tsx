@@ -15,19 +15,35 @@ import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
-  const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('chats');
+  const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('wallet');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [storedWalletInfo, setStoredWalletInfo] = useState<StoredWallet | null>(null);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     // This now correctly runs only on the client
-    setStoredWalletInfo(getStoredWallet());
+    const stored = getStoredWallet();
+    setStoredWalletInfo(stored);
+    
+    // Check if this is the very first time (no wallet stored)
+    // This helps decide the initial state without causing hydration issues
+    if (!stored) {
+        // This is a new user, so any subsequent wallet connection will be a "first login"
+        sessionStorage.setItem('isNewUser', 'true');
+    }
   }, []);
 
-  const handleWalletConnected = (newWallet: Wallet) => {
+  const handleLoginComplete = (newWallet: Wallet) => {
     setWallet(newWallet);
     setStoredWalletInfo(getStoredWallet());
+    
+    const isNew = sessionStorage.getItem('isNewUser');
+    if (isNew) {
+        setIsFirstLogin(true);
+        setActiveView('profile'); // Switch to profile to show the edit modal
+        sessionStorage.removeItem('isNewUser');
+    }
   };
   
   const handleWalletUnlocked = async (password: string) => {
@@ -36,7 +52,6 @@ export default function Home() {
         if(unlockedWallet) {
             setWallet(unlockedWallet);
         } else {
-            // This case should theoretically not happen if unlockWallet throws on failure
             toast({
                 title: "Unlock Failed",
                 description: "Could not unlock wallet.",
@@ -56,12 +71,18 @@ export default function Home() {
     clearStoredWallet();
     setWallet(null);
     setStoredWalletInfo(null);
+    setIsFirstLogin(false);
+    sessionStorage.setItem('isNewUser', 'true');
+  }
+  
+  const handleProfileSaved = () => {
+    setIsFirstLogin(false);
   }
 
   if (!storedWalletInfo) {
     return (
       <main className="flex min-h-[100dvh] flex-col items-center justify-center p-4">
-        <ConnectView onWalletConnected={handleWalletConnected} />
+        <ConnectView onLoginComplete={handleLoginComplete} />
       </main>
     );
   }
@@ -73,7 +94,6 @@ export default function Home() {
                 storedWallet={storedWalletInfo}
                 onWalletUnlocked={handleWalletUnlocked}
                 onDisconnect={handleDisconnect}
-                onWalletConnected={handleWalletConnected} // for password reset
             />
         </main>
     )
@@ -82,7 +102,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 p-4 md:p-6 mb-16">
-        {activeView === 'profile' && <ProfileView wallet={wallet} />}
+        {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet}/>}
         {activeView === 'wallet' && <WalletView wallet={wallet} onDisconnect={handleDisconnect}/>}
         {activeView === 'settings' && <SettingsView />}

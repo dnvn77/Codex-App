@@ -37,10 +37,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 
 
 interface ConnectViewProps {
-  onWalletConnected: (wallet: Wallet) => void;
-  isRecoveryMode?: boolean;
-  onPasswordReset?: (wallet: Wallet) => void;
-  recoverySeedPhrase?: string;
+  onLoginComplete: (wallet: Wallet) => void;
 }
 
 type SeedLength = 12 | 15 | 18 | 24;
@@ -111,10 +108,7 @@ const WordInput = ({
 
 
 export function ConnectView({ 
-  onWalletConnected,
-  isRecoveryMode = false,
-  onPasswordReset,
-  recoverySeedPhrase
+  onLoginComplete,
 }: ConnectViewProps) {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
@@ -156,7 +150,6 @@ export function ConnectView({
 
   const handleCreateWallet = () => {
     logEvent('create_wallet_start');
-    // Only generate a new wallet if one doesn't already exist for this session
     if (!newWallet) {
         const wallet = createWallet();
         setNewWallet(wallet);
@@ -171,7 +164,6 @@ export function ConnectView({
     while (indices.size < 3) {
         indices.add(Math.floor(Math.random() * seedWordCount));
     }
-    // No need to sort, fully random order is better.
     return Array.from(indices);
   }, []);
 
@@ -241,7 +233,6 @@ export function ConnectView({
         }
     } catch(error) {
         console.error("Network error persisting wallet data:", error);
-        // Do not block user flow, but log the error
     }
   };
   
@@ -261,31 +252,17 @@ export function ConnectView({
     
     let walletToSave = newWallet;
 
-    if (isRecoveryMode && recoverySeedPhrase) {
-      try {
-        walletToSave = await importWalletFromSeed(recoverySeedPhrase);
-      } catch (error) {
-        toast({ title: t.error, description: (error as Error).message, variant: "destructive" });
-        return;
-      }
-    }
-
     if (walletToSave) {
       await storeWallet(walletToSave, password);
       await persistWalletData(walletToSave);
       
-      if (isRecoveryMode && onPasswordReset) {
-        logEvent('password_reset_success');
-        onPasswordReset(walletToSave);
-      } else {
-        logEvent('create_wallet_success');
-        onWalletConnected(walletToSave);
-      }
+      logEvent('create_wallet_success');
+      onLoginComplete(walletToSave);
       
       handleCloseCreateDialog();
       toast({
-        title: isRecoveryMode ? t.passwordResetSuccessTitle : t.walletCreatedTitle,
-        description: isRecoveryMode ? t.passwordResetSuccessDesc : t.walletCreatedDesc,
+        title: t.walletCreatedTitle,
+        description: t.walletCreatedDesc,
       });
     }
   };
@@ -361,7 +338,6 @@ export function ConnectView({
   const handleImportWallet = async () => {
     const importSeedPhrase = seedWords.join(' ');
     try {
-      // Validate phrase before setting wallet state
       const wallet = await importWalletFromSeed(importSeedPhrase);
       setNewWallet(wallet); 
       logEvent('import_wallet_seed_verified');
@@ -384,7 +360,6 @@ export function ConnectView({
     }
     setCreateDialogOpen(false);
     setTimeout(() => {
-        // Reset all creation-related state
         setNewWallet(null);
         setCreationStep('showSeed');
         setPassword('');
@@ -408,63 +383,12 @@ export function ConnectView({
     </div>
   );
 
-  if (isRecoveryMode) {
-    return (
-      <div className="w-full">
-        <DialogHeader>
-          <DialogTitle>{t.setPasswordTitle}</DialogTitle>
-          <DialogDescription>{t.setNewPasswordDesc}</DialogDescription>
-        </DialogHeader>
-        <div className="py-4 space-y-4">
-          <div>
-            <Label htmlFor="password">{t.newPasswordLabel}</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-                className="pr-10"
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-              <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
-              <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
-              <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
-              <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
-              <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
-              <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword">{t.confirmNewPasswordLabel}</Label>
-            <Input
-              id="confirmPassword"
-              type={showPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-            />
-          </div>
-          {passwordError && (
-            <p className="text-destructive text-sm">{passwordError}</p>
-          )}
-        </div>
-        <DialogFooter>
-            <Button onClick={handleFinalizeCreation} disabled={isSetPasswordDisabled} className="w-full">{t.resetPasswordButton}</Button>
-        </DialogFooter>
-      </div>
-    );
-  }
-
   return (
     <>
       <Card className="text-center shadow-lg">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full mb-2">
-             <Image src="/strawberry-logo.svg" alt="Codex App Logo" width={40} height={40} className="text-primary" data-ai-hint="codex app logo"/>
+             <Image src="/codex-logo.svg" alt="Codex App Logo" width={40} height={40} className="text-primary" data-ai-hint="codex app logo"/>
           </div>
           <CardTitle className="font-sans text-3xl">{t.mainTitle}</CardTitle>
           <CardDescription>{t.mainDescription}</CardDescription>

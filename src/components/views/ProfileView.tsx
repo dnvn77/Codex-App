@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import { ShortenedLink } from '../shared/ShortenedLink';
 
 interface ProfileViewProps {
     wallet: Wallet;
+    showEditOnLoad?: boolean;
+    onProfileSaved?: () => void;
 }
 
 const mockRecentActivity = [
@@ -45,7 +47,7 @@ const mockRecentActivity = [
     }
 ];
 
-export function ProfileView({ wallet }: ProfileViewProps) {
+export function ProfileView({ wallet, showEditOnLoad = false, onProfileSaved }: ProfileViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
 
@@ -53,13 +55,17 @@ export function ProfileView({ wallet }: ProfileViewProps) {
   const [description, setDescription] = useState("Crypto enthusiast & DeFi trader");
   const [avatar, setAvatar] = useState("https://placehold.co/100x100.png");
   
-  const [isEditOpen, setEditOpen] = useState(false);
+  const [isEditOpen, setEditOpen] = useState(showEditOnLoad);
   const [tempName, setTempName] = useState(name);
   const [tempDescription, setTempDescription] = useState(description);
   const [tempAvatarFile, setTempAvatarFile] = useState<File | null>(null);
   const [tempAvatarPreview, setTempAvatarPreview] = useState<string | null>(null);
 
   const [selectedTx, setSelectedTx] = useState<(typeof mockRecentActivity)[0] | null>(null);
+
+  useEffect(() => {
+    setEditOpen(showEditOnLoad);
+  }, [showEditOnLoad]);
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(wallet.address);
@@ -88,6 +94,7 @@ export function ProfileView({ wallet }: ProfileViewProps) {
           description: "Your changes have been saved successfully.",
       });
       setEditOpen(false);
+      onProfileSaved?.(); // Notify parent that the profile has been saved
   }
 
   const handleCopyTxInfo = (value: string, label: string) => {
