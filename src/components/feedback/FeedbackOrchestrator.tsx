@@ -64,15 +64,18 @@ export const FeedbackOrchestrator = ({ currentView }: FeedbackOrchestratorProps)
 
   if (type === "choice") {
     let modalProps: any;
+    const options = (t.feedback.options as any)[`${props.questionId}`];
+    if(!options) return null;
+
     switch (props.questionId) {
         case 'seed_clarity':
-            modalProps = { ...props, titleKey: 'seedClarityTitle', questionKey: 'seedClarityQuestion', options: t.feedback.options.seedClarity };
+            modalProps = { ...props, titleKey: 'seedClarityTitle', questionKey: 'seedClarityQuestion', options: options };
             break;
         case 'send_flow_feeling':
-            modalProps = { ...props, titleKey: 'sendFlowFeelingTitle', questionKey: 'sendFlowFeelingQuestion', options: t.feedback.options.sendFlowFeeling };
+            modalProps = { ...props, titleKey: 'sendFlowFeelingTitle', questionKey: 'sendFlowFeelingQuestion', options: options };
             break;
         case 'receive_flow_ease':
-            modalProps = { ...props, titleKey: 'receiveFlowEaseTitle', questionKey: 'receiveFlowEaseQuestion', options: t.feedback.options.receiveFlowEase };
+            modalProps = { ...props, titleKey: 'receiveFlowEaseTitle', questionKey: 'receiveFlowEaseQuestion', options: options };
             break;
         default:
             return null;
