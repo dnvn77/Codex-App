@@ -177,7 +177,7 @@ export function ProfileView({ wallet, showEditOnLoad = false, onProfileSaved }: 
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-2 gap-4 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
           <Card className="text-center">
               <CardContent className="p-6">
                   <p className="text-3xl font-bold text-primary">24</p>
