@@ -279,7 +279,7 @@ export function ChatView({ wallet }: ChatViewProps) {
         id: messages.length + 2,
         sender: 'Me',
         type: 'link',
-        text: `https://sepolia.scrollscan.com/tx/${tx.txHash}`,
+        text: `https://testnet.monadexplorer.com/tx/${tx.txHash}`,
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
         sent: false
       }

@@ -170,7 +170,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                     </button>
                 </div>
                 <div className="pt-2">
-                    <ShortenedLink fullUrl={`https://sepolia.etherscan.io/tx/${selectedTx.txHash}`} displayPrefix="sepolia.etherscan.io/tx/" t={{ linkCopied: "Link copied!" }} />
+                    <ShortenedLink fullUrl={`https://testnet.monadexplorer.com/tx/${selectedTx.txHash}`} displayPrefix="testnet.monadexplorer.com/tx/" t={{ linkCopied: "Link copied!" }} />
                 </div>
             </div>
              <DialogClose asChild>

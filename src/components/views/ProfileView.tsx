@@ -260,7 +260,7 @@ export function ProfileView({ wallet, showEditOnLoad = false, onProfileSaved }: 
                     </button>
                 </div>
                 <div className="pt-2">
-                    <ShortenedLink fullUrl={`https://sepolia.scrollscan.com/tx/${selectedTx.txHash}`} displayPrefix="sepolia.scrollscan.com/tx/" t={{ linkCopied: "Link copied!" }} />
+                    <ShortenedLink fullUrl={`https://testnet.monadexplorer.com/tx/${selectedTx.txHash}`} displayPrefix="testnet.monadexplorer.com/tx/" t={{ linkCopied: "Link copied!" }} />
                 </div>
             </div>
              <DialogClose asChild>

@@ -48,7 +48,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
   const t = useTranslations();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const etherscanUrl = `https://sepolia.scrollscan.com/tx/${transaction.txHash}`;
+  const explorerUrl = `https://testnet.monadexplorer.com/tx/${transaction.txHash}`;
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const handleShare = useCallback(async () => {
@@ -94,11 +94,11 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
              await navigator.share({
                 title: t.shareTxTitle,
                 text: t.shareTxText(transaction.txHash),
-                url: etherscanUrl,
+                url: explorerUrl,
             });
         } else {
             // Fallback for browsers that don't support sharing at all
-            navigator.clipboard.writeText(etherscanUrl);
+            navigator.clipboard.writeText(explorerUrl);
             toast({
                 title: t.linkCopied,
                 description: t.shareUnsupportedDesc,
@@ -120,7 +120,7 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           });
       }
     }
-  }, [t, transaction, etherscanUrl, toast]);
+  }, [t, transaction, explorerUrl, toast]);
 
 
   return (
@@ -148,12 +148,12 @@ export function ReceiptView({ transaction, onBack }: ReceiptViewProps) {
           <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md w-full">
               <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-500" />
               <p>
-                Este es un recibo simulado. La transacción no se ha enviado realmente a la red de Sepolia.
+                Este es un recibo simulado. La transacción no se ha enviado realmente a la red de Monad.
               </p>
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-3">
-          <ShortenedLink fullUrl={etherscanUrl} displayPrefix="sepolia.scrollscan.com/tx/" t={t} />
+          <ShortenedLink fullUrl={explorerUrl} displayPrefix="testnet.monadexplorer.com/tx/" t={t} />
           {transaction.ticker !== 'ETH' && (
               <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md w-full">
                   <Info className="h-4 w-4 flex-shrink-0" />
