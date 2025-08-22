@@ -36,11 +36,13 @@ import { useTelegram } from '@/hooks/useTelegram';
 
 
 interface ConnectViewProps {
-  onLoginComplete: (wallet: Wallet) => void;
+  onLoginComplete: (wallet: Wallet, isNewUser: boolean) => void;
 }
 
 type SeedLength = 12 | 15 | 18 | 24;
 type CreationStep = 'showSeed' | 'confirmSeed' | 'setPassword';
+type ImportStep = 'enterSeed' | 'setPassword';
+
 
 const WordInput = ({
   index,
@@ -113,12 +115,14 @@ export function ConnectView({
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [newWallet, setNewWallet] = useState<Wallet | null>(null);
   
+  // Create flow state
   const [creationStep, setCreationStep] = useState<CreationStep>('showSeed');
   const [seedBackupConfirmed, setSeedBackupConfirmed] = useState(false);
   const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
   const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
   const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
 
+  // Shared password state
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -132,11 +136,12 @@ export function ConnectView({
   });
   const [showPassword, setShowPassword] = useState(false);
 
+  // Import flow state
+  const [importStep, setImportStep] = useState<ImportStep>('enterSeed');
   const [seedLength, setSeedLength] = useState<SeedLength>(12);
   const [seedWords, setSeedWords] = useState<string[]>(Array(12).fill(''));
-  
   const [isForExistingAccount, setIsForExistingAccount] = useState(false);
-
+  
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
@@ -149,20 +154,19 @@ export function ConnectView({
     if (passwordError) setPasswordError('');
   }
 
-  const handleCreateWallet = () => {
+  const handleCreateWalletFlowStart = () => {
     logEvent('create_wallet_start');
-    if (!newWallet) {
-        const wallet = createWallet();
-        setNewWallet(wallet);
-    }
+    const wallet = createWallet();
+    setNewWallet(wallet);
     setCreationStep('showSeed');
     setCreateDialogOpen(true);
   };
   
-  const handleOpenImportDialog = (existingAccount: boolean) => {
+  const handleImportFlowStart = (existingAccount: boolean) => {
       setIsForExistingAccount(existingAccount);
       const event = existingAccount ? 'import_account_start' : 'create_account_from_wallet_start';
       logEvent(event);
+      setImportStep('enterSeed');
       setImportDialogOpen(true);
   }
   
@@ -191,47 +195,30 @@ export function ConnectView({
     }
   };
   
-  const handleGoToSetPassword = async (importedSeedPhrase?: string) => {
-    let finalSeed = '';
+  const handleSeedVerification = async () => {
+    if (!newWallet) return;
+    
+    const correctWords = newWallet.seedPhrase.split(' ');
+    const newErrors = ['', '', ''];
+    let allCorrect = true;
 
-    if (importedSeedPhrase) {
-        finalSeed = importedSeedPhrase;
-    } else if (newWallet) {
-        const correctWords = newWallet.seedPhrase.split(' ');
-        const newErrors = ['', '', ''];
-        let allCorrect = true;
-
-        randomWordIndices.forEach((wordIndex, arrayIndex) => {
-            if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
-                newErrors[arrayIndex] = t.incorrectWordError;
-                allCorrect = false;
-            }
-        });
-
-        setConfirmationErrors(newErrors);
-
-        if (!allCorrect) {
-            logEvent('create_wallet_seed_verification_failed', { error_code: 'seed_verification_failed' });
-            return;
+    randomWordIndices.forEach((wordIndex, arrayIndex) => {
+        if (confirmationWords[arrayIndex].trim().toLowerCase() !== correctWords[wordIndex].toLowerCase()) {
+            newErrors[arrayIndex] = t.incorrectWordError;
+            allCorrect = false;
         }
-        finalSeed = newWallet.seedPhrase;
-    }
+    });
 
-    if (finalSeed) {
-        try {
-            const wallet = await importWalletFromSeed(finalSeed);
-            setNewWallet(wallet);
-            logEvent('create_wallet_seed_verified');
-            setCreationStep('setPassword');
-        } catch (error) {
-             toast({
-                title: t.importErrorTitle,
-                description: (error as Error).message || t.importErrorDesc,
-                variant: "destructive",
-            });
-        }
+    setConfirmationErrors(newErrors);
+
+    if (allCorrect) {
+        logEvent('create_wallet_seed_verified');
+        setCreationStep('setPassword');
+    } else {
+        logEvent('create_wallet_seed_verification_failed', { error_code: 'seed_verification_failed' });
     }
-};
+  };
+
 
   const persistWalletData = async (wallet: Wallet) => {
     if (!user?.id) {
@@ -261,35 +248,35 @@ export function ConnectView({
     }
   };
   
-  const handleFinalizeCreation = async () => {
-    const validation = validatePassword(password);
-    if (!Object.values(validation).every(v => v)) {
-        setPasswordError(t.passwordDoesNotMeetRequirements);
-        logEvent('create_wallet_password_fail', { reason: 'requirements_not_met' });
+  const handleFinalizeOnboarding = async (walletToSave: Wallet, isNewUser: boolean) => {
+      const validation = validatePassword(password);
+      if (!Object.values(validation).every(v => v)) {
+          setPasswordError(t.passwordDoesNotMeetRequirements);
+          logEvent('onboarding_password_fail', { reason: 'requirements_not_met' });
+          return;
+      }
+
+      if (password !== confirmPassword) {
+        setPasswordError(t.passwordsDoNotMatch);
+        logEvent('onboarding_password_fail', { reason: 'passwords_do_not_match' });
         return;
-    }
-
-    if (password !== confirmPassword) {
-      setPasswordError(t.passwordsDoNotMatch);
-      logEvent('create_wallet_password_fail', { reason: 'passwords_do_not_match' });
-      return;
-    }
-    
-    let walletToSave = newWallet;
-
-    if (walletToSave) {
+      }
+      
       await storeWallet(walletToSave, password);
       await persistWalletData(walletToSave);
       
-      logEvent('create_wallet_success');
-      onLoginComplete(walletToSave);
+      logEvent('onboarding_success', { is_new_user: isNewUser });
       
-      handleCloseCreateDialog();
+      onLoginComplete(walletToSave, isNewUser);
+      
       toast({
         title: t.walletCreatedTitle,
         description: t.walletCreatedDesc,
       });
-    }
+
+      // Close relevant dialog
+      if (isCreateDialogOpen) handleCloseCreateDialog();
+      if (isImportDialogOpen) handleCloseImportDialog();
   };
 
 
@@ -360,15 +347,19 @@ export function ConnectView({
     }
   };
 
-  const handleImportWallet = async () => {
+  const handleImportSeedVerification = async () => {
     const importSeedPhrase = seedWords.join(' ');
-    // TODO: Here you would check if an account for this wallet already exists
-    // on your backend. For now, we will simulate this by assuming if `isForExistingAccount`
-    // is false, it's a new account creation.
-    const importedWallet = await importWalletFromSeed(importSeedPhrase);
-    
-    setImportDialogOpen(false); 
-    onLoginComplete(importedWallet); // The parent `page.tsx` will handle the "first login" logic
+    try {
+        const wallet = await importWalletFromSeed(importSeedPhrase);
+        setNewWallet(wallet); // Store the imported wallet details
+        setImportStep('setPassword'); // Move to password step
+    } catch (error) {
+        toast({
+            title: t.importErrorTitle,
+            description: (error as Error).message || t.importErrorDesc,
+            variant: "destructive",
+        });
+    }
   };
   
   const handleCloseCreateDialog = () => {
@@ -394,6 +385,11 @@ export function ConnectView({
       setTimeout(() => {
           setSeedLength(12);
           setSeedWords(Array(12).fill(''));
+          setImportStep('enterSeed');
+          setNewWallet(null);
+          setPassword('');
+          setConfirmPassword('');
+          setPasswordError('');
       }, 300);
   }
 
@@ -407,6 +403,57 @@ export function ConnectView({
       {label}
     </div>
   );
+  
+  const PasswordStepView = ({ onFinalize, onCancel }: { onFinalize: () => void; onCancel: () => void; }) => (
+       <>
+           <DialogHeader>
+             <DialogTitle>{t.setPasswordTitle}</DialogTitle>
+             <DialogDescription>{t.setPasswordDesc}</DialogDescription>
+           </DialogHeader>
+           <div className="py-4 space-y-4">
+             <div>
+               <Label htmlFor="password">{t.passwordLabel}</Label>
+               <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+               </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                    <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
+                    <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
+                    <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
+                    <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
+                    <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
+                    <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
+                </div>
+             </div>
+             <div>
+               <Label htmlFor="confirmPassword">{t.confirmPasswordLabel}</Label>
+               <Input
+                 id="confirmPassword"
+                 type={showPassword ? "text" : "password"}
+                 value={confirmPassword}
+                 onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+               />
+             </div>
+             {passwordError && (
+               <p className="text-destructive text-sm">{passwordError}</p>
+             )}
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={onCancel}>{t.cancelButton}</Button>
+             <Button onClick={onFinalize} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
+           </DialogFooter>
+         </>
+  );
+
 
   return (
     <>
@@ -419,17 +466,17 @@ export function ConnectView({
           <CardDescription>{t.mainDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-4">
-          <Button size="lg" onClick={handleCreateWallet}>
+          <Button size="lg" onClick={handleCreateWalletFlowStart}>
             <PlusCircle />
             {t.createWalletAndAccountButton}
           </Button>
           
-           <Button size="lg" variant="secondary" onClick={() => handleOpenImportDialog(false)}>
+           <Button size="lg" variant="secondary" onClick={() => handleImportFlowStart(false)}>
             <UserPlus />
             {t.createAccountWithWalletButton}
           </Button>
 
-          <Button size="lg" variant="outline" onClick={() => handleOpenImportDialog(true)}>
+          <Button size="lg" variant="outline" onClick={() => handleImportFlowStart(true)}>
             <FileInput />
             {t.importExistingAccountButton}
           </Button>
@@ -496,59 +543,16 @@ export function ConnectView({
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={handleBackToShowSeed}>{t.backButton}</Button>
-                <Button onClick={() => handleGoToSetPassword()} disabled={isConfirmationDisabled}>{t.continueButton}</Button>
+                <Button onClick={handleSeedVerification} disabled={isConfirmationDisabled}>{t.continueButton}</Button>
               </DialogFooter>
             </>
           )}
 
-          {creationStep === 'setPassword' && (
-             <>
-               <DialogHeader>
-                 <DialogTitle>{t.setPasswordTitle}</DialogTitle>
-                 <DialogDescription>{t.setPasswordDesc}</DialogDescription>
-               </DialogHeader>
-               <div className="py-4 space-y-4">
-                 <div>
-                   <Label htmlFor="password">{t.passwordLabel}</Label>
-                   <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => handlePasswordChange(e.target.value)}
-                        className="pr-10"
-                      />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground">
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                   </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-                        <PasswordRequirement label={t.reqLength} met={passwordValidation.length} />
-                        <PasswordRequirement label={t.reqUppercase} met={passwordValidation.uppercase} />
-                        <PasswordRequirement label={t.reqLowercase} met={passwordValidation.lowercase} />
-                        <PasswordRequirement label={t.reqNumber} met={passwordValidation.number} />
-                        <PasswordRequirement label={t.reqSpecial} met={passwordValidation.special} />
-                        <PasswordRequirement label={t.reqNotCommon} met={passwordValidation.common} />
-                    </div>
-                 </div>
-                 <div>
-                   <Label htmlFor="confirmPassword">{t.confirmPasswordLabel}</Label>
-                   <Input
-                     id="confirmPassword"
-                     type={showPassword ? "text" : "password"}
-                     value={confirmPassword}
-                     onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-                   />
-                 </div>
-                 {passwordError && (
-                   <p className="text-destructive text-sm">{passwordError}</p>
-                 )}
-               </div>
-               <DialogFooter>
-                 <Button variant="outline" onClick={handleCloseCreateDialog}>{t.cancelButton}</Button>
-                 <Button onClick={handleFinalizeCreation} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
-               </DialogFooter>
-             </>
+          {creationStep === 'setPassword' && newWallet && (
+             <PasswordStepView 
+                onFinalize={() => handleFinalizeOnboarding(newWallet, true)}
+                onCancel={handleCloseCreateDialog}
+             />
           )}
 
         </DialogContent>
@@ -556,58 +560,69 @@ export function ConnectView({
       
       <Dialog open={isImportDialogOpen} onOpenChange={handleCloseImportDialog}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t.importWalletTitle}</DialogTitle>
-            <DialogDescription>{isForExistingAccount ? t.importExistingAccountDesc : t.importToCreateAccountDesc}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-bold">{t.securityWarningTitle}</p>
-                <p>{t.securityWarningDesc}</p>
-              </div>
-            </div>
-            
-            <div>
-              <Label className="mb-2 block">{t.seedPhraseLengthLabel}</Label>
-              <RadioGroup defaultValue="12" onValueChange={handleSeedLengthChange} value={String(seedLength)} className="flex space-x-4">
-                {[12, 15, 18, 24].map(len => (
-                  <div key={len} className="flex items-center space-x-2">
-                    <RadioGroupItem value={String(len)} id={`r${len}`} />
-                    <Label htmlFor={`r${len}`}>{len}</Label>
+            {importStep === 'enterSeed' && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{t.importWalletTitle}</DialogTitle>
+                  <DialogDescription>{isForExistingAccount ? t.importExistingAccountDesc : t.importToCreateAccountDesc}</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold">{t.securityWarningTitle}</p>
+                      <p>{t.securityWarningDesc}</p>
+                    </div>
                   </div>
-                ))}
-              </RadioGroup>
-            </div>
+                  
+                  <div>
+                    <Label className="mb-2 block">{t.seedPhraseLengthLabel}</Label>
+                    <RadioGroup defaultValue="12" onValueChange={handleSeedLengthChange} value={String(seedLength)} className="flex space-x-4">
+                      {[12, 15, 18, 24].map(len => (
+                        <div key={len} className="flex items-center space-x-2">
+                          <RadioGroupItem value={String(len)} id={`r${len}`} />
+                          <Label htmlFor={`r${len}`}>{len}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
 
-            <div>
-              <Label className="mb-2 block">{t.secretPhraseWordsLabel}</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2">
-                {seedWords.map((word, index) => (
-                  <WordInput
-                    key={index}
-                    index={index}
-                    value={word}
-                    onChange={handleWordChange}
-                    onPaste={handlePaste}
-                    onSuggestionClick={handleSuggestionClick}
-                  />
-                ))}
-              </div>
-               <p className="text-xs text-muted-foreground mt-2">
-                {t.pasteDisclaimer}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">{t.cancelButton}</Button>
-            </DialogClose>
-            <Button onClick={handleImportWallet} disabled={isImportDisabled}>
-              {t.importButton}
-            </Button>
-          </DialogFooter>
+                  <div>
+                    <Label className="mb-2 block">{t.secretPhraseWordsLabel}</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2">
+                      {seedWords.map((word, index) => (
+                        <WordInput
+                          key={index}
+                          index={index}
+                          value={word}
+                          onChange={handleWordChange}
+                          onPaste={handlePaste}
+                          onSuggestionClick={handleSuggestionClick}
+                        />
+                      ))}
+                    </div>
+                     <p className="text-xs text-muted-foreground mt-2">
+                      {t.pasteDisclaimer}
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">{t.cancelButton}</Button>
+                  </DialogClose>
+                  <Button onClick={handleImportSeedVerification} disabled={isImportDisabled}>
+                    {t.importButton}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+
+            {importStep === 'setPassword' && newWallet && (
+                 <PasswordStepView 
+                    onFinalize={() => handleFinalizeOnboarding(newWallet, !isForExistingAccount)}
+                    onCancel={handleCloseImportDialog}
+                 />
+            )}
         </DialogContent>
       </Dialog>
     </>

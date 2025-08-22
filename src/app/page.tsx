@@ -25,28 +25,17 @@ export default function Home() {
     // This now correctly runs only on the client
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
-    
-    const isNewUser = !stored;
-    // We use sessionStorage to ensure this flag is only true for the initial session load.
-    // If the user refreshes, it should persist, but it will be cleared on closing the tab.
-    if (isNewUser) {
-        sessionStorage.setItem('isNewUser', 'true');
-    }
   }, []);
 
-  const handleLoginComplete = (newWallet: Wallet) => {
+  const handleLoginComplete = (newWallet: Wallet, isNewUser: boolean) => {
     setWallet(newWallet);
     const newStoredInfo = getStoredWallet();
     setStoredWalletInfo(newStoredInfo);
     
-    const isNew = sessionStorage.getItem('isNewUser');
-    if (isNew) {
-        // This is a "first login" in the sense that they just created/imported
-        // a wallet for the first time in this session.
+    if (isNewUser) {
         logEvent('first_login_complete');
         setIsFirstLogin(true);
         setActiveView('profile'); // Switch to profile to show the edit modal
-        sessionStorage.removeItem('isNewUser');
     }
   };
   
@@ -77,7 +66,6 @@ export default function Home() {
     setWallet(null);
     setStoredWalletInfo(null);
     setIsFirstLogin(false);
-    sessionStorage.setItem('isNewUser', 'true');
   }
   
   const handleProfileSaved = () => {
@@ -99,7 +87,7 @@ export default function Home() {
                 storedWallet={storedWalletInfo}
                 onWalletUnlocked={handleWalletUnlocked}
                 onDisconnect={handleDisconnect}
-                onLoginComplete={handleLoginComplete}
+                onLoginComplete={(wallet) => handleLoginComplete(wallet, false)}
             />
         </main>
     )
@@ -110,7 +98,7 @@ export default function Home() {
       <main className="flex-1 p-4 md:p-6 mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet}/>}
-        {activeView === 'wallet' && <WalletView wallet={wallet} onDisconnect={handleDisconnect}/>}
+        {activeView === 'wallet' && <WalletView wallet={wallet}/>}
         {activeView === 'settings' && <SettingsView onDisconnect={handleDisconnect} />}
         {activeView === 'contacts' && <ContactsView />}
       </main>
