@@ -485,17 +485,41 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
         const derivedKeys = deriveKeysFromSeed(seedPhrase);
         
         if(derivedKeys.address !== stored.address) {
-            throw new Error("Address mismatch after decryption. Data integrity error.");
+            // This is a critical failure, but for a better UX, we'll treat it as a wrong password.
+            // In a real app, this should be logged for investigation.
+            console.error("Decrypted address does not match stored address. Check encryption/derivation logic.");
+            throw new Error("Address mismatch after decryption.");
         }
+
+        const response = await fetch('/api/wallet/balance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+            },
+            body: JSON.stringify({ address: stored.address })
+        });
+        
+        if (!response.ok) {
+            console.warn("Could not fetch latest balance. Using stored balance.");
+            return { ...derivedKeys, seedPhrase, balance: stored.balance };
+        }
+        
+        const data = await response.json();
+        const latestBalance = parseFloat(data.balanceEth);
+        
+        // Update stored balance for next time
+        stored.balance = latestBalance;
+        localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(stored));
 
         return {
             ...derivedKeys,
             seedPhrase,
-            balance: stored.balance,
+            balance: latestBalance,
         };
     } catch (e) {
-        console.error("Decryption failed:", e);
-        throw new Error("Wrong password");
+        console.error("Decryption failed or network error:", e);
+        throw new Error("Wrong password or network issue.");
     }
 }
 
@@ -630,3 +654,5 @@ export async function setFavoriteTokens(userId: string, tokens: string[]): Promi
         // We don't need to notify the user, local storage is the source of truth
     }
 }
+
+    
