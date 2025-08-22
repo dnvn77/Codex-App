@@ -28,10 +28,10 @@ interface MockMessage {
   conversationId: number;
   senderAddress: string;
   recipientAddress: string;
-  encryptedContent: string; // Base64 encoded "encrypted" blob
-  decryptedContent?: string; // Optional, only available if decrypted
+  content: string; // Can be encrypted blob (Base64) or plain text for special types
   timestamp: string;
   type: 'text' | 'receipt' | 'link';
+  isEncrypted: boolean;
 }
 
 const mockContacts = [
@@ -73,6 +73,9 @@ interface ChatViewProps {
     onTransactionSuccess: (ticker: string, amount: number, gasCost: number) => void;
 }
 
+interface DecryptedMessage extends MockMessage {
+    decryptedContent?: string;
+}
 
 export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps) {
   const t = useTranslations();
@@ -86,7 +89,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   // UI State
   const [chats, setChats] = useState(mockContacts);
   const [selectedChat, setSelectedChat] = useState<typeof chats[0] | null>(null);
-  const [decryptedMessages, setDecryptedMessages] = useState<MockMessage[]>([]);
+  const [decryptedMessages, setDecryptedMessages] = useState<DecryptedMessage[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -117,8 +120,8 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
 
     // Simulate fetching encrypted messages from a backend (Supabase)
     const initialMessages: MockMessage[] = [
-      { id: 1, conversationId: 1, senderAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", recipientAddress: wallet.address, encryptedContent: encryptMessage("Hey! How are you doing?", keys.privateKey, "pub_alice"), timestamp: "17:43", type: 'text' },
-      { id: 2, conversationId: 1, senderAddress: wallet.address, recipientAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", encryptedContent: encryptMessage("I'm doing great! Just sent you some ETH for the dinner we had yesterday", keys.privateKey, "pub_alice"), timestamp: "17:53", type: 'text' },
+      { id: 1, conversationId: 1, senderAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", recipientAddress: wallet.address, content: encryptMessage("Hey! How are you doing?", keys.privateKey, "pub_alice"), timestamp: "17:43", type: 'text', isEncrypted: true },
+      { id: 2, conversationId: 1, senderAddress: wallet.address, recipientAddress: "0x742d35Cc6634C0532925a3b8D4C9db96590b5b8c", content: encryptMessage("I'm doing great! Just sent you some ETH for the dinner we had yesterday", keys.privateKey, "pub_alice"), timestamp: "17:53", type: 'text', isEncrypted: true },
     ];
     setAllMessages(initialMessages);
   }, [wallet.masterKey, wallet.address]);
@@ -138,7 +141,12 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
     );
 
     const decrypted = conversationMessages.map((msg) => {
-      const decryptedContent = decryptMessage(msg.encryptedContent, messagingKeys.privateKey);
+      let decryptedContent: string | undefined = undefined;
+      if (msg.isEncrypted) {
+          decryptedContent = decryptMessage(msg.content, messagingKeys.privateKey) ?? undefined;
+      } else {
+          decryptedContent = msg.content;
+      }
       return { ...msg, decryptedContent };
     });
 
@@ -209,9 +217,10 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
       conversationId: selectedChat.id,
       senderAddress: wallet.address,
       recipientAddress: selectedChat.address,
-      encryptedContent,
+      content: encryptedContent,
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      type: 'text'
+      type: 'text',
+      isEncrypted: true
     };
     // In a real app, this would be sent to the backend to be stored in Supabase
     setAllMessages([...allMessages, newMessage]);
@@ -286,9 +295,10 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
         conversationId: selectedChat.id,
         senderAddress: wallet.address,
         recipientAddress: selectedChat.address,
-        encryptedContent: encryptMessage(dataUrl, messagingKeys.privateKey, selectedChat.publicKey),
+        content: dataUrl,
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        type: 'receipt'
+        type: 'receipt',
+        isEncrypted: false, // Transaction receipts are not encrypted
       };
       
       const linkMessage: MockMessage = {
@@ -296,9 +306,10 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
         conversationId: selectedChat.id,
         senderAddress: wallet.address,
         recipientAddress: selectedChat.address,
-        encryptedContent: encryptMessage(`https://testnet.monadexplorer.com/tx/${tx.txHash}`, messagingKeys.privateKey, selectedChat.publicKey),
+        content: `https://testnet.monadexplorer.com/tx/${tx.txHash}`,
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        type: 'link'
+        type: 'link',
+        isEncrypted: false, // Transaction links are not encrypted
       }
 
       setAllMessages([...allMessages, receiptMessage, linkMessage]);
