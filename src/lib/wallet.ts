@@ -582,13 +582,13 @@ export function deleteContact(address: string): Contact[] {
 export function calculateTransactionFee(amountUSD: number): { fee: number, percentage: number } {
     let percentage: number;
     if (amountUSD < 10) {
-        percentage = 5;
-    } else if (amountUSD >= 10 && amountUSD < 100) {
-        percentage = 4;
-    } else if (amountUSD >= 100 && amountUSD < 1000) {
         percentage = 3;
-    } else if (amountUSD >= 1000 && amountUSD < 10000) {
+    } else if (amountUSD >= 10 && amountUSD < 100) {
+        percentage = 2.5;
+    } else if (amountUSD >= 100 && amountUSD < 1000) {
         percentage = 2;
+    } else if (amountUSD >= 1000 && amountUSD < 10000) {
+        percentage = 1.5;
     } else {
         percentage = 1;
     }
