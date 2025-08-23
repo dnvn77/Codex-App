@@ -72,3 +72,16 @@ export const PriceResponseSchema = z.array(
     })
 );
 export type PriceResponse = z.infer<typeof PriceResponseSchema>;
+
+// POST /analytics/log
+export const AnalyticsEventSchema = z.object({
+    session_id: z.string().uuid(),
+    event_type: z.string().min(1),
+    client_timestamp: z.string().datetime(),
+    screen: z.string(),
+    device_type: z.string(),
+    language: z.string(),
+    ui_theme: z.string(),
+    payload: z.record(z.any()).optional(),
+});
+export type AnalyticsEventData = z.infer<typeof AnalyticsEventSchema>;

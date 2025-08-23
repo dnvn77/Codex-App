@@ -1,7 +1,6 @@
 "use client";
 
 import type { ClientType } from "@/hooks/useTelegram";
-import { getSupabase } from "./supabase";
 
 // Almacena el ID de sesión en sessionStorage para que persista solo durante la sesión del navegador.
 let sessionId: string | null = null;
@@ -60,17 +59,23 @@ export async function logEvent(eventType: string, payload: EventPayload = {}) {
     device_type: clientType === 'telegram_webapp' ? 'telegram_webapp' : deviceType,
     language,
     ui_theme: theme,
-    ...payload,
+    payload,
   };
 
-  console.log('Logging analytic event to Supabase:', eventData);
+  try {
+    const response = await fetch('/api/analytics/log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
 
-  const supabase = getSupabase();
-  const { error } = await supabase.from('event_logs').insert(eventData);
-
-  if (error) {
-    console.error('Supabase analytics insert error:', error);
-  } else {
-    console.log('Analytics event successfully logged to Supabase.');
+    if (!response.ok) {
+        const errorBody = await response.json();
+        console.error('Failed to log analytics event to backend.', errorBody);
+    }
+  } catch (error) {
+    console.error('Network error while logging analytics event.', error);
   }
 }

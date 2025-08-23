@@ -11,6 +11,7 @@ import { authenticateApiKey } from './middleware/auth';
 import walletRoutes from './routes/wallet';
 import txRoutes from './routes/tx';
 import priceRoutes from './routes/prices';
+import analyticsRoutes from './routes/analytics'; // Importar nuevas rutas
 import { errorHandler } from './middleware/errorHandler';
 
 
@@ -39,8 +40,10 @@ const apiLimiter = rateLimit({
 // Las rutas de wallet y tx requieren autenticación por API Key
 app.use('/wallet', apiLimiter, authenticateApiKey, walletRoutes);
 app.use('/tx', apiLimiter, authenticateApiKey, txRoutes);
-// La ruta de precios es pública y solo usa el rate limiter
+
+// Las rutas de precios y analítica son públicas y solo usan el rate limiter
 app.use('/prices', apiLimiter, priceRoutes);
+app.use('/analytics', apiLimiter, analyticsRoutes); // Añadir nuevas rutas
 
 
 // --- Manejo de Errores ---

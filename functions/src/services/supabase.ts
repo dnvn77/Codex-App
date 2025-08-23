@@ -8,7 +8,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
-import type { TransactionLogData } from '../types';
+import type { TransactionLogData, AnalyticsEventData } from '../types';
 
 // Cliente de Supabase con privilegios de administrador.
 // Usar solo en el backend.
@@ -148,4 +148,24 @@ export async function logTransaction(txData: TransactionLogData) {
     }
 
     return loggedTx;
+}
+
+/**
+ * Registra un evento de analítica en la base de datos.
+ * @param {AnalyticsEventData} eventData - Los datos del evento a registrar.
+ * @returns {Promise<any>} El registro del evento creado.
+ */
+export async function logAnalyticsEvent(eventData: AnalyticsEventData) {
+    const { data, error } = await supabaseAdmin
+        .from('event_logs')
+        .insert(eventData)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error al registrar evento de analítica:', error);
+        throw new Error('No se pudo registrar el evento de analítica.');
+    }
+
+    return data;
 }
