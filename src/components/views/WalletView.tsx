@@ -56,11 +56,8 @@ import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 import { ReceiptView } from './ReceiptView';
-import { getSwapQuote } from '@/ai/flows/swapQuoteFlow';
 import * as htmlToImage from 'html-to-image';
-import { TOKEN_ADDRESSES } from '@/lib/constants';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -140,14 +137,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const [isWithdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalAmountError, setWithdrawalAmountError] = useState('');
-  const [withdrawalToken, setWithdrawalToken] = useState('MONAD');
   const [withdrawalReason, setWithdrawalReason] = useState('');
-  const [withdrawalStep, setWithdrawalStep] = useState<'amount' | 'confirm' | 'receipt'>('amount');
-  const [swapQuote, setSwapQuote] = useState<any>(null);
-  const [isQuoting, setIsQuoting] = useState(false);
+  const [withdrawalStep, setWithdrawalStep] = useState<'amount' | 'receipt'>('amount');
   const [withdrawalReceipt, setWithdrawalReceipt] = useState<{ code: string; pin: string } | null>(null);
-
-  const withdrawalAsset = useMemo(() => assets.find(a => a.ticker === withdrawalToken) || null, [assets, withdrawalToken]);
 
   const handleDownloadReceipt = useCallback(async () => {
     if (!receiptRef.current) return;
@@ -170,10 +162,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   
   const monadPrice = useMemo(() => {
     return assets.find(a => a.ticker === 'MONAD')?.priceUSD || 0.05;
-  }, [assets]);
-
-  const ethPrice = useMemo(() => {
-    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
   }, [assets]);
 
   const totalBalanceUSD = useMemo(() => {
@@ -526,57 +514,31 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }, 150);
   };
 
-  const handleGetSwapQuote = async () => {
-    if (!withdrawalAmount || !withdrawalAsset) {
+  const executeWithdrawal = async () => {
+    if (!withdrawalAmount) {
         setWithdrawalAmountError('Please enter a valid amount.');
         return;
     }
     const amountNum = parseFloat(withdrawalAmount);
+    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
+    const amountInMonad = amountNum / monadPrice;
+
     if (isNaN(amountNum) || amountNum <= 0) {
         setWithdrawalAmountError('Amount must be a positive number.');
         return;
     }
-     if (amountNum > (withdrawalAsset.balance * withdrawalAsset.priceUSD)) {
-        setWithdrawalAmountError(`Insufficient balance. You have ~$${(withdrawalAsset.balance * withdrawalAsset.priceUSD).toFixed(2)}.`);
+     if (amountInMonad > monadBalance) {
+        setWithdrawalAmountError(`Insufficient MONAD balance.`);
         return;
     }
 
-    setIsQuoting(true);
+    setIsSending(true);
     setWithdrawalAmountError('');
 
     try {
-        const decimals = withdrawalAsset.ticker === 'MONAD' || withdrawalAsset.ticker === 'ETH' ? 18 : 6;
-        const sellAmount = (amountNum / withdrawalAsset.priceUSD).toFixed(decimals);
-        const sellAmountInBaseUnit = (BigInt(Math.floor(parseFloat(sellAmount) * (10**decimals)))).toString();
-        
-        const quote = await getSwapQuote({
-            sellToken: TOKEN_ADDRESSES[withdrawalToken],
-            buyToken: TOKEN_ADDRESSES['USDC'],
-            sellAmount: sellAmountInBaseUnit,
-        });
-        setSwapQuote(quote);
-        setWithdrawalStep('confirm');
-    } catch (error) {
-        console.error("Failed to get swap quote:", error);
-        toast({ title: "Quote Error", description: (error as Error).message, variant: 'destructive' });
-    } finally {
-        setIsQuoting(false);
-    }
-  };
-
-  const executeWithdrawal = async () => {
-    setIsSending(true);
-    try {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        const decimals = withdrawalAsset?.ticker === 'MONAD' || withdrawalAsset?.ticker === 'ETH' ? 18 : 6;
-        const sellAmount = parseFloat(swapQuote.sellAmount) / (10 ** decimals);
-        
-        // Include gas fee in the total amount to be debited
-        const gasCostInEth = (BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas)) / BigInt(10**18);
-        const totalDebit = withdrawalToken === 'MONAD' || withdrawalToken === 'ETH' ? sellAmount + parseFloat(gasCostInEth.toString()) : sellAmount;
-        
-        onTransactionSuccess(withdrawalToken, totalDebit, 0);
+        onTransactionSuccess('MONAD', amountInMonad, 0);
 
         const code = [1, 2, 3].map(() => Math.floor(1000 + Math.random() * 9000)).join(' - ');
         const pin = String(Math.floor(1000 + Math.random() * 9000));
@@ -596,10 +558,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     setWithdrawalDialogOpen(false);
     setTimeout(() => {
         setWithdrawalAmount('');
-        setWithdrawalToken('MONAD');
         setWithdrawalReason('');
         setWithdrawalStep('amount');
-        setSwapQuote(null);
         setWithdrawalReceipt(null);
         setWithdrawalAmountError('');
     }, 300);
@@ -608,9 +568,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   if(sentTransaction) {
     return <ReceiptView transaction={sentTransaction} onBack={() => setSentTransaction(null)} />
   }
-
-  const withdrawalTokens = assets.filter(a => ['MONAD', 'ETH', 'USDC', 'USDT'].includes(a.ticker) && a.balance > 0);
-
 
   return (
     <div className='space-y-4'>
@@ -1037,7 +994,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               <>
                  <DialogHeader>
                     <DialogTitle>Retiro sin Tarjeta</DialogTitle>
-                    <DialogDescription>Ingresa la cantidad a retirar y selecciona con qué activo pagar.</DialogDescription>
+                    <DialogDescription>Ingresa la cantidad a retirar (en USD). Se pagará con tu balance de MONAD.</DialogDescription>
                  </DialogHeader>
                  <div className="py-4 space-y-4">
                     <div>
@@ -1046,25 +1003,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                             <Input id="withdrawal-amount" type="number" placeholder="100.00" value={withdrawalAmount} onChange={(e) => {setWithdrawalAmount(e.target.value); setWithdrawalAmountError('')}} className="pl-6"/>
                         </div>
-                    </div>
-                    <div>
-                        <Label htmlFor="withdrawal-token">Pagar con</Label>
-                        <Select onValueChange={setWithdrawalToken} defaultValue={withdrawalToken}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a token" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {withdrawalTokens.map(asset => (
-                                    <SelectItem key={asset.ticker} value={asset.ticker}>
-                                        <div className="flex items-center gap-2">
-                                            <Image src={asset.icon} alt={asset.name} width={20} height={20} />
-                                            <span>{asset.ticker}</span>
-                                            <span className="ml-auto text-muted-foreground text-xs">~${(asset.balance * asset.priceUSD).toFixed(2)}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                         {withdrawalAmount && <p className="text-xs text-muted-foreground mt-1">Equivalente a ~{(parseFloat(withdrawalAmount) / monadPrice).toFixed(4)} MONAD</p>}
                     </div>
                      <div>
                         <Label htmlFor="withdrawal-reason">Motivo del retiro (opcional)</Label>
@@ -1074,34 +1013,12 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                  </div>
                  <DialogFooter>
                     <Button variant="outline" onClick={closeWithdrawalDialog}>Cancelar</Button>
-                    <Button onClick={handleGetSwapQuote} disabled={isQuoting || !withdrawalAmount}>
-                        {isQuoting ? <Loader2 className="animate-spin mr-2"/> : null}
-                        Obtener Cotización
+                    <Button onClick={executeWithdrawal} disabled={isSending || !withdrawalAmount}>
+                        {isSending ? <Loader2 className="animate-spin mr-2"/> : null}
+                        Confirmar Retiro
                     </Button>
                  </DialogFooter>
               </>
-           )}
-           {withdrawalStep === 'confirm' && swapQuote && (
-                <>
-                    <DialogHeader>
-                        <DialogTitle>Confirmar Retiro</DialogTitle>
-                        <DialogDescription>Revisa los detalles de la transacción. Esto es lo que se descontará de tu billetera.</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 space-y-2 text-sm">
-                         <div className="flex justify-between p-2 rounded-md bg-secondary"><span>Retirarás</span><span className="font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</span></div>
-                         <div className="flex justify-between p-2"><span>Pagarás (aprox.)</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.ticker === 'ETH' || withdrawalAsset?.ticker === 'MONAD' ? 18 : 6))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Comisión de red (gas)</span><span>${((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(ethPrice * 100))) / BigInt(10**20)).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,') + '.' + ((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(ethPrice * 100))) % BigInt(10**20)).toString().padStart(2, '0')} USD</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Tasa de cambio</span><span>1 {withdrawalAsset?.ticker} ≈ ${parseFloat(swapQuote.price).toFixed(2)} USD</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Fuente de liquidez</span><span>{swapQuote.sources.find((s: any) => s.proportion === '1')?.name || 'Multiple'}</span></div>
-                    </div>
-                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setWithdrawalStep('amount')}>Volver</Button>
-                        <Button onClick={executeWithdrawal} disabled={isSending}>
-                            {isSending ? <Loader2 className="animate-spin mr-2"/> : null}
-                            Confirmar y Retirar
-                        </Button>
-                    </DialogFooter>
-                </>
            )}
             {withdrawalStep === 'receipt' && withdrawalReceipt && (
                 <>

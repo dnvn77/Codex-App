@@ -2,4 +2,3 @@
 import "./flows/assetPriceFlow";
 import "./flows/assetHistoryFlow";
 import "./flows/transactionHistoryFlow";
-import "./flows/swapQuoteFlow";
