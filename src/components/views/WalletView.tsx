@@ -517,12 +517,17 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
 
   const executeWithdrawal = async () => {
-    if (!withdrawalAmount || !withdrawalTokenTicker) {
-        setWithdrawalAmountError('Please enter a valid amount and select a token.');
+    const amountNum = parseFloat(withdrawalAmount);
+    if (!withdrawalAmount || isNaN(amountNum) || amountNum <= 0) {
+        setWithdrawalAmountError('La cantidad debe ser un número positivo.');
         return;
     }
     
-    const amountNum = parseFloat(withdrawalAmount);
+    if (!withdrawalTokenTicker) {
+        setWithdrawalAmountError('Please select a token to pay with.');
+        return;
+    }
+
     const token = assets.find(a => a.ticker === withdrawalTokenTicker);
     
     if (!token) {
@@ -532,11 +537,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     
     const amountInToken = amountNum / token.priceUSD;
 
-    if (isNaN(amountNum) || amountNum <= 0) {
-        setWithdrawalAmountError('Amount must be a positive number.');
-        return;
-    }
-     if (amountInToken > token.balance) {
+    if (amountInToken > token.balance) {
         setWithdrawalAmountError(`Insufficient ${token.ticker} balance.`);
         return;
     }
@@ -1021,8 +1022,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                     </div>
                      <div>
                         <Label>Pagar con</Label>
-                         <RadioGroup onValueChange={setWithdrawalTokenTicker} value={withdrawalTokenTicker || ""} className="mt-2 grid grid-cols-3 gap-2">
-                            {['MONAD', 'ETH', 'USDC'].map(ticker => {
+                         <RadioGroup onValueChange={setWithdrawalTokenTicker} value={withdrawalTokenTicker || ""} className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {['MONAD', 'ETH', 'USDC', 'USDT'].map(ticker => {
                                 const asset = assets.find(a => a.ticker === ticker);
                                 if (!asset) return null;
                                 return (
