@@ -39,8 +39,8 @@ export type SwapQuoteOutput = z.infer<typeof SwapQuoteOutputSchema>;
 export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
   const { sellToken, buyToken, sellAmount, takerAddress } = input;
   
-  // The 0x API endpoint for the Monad network.
-  const API_ENDPOINT = 'https://monad.api.0x.org/swap/v1/quote';
+  // The 0x API endpoint for the Sepolia testnet.
+  const API_ENDPOINT = 'https://sepolia.api.0x.org/swap/v1/quote';
   
   const params = new URLSearchParams({
     sellToken,

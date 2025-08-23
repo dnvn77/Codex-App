@@ -172,6 +172,10 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     return assets.find(a => a.ticker === 'MONAD')?.priceUSD || 0.05;
   }, [assets]);
 
+  const ethPrice = useMemo(() => {
+    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
+  }, [assets]);
+
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
         const valueInUSD = asset.balance * asset.priceUSD;
@@ -541,8 +545,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     setWithdrawalAmountError('');
 
     try {
-        const sellAmount = (amountNum / withdrawalAsset.priceUSD).toFixed(withdrawalAsset.decimals || 18);
-        const sellAmountInBaseUnit = (BigInt(Math.floor(parseFloat(sellAmount) * (10**(withdrawalAsset.decimals || 18))))).toString();
+        const decimals = withdrawalAsset.ticker === 'MONAD' || withdrawalAsset.ticker === 'ETH' ? 18 : 6;
+        const sellAmount = (amountNum / withdrawalAsset.priceUSD).toFixed(decimals);
+        const sellAmountInBaseUnit = (BigInt(Math.floor(parseFloat(sellAmount) * (10**decimals)))).toString();
         
         const quote = await getSwapQuote({
             sellToken: TOKEN_ADDRESSES[withdrawalToken],
@@ -565,11 +570,12 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     try {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        const sellAmount = parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18));
+        const decimals = withdrawalAsset?.ticker === 'MONAD' || withdrawalAsset?.ticker === 'ETH' ? 18 : 6;
+        const sellAmount = parseFloat(swapQuote.sellAmount) / (10 ** decimals);
         
         // Include gas fee in the total amount to be debited
-        const gasCostInMonad = (BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas)) / BigInt(10**18);
-        const totalDebit = withdrawalToken === 'MONAD' ? sellAmount + parseFloat(gasCostInMonad.toString()) : sellAmount;
+        const gasCostInEth = (BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas)) / BigInt(10**18);
+        const totalDebit = withdrawalToken === 'MONAD' || withdrawalToken === 'ETH' ? sellAmount + parseFloat(gasCostInEth.toString()) : sellAmount;
         
         onTransactionSuccess(withdrawalToken, totalDebit, 0);
 
@@ -1084,9 +1090,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                     </DialogHeader>
                     <div className="py-4 space-y-2 text-sm">
                          <div className="flex justify-between p-2 rounded-md bg-secondary"><span>Retirarás</span><span className="font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</span></div>
-                         <div className="flex justify-between p-2"><span>Pagarás (aprox.)</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Comisión 0x (gas)</span><span>${((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(monadPrice * 100))) / BigInt(10**20)).toString() + '.' + ((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(monadPrice * 100))) % BigInt(10**20)).toString().padStart(2, '0')} USD</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Tasa de cambio</span><span>1 {withdrawalAsset?.ticker} ≈ ${swapQuote.price} USD</span></div>
+                         <div className="flex justify-between p-2"><span>Pagarás (aprox.)</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.ticker === 'ETH' || withdrawalAsset?.ticker === 'MONAD' ? 18 : 6))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Comisión de red (gas)</span><span>${((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(ethPrice * 100))) / BigInt(10**20)).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,') + '.' + ((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(ethPrice * 100))) % BigInt(10**20)).toString().padStart(2, '0')} USD</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Tasa de cambio</span><span>1 {withdrawalAsset?.ticker} ≈ ${parseFloat(swapQuote.price).toFixed(2)} USD</span></div>
                          <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Fuente de liquidez</span><span>{swapQuote.sources.find((s: any) => s.proportion === '1')?.name || 'Multiple'}</span></div>
                     </div>
                      <DialogFooter>
