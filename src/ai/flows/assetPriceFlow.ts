@@ -29,12 +29,16 @@ export type AssetPriceOutput = z.infer<typeof AssetPriceOutputSchema>;
 
 const getIconPath = (assetId: number): string => {
     if (assetId === 0) { // Handle Codex Token case
-      return '/strawberry-logo.svg';
+      return '/codex-logo.svg';
+    }
+    if (assetId === 9999) { // Handle Monad case
+        return '/monad-logo.svg';
     }
     return `https://s2.coinmarketcap.com/static/img/coins/64x64/${assetId}.png`;
 }
 
 const mockPrices: Record<string, { name: string, id: number, price: number, change: number }> = {
+    MONAD: { name: 'Monad', id: 9999, price: 1.23, change: 4.5 },
     ETH: { name: 'Ethereum', id: 1027, price: 3450.12, change: -1.25 },
     USDC: { name: 'USD Coin', id: 3408, price: 1.00, change: 0.01 },
     USDT: { name: 'Tether', id: 825, price: 0.99, change: -0.02 },

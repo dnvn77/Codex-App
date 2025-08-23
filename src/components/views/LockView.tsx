@@ -175,13 +175,12 @@ interface LockViewProps {
   storedWallet: StoredWallet;
   onWalletUnlocked: (wallet: Wallet) => void;
   onDisconnect: () => void;
-  onLoginComplete: (wallet: Wallet, isNewUser: boolean) => void;
 }
 
 type RecoveryStep = 'enterSeed' | 'resetPassword';
 type SeedLength = 12 | 15 | 18 | 24;
 
-export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLoginComplete }: LockViewProps) {
+export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockViewProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -446,7 +445,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect, onLogin
                     seedPhrase={fullSeedForReset}
                     onPasswordReset={(wallet) => {
                         handleCloseRecovery();
-                        onLoginComplete(wallet, false);
+                        onWalletUnlocked(wallet);
                     }}
                     t={t}
                 />

@@ -73,7 +73,6 @@ export default function Home() {
       // Set initial mock balances for non-native assets, native MONAD balance comes from wallet object
       setMockBalances(prev => ({
         ...prev,
-        'MONAD': wallet.balance,
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
@@ -87,7 +86,8 @@ export default function Home() {
     if (priceData.length > 0 && wallet) {
         const combinedAssets = priceData.map(asset => ({
             ...asset,
-            balance: mockBalances[asset.ticker] || 0,
+            // Use real balance for MONAD from wallet object, otherwise use mock balances
+            balance: asset.ticker === 'MONAD' ? wallet.balance : (mockBalances[asset.ticker] || 0),
             isFavorite: false,
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
@@ -146,24 +146,25 @@ export default function Home() {
   }
 
   const handleTransactionSuccess = (ticker: string, amount: number, gasCost: number) => {
-    setMockBalances(prevBalances => {
-        const newBalances = { ...prevBalances };
-        if (newBalances[ticker] !== undefined) {
-            newBalances[ticker] = Math.max(0, newBalances[ticker] - amount);
-        }
-        if (newBalances['MONAD'] !== undefined) {
-            newBalances['MONAD'] = Math.max(0, newBalances['MONAD'] - gasCost);
-        }
-        return newBalances;
+    // Update the main wallet object if MONAD balance changed
+    setWallet(prevWallet => {
+      if (!prevWallet) return null;
+      let newBalance = prevWallet.balance;
+      if (ticker === 'MONAD') {
+          newBalance -= amount;
+      }
+      newBalance -= gasCost;
+
+      return { ...prevWallet, balance: Math.max(0, newBalance) };
     });
 
-    // Also update the main wallet object if MONAD balance changed
-    setWallet(prevWallet => {
-        if (!prevWallet) return null;
-        return {
-            ...prevWallet,
-            balance: mockBalances['MONAD'] ? mockBalances['MONAD'] - gasCost : prevWallet.balance - gasCost
-        };
+    // Also update mock balances for other tokens
+    setMockBalances(prevBalances => {
+        const newBalances = { ...prevBalances };
+        if (newBalances[ticker] !== undefined && ticker !== 'MONAD') {
+            newBalances[ticker] = Math.max(0, newBalances[ticker] - amount);
+        }
+        return newBalances;
     });
   };
 
@@ -182,7 +183,6 @@ export default function Home() {
                 storedWallet={storedWalletInfo}
                 onWalletUnlocked={handleLoginComplete}
                 onDisconnect={handleDisconnect}
-                onLoginComplete={(wallet, isNew) => handleLoginComplete(wallet, isNew)}
             />
         </main>
     )
