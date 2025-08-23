@@ -144,7 +144,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   }, [assets, selectedAssetTicker]);
 
   const maxSendableAmount = useMemo(() => {
-    if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
+    if (!selectedAsset) return 0;
     
     // Calculate total cost in ETH: gas fee + transaction fee in ETH
     const feeInEth = (transactionFee.fee / ethPrice);
@@ -655,7 +655,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                   <div className="flex justify-between items-end h-6 mb-1">
                       <Label htmlFor="amount">{t.amountLabel}</Label>
                        <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || !selectedAsset}>
-                        {t.maxAmountLabel}: ${((maxSendableAmount * selectedAsset!.priceUSD) || 0).toFixed(2)}
+                        {t.maxAmountLabel}: ${((maxSendableAmount * (selectedAsset?.priceUSD || 0)) || 0).toFixed(2)}
                       </button>
                   </div>
                   <div className="relative">
