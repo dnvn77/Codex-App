@@ -3,7 +3,6 @@
  * @fileOverview A flow to fetch a swap quote from the 0x API.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { MONAD_ADDRESS, USDC_ADDRESS } from '@/lib/constants';
 
@@ -36,7 +35,7 @@ const SwapQuoteOutputSchema = z.object({
 });
 export type SwapQuoteOutput = z.infer<typeof SwapQuoteOutputSchema>;
 
-async function fetchSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
+export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
   const { sellToken, buyToken, sellAmount, takerAddress } = input;
   
   // The 0x API endpoint for the Monad network.
@@ -70,15 +69,3 @@ async function fetchSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
     throw error;
   }
 }
-
-// Define the Genkit flow
-export const getSwapQuoteFlow = ai.defineFlow(
-  {
-    name: 'getSwapQuoteFlow',
-    inputSchema: SwapQuoteInputSchema,
-    outputSchema: SwapQuoteOutputSchema,
-  },
-  async (input) => {
-    return await fetchSwapQuote(input);
-  }
-);

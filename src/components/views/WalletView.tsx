@@ -56,7 +56,7 @@ import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 import { ReceiptView } from './ReceiptView';
-import { getSwapQuoteFlow } from '@/ai/flows/swapQuoteFlow';
+import { getSwapQuote } from '@/ai/flows/swapQuoteFlow';
 import * as htmlToImage from 'html-to-image';
 import { TOKEN_ADDRESSES } from '@/lib/constants';
 import { Textarea } from '../ui/textarea';
@@ -544,7 +544,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
         const sellAmount = (amountNum / withdrawalAsset.priceUSD).toFixed(withdrawalAsset.decimals || 18);
         const sellAmountInBaseUnit = (BigInt(Math.floor(parseFloat(sellAmount) * (10**(withdrawalAsset.decimals || 18))))).toString();
         
-        const quote = await getSwapQuoteFlow({
+        const quote = await getSwapQuote({
             sellToken: TOKEN_ADDRESSES[withdrawalToken],
             buyToken: TOKEN_ADDRESSES['USDC'],
             sellAmount: sellAmountInBaseUnit,
@@ -1143,4 +1143,3 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     </div>
   );
 }
-
