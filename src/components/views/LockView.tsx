@@ -197,6 +197,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
   
   const t = useTranslations();
   const { toast } = useToast();
+  const { user } = useTelegram();
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,17 +209,49 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
 
     try {
         await new Promise(resolve => setTimeout(resolve, 500));
+        // First, check if the password is correct locally.
         const localWallet = await unlockWallet(password);
         if (!localWallet) {
-           throw new Error("Wrong password.");
+           throw new Error(t.wrongPasswordError);
+        }
+
+        // If correct, fetch the latest state (including REAL balance) from the backend.
+        if (!user?.id) {
+            console.warn("Telegram User ID not available. Using local wallet data for unlock.");
+            onWalletUnlocked(localWallet, false);
+            logEvent('unlock_success_local');
+            return;
+        }
+
+        const response = await fetch('/api/wallet/create', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+            },
+            body: JSON.stringify({ userId: String(user.id), walletAddress: localWallet.address })
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not sync with the server. Please try again.");
         }
         
-        onWalletUnlocked(localWallet, false);
+        const { wallet: fetchedWalletData } = await response.json();
+
+        const finalWalletState: Wallet = {
+            ...localWallet, // Keep local keys
+            balance: fetchedWalletData.balance, // Use real balance from backend
+        };
+        
+        // Re-store wallet with updated balance
+        await storeWallet(finalWalletState, password);
+
+        onWalletUnlocked(finalWalletState, false);
         logEvent('unlock_success');
 
     } catch(err) {
-      setError(t.wrongPasswordError);
-      logEvent('unlock_fail');
+      setError((err as Error).message);
+      logEvent('unlock_fail', { error_message: (err as Error).message });
     } finally {
         setIsLoading(false);
     }
@@ -457,3 +490,5 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
     </>
   );
 }
+
+    
