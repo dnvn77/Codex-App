@@ -58,6 +58,7 @@ import { useFeedback } from '@/hooks/useFeedback';
 import { ReceiptView } from './ReceiptView';
 import * as htmlToImage from 'html-to-image';
 import { Textarea } from '../ui/textarea';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -137,6 +138,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const [isWithdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalAmountError, setWithdrawalAmountError] = useState('');
+  const [withdrawalTokenTicker, setWithdrawalTokenTicker] = useState<string | null>(null);
   const [withdrawalReason, setWithdrawalReason] = useState('');
   const [withdrawalStep, setWithdrawalStep] = useState<'amount' | 'receipt'>('amount');
   const [withdrawalReceipt, setWithdrawalReceipt] = useState<{ code: string; pin: string } | null>(null);
@@ -515,20 +517,27 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
 
   const executeWithdrawal = async () => {
-    if (!withdrawalAmount) {
-        setWithdrawalAmountError('Please enter a valid amount.');
+    if (!withdrawalAmount || !withdrawalTokenTicker) {
+        setWithdrawalAmountError('Please enter a valid amount and select a token.');
         return;
     }
+    
     const amountNum = parseFloat(withdrawalAmount);
-    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
-    const amountInMonad = amountNum / monadPrice;
+    const token = assets.find(a => a.ticker === withdrawalTokenTicker);
+    
+    if (!token) {
+        setWithdrawalAmountError('Invalid token selected.');
+        return;
+    }
+    
+    const amountInToken = amountNum / token.priceUSD;
 
     if (isNaN(amountNum) || amountNum <= 0) {
         setWithdrawalAmountError('Amount must be a positive number.');
         return;
     }
-     if (amountInMonad > monadBalance) {
-        setWithdrawalAmountError(`Insufficient MONAD balance.`);
+     if (amountInToken > token.balance) {
+        setWithdrawalAmountError(`Insufficient ${token.ticker} balance.`);
         return;
     }
 
@@ -538,7 +547,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     try {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        onTransactionSuccess('MONAD', amountInMonad, 0);
+        onTransactionSuccess(token.ticker, amountInToken, 0);
 
         const code = [1, 2, 3].map(() => Math.floor(1000 + Math.random() * 9000)).join(' - ');
         const pin = String(Math.floor(1000 + Math.random() * 9000));
@@ -559,11 +568,17 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     setTimeout(() => {
         setWithdrawalAmount('');
         setWithdrawalReason('');
+        setWithdrawalTokenTicker(null);
         setWithdrawalStep('amount');
         setWithdrawalReceipt(null);
         setWithdrawalAmountError('');
     }, 300);
   };
+
+  const withdrawalPaymentToken = useMemo(() => {
+    if (!withdrawalTokenTicker) return null;
+    return assets.find(a => a.ticker === withdrawalTokenTicker) ?? null;
+  }, [withdrawalTokenTicker, assets]);
   
   if(sentTransaction) {
     return <ReceiptView transaction={sentTransaction} onBack={() => setSentTransaction(null)} />
@@ -994,7 +1009,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               <>
                  <DialogHeader>
                     <DialogTitle>Retiro sin Tarjeta</DialogTitle>
-                    <DialogDescription>Ingresa la cantidad a retirar (en USD). Se pagará con tu balance de MONAD.</DialogDescription>
+                    <DialogDescription>Ingresa la cantidad a retirar (en USD) y elige con qué token pagar.</DialogDescription>
                  </DialogHeader>
                  <div className="py-4 space-y-4">
                     <div>
@@ -1003,9 +1018,40 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                             <Input id="withdrawal-amount" type="number" placeholder="100.00" value={withdrawalAmount} onChange={(e) => {setWithdrawalAmount(e.target.value); setWithdrawalAmountError('')}} className="pl-6"/>
                         </div>
-                         {withdrawalAmount && <p className="text-xs text-muted-foreground mt-1">Equivalente a ~{(parseFloat(withdrawalAmount) / monadPrice).toFixed(4)} MONAD</p>}
                     </div>
                      <div>
+                        <Label>Pagar con</Label>
+                         <RadioGroup onValueChange={setWithdrawalTokenTicker} value={withdrawalTokenTicker || ""} className="mt-2 grid grid-cols-3 gap-2">
+                            {['MONAD', 'ETH', 'USDC'].map(ticker => {
+                                const asset = assets.find(a => a.ticker === ticker);
+                                if (!asset) return null;
+                                return (
+                                    <div key={ticker}>
+                                        <RadioGroupItem value={ticker} id={`pay-${ticker}`} className="sr-only peer" />
+                                        <Label htmlFor={`pay-${ticker}`} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                            <div className='flex items-center gap-2 mb-1'>
+                                                <Image src={asset.icon} alt={asset.ticker} width={20} height={20} />
+                                                {ticker}
+                                            </div>
+                                            <span className='text-xs text-muted-foreground font-mono'>
+                                                Bal: {asset.balance.toLocaleString(undefined, { maximumFractionDigits: 4})}
+                                            </span>
+                                        </Label>
+                                    </div>
+                                )
+                            })}
+                        </RadioGroup>
+                    </div>
+
+                    {withdrawalAmount && withdrawalPaymentToken && (
+                        <div className="text-sm text-center bg-muted/50 p-3 rounded-lg">
+                            <p>
+                                Costo aproximado: <span className="font-semibold">{(parseFloat(withdrawalAmount) / withdrawalPaymentToken.priceUSD).toFixed(6)} {withdrawalPaymentToken.ticker}</span>
+                            </p>
+                        </div>
+                    )}
+
+                    <div>
                         <Label htmlFor="withdrawal-reason">Motivo del retiro (opcional)</Label>
                         <Textarea id="withdrawal-reason" placeholder="Ej: Pago de servicios" value={withdrawalReason} onChange={(e) => setWithdrawalReason(e.target.value)}/>
                     </div>
@@ -1013,7 +1059,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                  </div>
                  <DialogFooter>
                     <Button variant="outline" onClick={closeWithdrawalDialog}>Cancelar</Button>
-                    <Button onClick={executeWithdrawal} disabled={isSending || !withdrawalAmount}>
+                    <Button onClick={executeWithdrawal} disabled={isSending || !withdrawalAmount || !withdrawalTokenTicker}>
                         {isSending ? <Loader2 className="animate-spin mr-2"/> : null}
                         Confirmar Retiro
                     </Button>
