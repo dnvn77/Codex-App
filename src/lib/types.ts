@@ -46,7 +46,7 @@ export interface TransactionHistoryItem {
     amount: number | null; // Null for private ZKP transactions
     ticker: string;
     type: 'in' | 'out';
-    origin: 'strawberry' | 'other'; // Where the tx was initiated
+    origin: 'codex' | 'other'; // Where the tx was initiated
     blockNumber: number;
     status: 'confirmed' | 'pending' | 'failed';
 }
