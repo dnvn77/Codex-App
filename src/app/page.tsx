@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -70,9 +69,11 @@ export default function Home() {
   useEffect(() => {
     if (wallet) {
       updateAssetPrices();
-      // Set initial mock balances for non-native assets, native MONAD balance comes from wallet object
+      // Set initial mock balances for non-native assets.
+      // The native MONAD balance comes directly from the wallet object after login.
       setMockBalances(prev => ({
         ...prev,
+        'ETH': 1.5, // Keep a simulated balance for ETH for gas
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
@@ -91,7 +92,7 @@ export default function Home() {
             isFavorite: false,
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
-            const valueB = b.balance * a.priceUSD;
+            const valueB = b.balance * b.priceUSD;
             if (valueB !== valueA) return valueB - valueA;
             return a.ticker.localeCompare(b.ticker);
         });
@@ -113,17 +114,12 @@ export default function Home() {
         logEvent('first_login_complete');
         setIsFirstLogin(true);
         setActiveView('profile');
-    } else {
-       // On subsequent logins, ensure the wallet state has the real balance for MONAD
-        setMockBalances(prev => ({ ...prev, 'MONAD': newWallet.balance }));
     }
   };
   
   const handleWalletUnlocked = (unlockedWallet: Wallet) => {
     if(unlockedWallet) {
         setWallet(unlockedWallet);
-        // Also update balances on unlock
-        setMockBalances(prev => ({ ...prev, 'MONAD': unlockedWallet.balance }));
     } else {
         toast({
             title: "Unlock Failed",
@@ -151,9 +147,10 @@ export default function Home() {
       if (!prevWallet) return null;
       let newBalance = prevWallet.balance;
       if (ticker === 'MONAD') {
-          newBalance -= amount;
+          newBalance -= (amount + gasCost);
+      } else {
+          newBalance -= gasCost; // Only deduct gas if another token was sent
       }
-      newBalance -= gasCost;
 
       return { ...prevWallet, balance: Math.max(0, newBalance) };
     });
