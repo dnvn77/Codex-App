@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet, calculateTransactionFee } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
-import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User, Banknote, Download } from 'lucide-react';
+import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User, Banknote, Download, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -59,6 +59,7 @@ import { ReceiptView } from './ReceiptView';
 import * as htmlToImage from 'html-to-image';
 import { Textarea } from '../ui/textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import type { StoredWallet } from '@/lib/types';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -66,6 +67,8 @@ interface WalletViewProps {
   onTransactionSuccess: (ticker: string, amount: number, gasCost: number) => void;
   assetStatus: 'loading' | 'success' | 'error';
   onRefreshPrices: () => void;
+  setMockBalances: (balances: Record<string, number>) => void;
+  mockBalances: Record<string, number>;
 }
 
 const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number; averageGas: number; isLoading: boolean, t: any }) => {
@@ -92,7 +95,7 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   );
 };
 
-export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, onRefreshPrices }: WalletViewProps) {
+export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, onRefreshPrices, setMockBalances, mockBalances }: WalletViewProps) {
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
@@ -329,7 +332,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                 to: tx.to,
                 txHash: tx.txHash,
                 ticker: tx.ticker,
-                amount: tx.amount,
+                amount: tx.amount.toString(),
                 blockNumber: tx.l1SettlementBlock
             })
         });
@@ -495,6 +498,18 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }
   };
 
+  const handleSimulateReceive = () => {
+    logEvent('simulate_receive_clicked');
+    const receivedAmount = 0.1;
+    setMockBalances(prev => ({
+        ...prev,
+        'ETH': (prev['ETH'] || 0) + receivedAmount,
+    }));
+    toast({
+      title: "Funds Received!",
+      description: `You just received ${receivedAmount} ETH.`,
+    });
+  };
 
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
@@ -643,7 +658,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                 </Button>
             </div>
           </div>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
@@ -688,6 +703,10 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                <Button variant="outline" onClick={handleSimulateReceive}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Simulate Receive (ETH)
+                </Button>
            </div>
           
           <Separator />
@@ -1112,3 +1131,4 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     </div>
   );
 }
+

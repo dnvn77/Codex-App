@@ -8,8 +8,8 @@
 import { Router } from 'express';
 import { getBalance } from '../services/chain';
 import { validateRequest } from '../middleware/validateRequest';
-import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema, UpdateFavoritesRequestSchema} from '../types'
-import { createOrRetrieveUserAndWallet, updateUserFavoriteTokens } from '../services/supabase';
+import {CreateWalletRequestSchema, GetBalanceRequestSchema, GetBalanceBodySchema} from '../types'
+import { createOrRetrieveUserAndWallet } from '../services/supabase';
 
 
 const router = Router();
@@ -28,10 +28,14 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
     // Guardar el mapeo userId -> address en Supabase.
     const { user, wallet } = await createOrRetrieveUserAndWallet(userId, walletAddress, 'zerodev');
 
+    const balance = await getBalance(walletAddress);
+
     res.status(200).json({
-      address: wallet.address,
-      // Devolver también los favoritos al crear/recuperar la billetera
-      favoriteTokens: user.favorite_tokens || ['ETH', 'USDC', 'USDT', 'WBTC', 'LINK', 'UNI', 'DAI', 'LDO', 'ARB', 'OP', 'AAVE', 'MKR', 'SAND', 'MANA', 'STRW'],
+      user,
+      wallet: {
+        ...wallet,
+        balance: parseFloat(balance) // Include the real balance
+      },
       message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
   } catch (error) {
@@ -48,7 +52,7 @@ const handleGetBalance = async (address: string, res: any, next: any) => {
         res.status(200).json({
             address: address,
             balanceEth: balance,
-            message: `🔍 Balance de ${shortAddress}:\n*${balance} ETH* (Scroll Sepolia)`,
+            message: `🔍 Balance de ${shortAddress}:\n*${balance} MONAD* (Testnet)`,
         });
     } catch (error) {
         next(error);
@@ -58,7 +62,7 @@ const handleGetBalance = async (address: string, res: any, next: any) => {
 
 /**
  * @route   GET /wallet/balance/:address
- * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde la URL).
+ * @desc    Consulta el balance de una dirección en Monad Testnet (desde la URL).
  * @access  Privado (requiere API Key)
  */
 router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema}), async (req, res, next) => {
@@ -67,32 +71,11 @@ router.get('/balance/:address', validateRequest({params: GetBalanceRequestSchema
 
 /**
  * @route   POST /wallet/balance
- * @desc    Consulta el balance de una dirección en Scroll Sepolia (desde el body).
+ * @desc    Consulta el balance de una dirección en Monad Testnet (desde el body).
  * @access  Privado (requiere API Key)
  */
 router.post('/balance', validateRequest({body: GetBalanceBodySchema}), async (req, res, next) => {
     handleGetBalance(req.body.address, res, next);
 });
 
-/**
- * @route   POST /wallet/favorites
- * @desc    Actualiza la lista de tokens favoritos de un usuario.
- * @access  Privado (requiere API Key)
- */
-router.post('/favorites', validateRequest({body: UpdateFavoritesRequestSchema}), async (req, res, next) => {
-    try {
-        const { userId, favoriteTokens } = req.body;
-        const updatedUser = await updateUserFavoriteTokens(userId, favoriteTokens);
-        res.status(200).json({
-            message: 'Tokens favoritos actualizados exitosamente.',
-            favoriteTokens: updatedUser.favorite_tokens,
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-
 export default router;
-
-

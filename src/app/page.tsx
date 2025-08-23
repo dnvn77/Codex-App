@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -68,14 +69,16 @@ export default function Home() {
   useEffect(() => {
     if (wallet) {
       updateAssetPrices();
-       setMockBalances({
+      // Set initial mock balances for non-native assets, native MONAD balance comes from wallet object
+      setMockBalances(prev => ({
+        ...prev,
         'ETH': wallet.balance,
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
         'LINK': 150.2,
         'UNI': 300,
-      });
+      }));
     }
   }, [wallet, updateAssetPrices]);
 
@@ -109,6 +112,9 @@ export default function Home() {
         logEvent('first_login_complete');
         setIsFirstLogin(true);
         setActiveView('profile');
+    } else {
+       // On subsequent logins, ensure the wallet state has the real balance
+        setMockBalances(prev => ({ ...prev, 'ETH': newWallet.balance }));
     }
   };
   
@@ -151,9 +157,16 @@ export default function Home() {
     // Also update the main wallet object if ETH balance changed
     setWallet(prevWallet => {
         if (!prevWallet) return null;
+        const newBalance = (prevBalances) => {
+            if (prevBalances['ETH'] !== undefined) {
+                return Math.max(0, prevBalances['ETH'] - gasCost);
+            }
+            return prevWallet.balance;
+        }
+
         return {
             ...prevWallet,
-            balance: Math.max(0, prevWallet.balance - (gasCost + amount))
+            balance: mockBalances['ETH'] ? mockBalances['ETH'] - gasCost : prevWallet.balance - gasCost
         };
     });
   };
@@ -171,7 +184,7 @@ export default function Home() {
          <main className="flex min-h-[100dvh] flex-col items-center justify-center p-4">
             <LockView 
                 storedWallet={storedWalletInfo}
-                onWalletUnlocked={handleWalletUnlocked}
+                onWalletUnlocked={handleLoginComplete}
                 onDisconnect={handleDisconnect}
                 onLoginComplete={(wallet, isNew) => handleLoginComplete(wallet, isNew)}
             />
@@ -184,7 +197,7 @@ export default function Home() {
       <main className="flex-1 p-2 md:p-4 overflow-y-auto mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} />}
-        {activeView === 'wallet' && <WalletView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} assetStatus={assetStatus} onRefreshPrices={updateAssetPrices} />}
+        {activeView === 'wallet' && <WalletView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} assetStatus={assetStatus} onRefreshPrices={updateAssetPrices} setMockBalances={setMockBalances} mockBalances={mockBalances} />}
         {activeView === 'settings' && <SettingsView onDisconnect={handleDisconnect} />}
         {activeView === 'contacts' && <ContactsView />}
       </main>
