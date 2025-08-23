@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Copy, Edit, ArrowUpRight, ArrowDownLeft, Upload, Info } from "lucide-react";
-import type { Wallet } from "@/lib/types";
+import type { Wallet, Contact } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { ShortenedLink } from '../shared/ShortenedLink';
+import { getContacts } from '@/lib/wallet';
 
 interface ProfileViewProps {
     wallet: Wallet;
@@ -62,9 +63,11 @@ export function ProfileView({ wallet, showEditOnLoad = false, onProfileSaved }: 
   const [tempAvatarPreview, setTempAvatarPreview] = useState<string | null>(null);
 
   const [selectedTx, setSelectedTx] = useState<(typeof mockRecentActivity)[0] | null>(null);
+  const [contactsCount, setContactsCount] = useState(0);
 
   useEffect(() => {
     setEditOpen(showEditOnLoad);
+    setContactsCount(getContacts().length);
   }, [showEditOnLoad]);
 
   const handleCopyAddress = () => {
@@ -180,7 +183,7 @@ export function ProfileView({ wallet, showEditOnLoad = false, onProfileSaved }: 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
           <Card className="text-center">
               <CardContent className="p-6">
-                  <p className="text-3xl font-bold text-primary">24</p>
+                  <p className="text-3xl font-bold text-primary">{contactsCount}</p>
                   <p className="text-sm text-muted-foreground">{t.contacts}</p>
               </CardContent>
           </Card>
