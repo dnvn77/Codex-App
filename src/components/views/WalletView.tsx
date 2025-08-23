@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet, calculateTransactionFee } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -126,6 +126,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const [isContactsOpen, setContactsOpen] = useState(false);
   
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
+  const [transactionFee, setTransactionFee] = useState({ fee: 0, percentage: 0 });
   
   const ethPrice = useMemo(() => {
     return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
@@ -145,12 +146,21 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
     
+    // Calculate total cost in ETH: gas fee + transaction fee in ETH
+    const feeInEth = (transactionFee.fee / ethPrice);
+    const totalCostInEth = gasCost + feeInEth;
+
     if (selectedAsset.ticker === 'ETH') {
-      const max = selectedAsset.balance - gasCost;
-      return max > 0 ? max : 0;
+        const max = selectedAsset.balance - totalCostInEth;
+        return max > 0 ? max : 0;
     }
+    
+    // For other tokens, we only check ETH balance for gas+tx fee
+    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+    if (ethBalance < totalCostInEth) return 0;
+    
     return selectedAsset.balance;
-  }, [selectedAsset, gasCost]);
+}, [selectedAsset, assets, gasCost, transactionFee.fee, ethPrice]);
 
 
   useEffect(() => {
@@ -215,7 +225,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
+    const numericAmount = parseFloat(newAmount) || 0;
     setAmount(newAmount);
+    setTransactionFee(calculateTransactionFee(numericAmount));
     validateAmount(newAmount);
   };
   
@@ -233,10 +245,12 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
         const amountInEth = numericAmountUSD / ethPrice;
         const balance = selectedAsset?.balance || 0;
         
-        if (amountInEth > balance) {
+        // Total cost includes amount to send, gas, and transaction fee
+        const feeInEth = transactionFee.fee / ethPrice;
+        const totalDeduction = amountInEth + gasCost + feeInEth;
+
+        if (totalDeduction > balance) {
             setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-        } else if (amountInEth > maxSendableAmount) {
-            setAmountError(t.insufficientGasError);
         } else {
             setAmountError('');
         }
@@ -245,11 +259,31 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
 
   const handleSetMaxAmount = () => {
-    if (!selectedAsset || selectedAssetTicker !== 'ETH') return;
-    const maxEth = maxSendableAmount;
-    const maxUsd = maxEth * ethPrice;
-    const maxAmountStr = maxUsd.toFixed(2);
+    if (!selectedAsset) return;
+    
+    let maxUsd = 0;
+    if (selectedAsset.ticker === 'ETH') {
+        const ethBalance = selectedAsset.balance;
+        // This is an approximation since fee depends on amount. We can iterate or just use a good estimate.
+        // Let's calculate max amount before fee, then adjust.
+        const balanceAfterGas = (ethBalance - gasCost) * ethPrice;
+        if (balanceAfterGas <= 0) {
+            maxUsd = 0;
+        } else {
+            // Fee is a percentage of the amount. Amount_USD + Fee_USD = balanceAfterGas
+            // Amount_USD * (1 + fee_percentage/100) = balanceAfterGas
+            // Amount_USD = balanceAfterGas / (1 + fee_percentage/100)
+            const feeTier = calculateTransactionFee(balanceAfterGas); // Get fee % at this tier
+            maxUsd = balanceAfterGas / (1 + feeTier.percentage / 100);
+        }
+    } else {
+        // For other tokens, max is just the token balance. Fee is paid in ETH.
+        maxUsd = selectedAsset.balance * selectedAsset.priceUSD;
+    }
+
+    const maxAmountStr = maxUsd > 0 ? maxUsd.toFixed(2) : "0";
     setAmount(maxAmountStr);
+    setTransactionFee(calculateTransactionFee(maxUsd));
     validateAmount(maxAmountStr);
   };
 
@@ -323,7 +357,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
       
       await persistTransaction(tx);
 
-      onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
+      const feeInEth = transactionFee.fee / ethPrice;
+      onTransactionSuccess(selectedAsset.ticker, amountInEth + feeInEth, gasCost);
       setSentTransaction({ ...tx, wallet }); // Show receipt view
 
       if (txSentFirstTime) {
@@ -334,6 +369,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
       logEvent('send_transaction_success', { tx_hash: tx.txHash });
       setToAddress('');
       setAmount('');
+      setTransactionFee({ fee: 0, percentage: 0 });
     } catch (error) {
       const err = error as Error;
       logEvent('send_transaction_fail', { error_message: err.message, error_code: 'tx_failed' });
@@ -618,8 +654,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               <div className="col-span-3 space-y-1">
                   <div className="flex justify-between items-end h-6 mb-1">
                       <Label htmlFor="amount">{t.amountLabel}</Label>
-                       <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
-                        {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
+                       <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || !selectedAsset}>
+                        {t.maxAmountLabel}: ${((maxSendableAmount * selectedAsset!.priceUSD) || 0).toFixed(2)}
                       </button>
                   </div>
                   <div className="relative">
@@ -633,11 +669,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                           disabled={isSending || selectedAssetTicker !== 'ETH'}
                           className="pl-6"
                       />
-                       {amount && selectedAssetTicker === 'ETH' && !amountError && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                              ({amountInEth.toFixed(5)} ETH)
-                          </span>
-                      )}
                   </div>
               </div>
 
@@ -678,6 +709,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                                       setSelectedAssetTicker(asset.ticker);
                                       setAmount('');
                                       setAmountError('');
+                                      setTransactionFee({ fee: 0, percentage: 0 });
                                       setAssetSelectorOpen(false);
                                   }}
                                   >
@@ -701,7 +733,12 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               </div>
             </div>
             <div>
-              {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
+              {transactionFee.fee > 0 && (
+                <div className="text-xs text-muted-foreground text-right mt-1">
+                    (<span className="font-bold">Fee: ${transactionFee.fee.toFixed(2)} ({transactionFee.percentage}%)</span>)
+                </div>
+              )}
+              {amountError && <p className="text-sm font-medium text-destructive mt-1">{amountError}</p>}
               {selectedAssetTicker !== 'ETH' && (
                   <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
                       <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />

@@ -268,7 +268,6 @@ export const bip39Wordlist: string[] = [
 
 const WALLET_STORAGE_KEY = 'codex_wallet';
 const CONTACTS_STORAGE_KEY = 'codex_contacts';
-const FAVORITE_TOKENS_KEY_PREFIX = 'favorite_tokens_';
 
 // Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
 function mockHash(input: string): string {
@@ -524,12 +523,6 @@ export function clearStoredWallet(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(WALLET_STORAGE_KEY);
     localStorage.removeItem(CONTACTS_STORAGE_KEY);
-    // Also clear favorite tokens for all users
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith(FAVORITE_TOKENS_KEY_PREFIX)) {
-            localStorage.removeItem(key);
-        }
-    });
 }
 
 export function validatePassword(password: string): {
@@ -586,17 +579,22 @@ export function deleteContact(address: string): Contact[] {
     return contacts;
 }
 
-// Favorite Tokens Management
-export function getFavoriteTokens(): string[] {
-    if (typeof window === 'undefined') return [];
-    return [];
+export function calculateTransactionFee(amountUSD: number): { fee: number, percentage: number } {
+    let percentage: number;
+    if (amountUSD < 10) {
+        percentage = 5;
+    } else if (amountUSD >= 10 && amountUSD < 100) {
+        percentage = 4;
+    } else if (amountUSD >= 100 && amountUSD < 1000) {
+        percentage = 3;
+    } else if (amountUSD >= 1000 && amountUSD < 10000) {
+        percentage = 2;
+    } else {
+        percentage = 1;
+    }
+    const fee = (amountUSD * percentage) / 100;
+    return { fee, percentage };
 }
-
-export async function setFavoriteTokens(userId: string, tokens: string[]): Promise<void> {
-    // This function is now a no-op as favorites are removed.
-    return;
-}
-
 
 // --- E2EE Messaging Logic (Simulated) ---
 

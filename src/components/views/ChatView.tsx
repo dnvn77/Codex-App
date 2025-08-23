@@ -16,7 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Label } from '../ui/label';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { sendTransaction, resolveEnsName, unlockWallet, encryptMessage, decryptMessage, getMessagingKeys, type MessagingKeys } from '@/lib/wallet';
+import { sendTransaction, resolveEnsName, unlockWallet, encryptMessage, decryptMessage, getMessagingKeys, type MessagingKeys, calculateTransactionFee } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
 import { TransactionReceiptMessage } from './TransactionReceiptMessage';
 import { logEvent } from '@/lib/analytics';
@@ -112,6 +112,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [showHighGasConfirm, setShowHighGasConfirm] = useState(false);
   const [showGasNotifyPrompt, setShowGasNotifyPrompt] = useState(false);
+  const [transactionFee, setTransactionFee] = useState({ fee: 0, percentage: 0 });
 
   // Initialize messaging keys and mock messages on mount
   useEffect(() => {
@@ -179,12 +180,21 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset || typeof selectedAsset.balance !== 'number') return 0;
     
+    // Calculate total cost in ETH: gas fee + transaction fee in ETH
+    const feeInEth = (transactionFee.fee / ethPrice);
+    const totalCostInEth = gasCost + feeInEth;
+
     if (selectedAsset.ticker === 'ETH') {
-      const max = selectedAsset.balance - gasCost;
-      return max > 0 ? max : 0;
+        const max = selectedAsset.balance - totalCostInEth;
+        return max > 0 ? max : 0;
     }
+    
+    // For other tokens, we only check ETH balance for gas+tx fee
+    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+    if (ethBalance < totalCostInEth) return 0;
+    
     return selectedAsset.balance;
-  }, [selectedAsset, gasCost]);
+}, [selectedAsset, assets, gasCost, transactionFee.fee, ethPrice]);
   
    const amountInEth = useMemo(() => {
     const numericAmount = parseFloat(amount);
@@ -229,7 +239,9 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
+    const numericAmount = parseFloat(newAmount) || 0;
     setAmount(newAmount);
+    setTransactionFee(calculateTransactionFee(numericAmount));
     validateAmount(newAmount);
   };
   
@@ -244,10 +256,13 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
     } else {
         const amountInEth = numericAmountUSD / ethPrice;
         const balance = selectedAsset?.balance || 0;
-        if (amountInEth > balance) {
+        
+        // Total cost includes amount to send, gas, and transaction fee
+        const feeInEth = transactionFee.fee / ethPrice;
+        const totalDeduction = amountInEth + gasCost + feeInEth;
+
+        if (totalDeduction > balance) {
             setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-        } else if (amountInEth > maxSendableAmount) {
-            setAmountError(t.insufficientGasError);
         } else {
             setAmountError('');
         }
@@ -255,11 +270,31 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
   };
   
    const handleSetMaxAmount = () => {
-    if (!selectedAsset || selectedAssetTicker !== 'ETH') return;
-    const maxEth = maxSendableAmount;
-    const maxUsd = maxEth * ethPrice;
-    const maxAmountStr = maxUsd.toFixed(2);
+    if (!selectedAsset) return;
+    
+    let maxUsd = 0;
+    if (selectedAsset.ticker === 'ETH') {
+        const ethBalance = selectedAsset.balance;
+        // This is an approximation since fee depends on amount. We can iterate or just use a good estimate.
+        // Let's calculate max amount before fee, then adjust.
+        const balanceAfterGas = (ethBalance - gasCost) * ethPrice;
+        if (balanceAfterGas <= 0) {
+            maxUsd = 0;
+        } else {
+            // Fee is a percentage of the amount. Amount_USD + Fee_USD = balanceAfterGas
+            // Amount_USD * (1 + fee_percentage/100) = balanceAfterGas
+            // Amount_USD = balanceAfterGas / (1 + fee_percentage/100)
+            const feeTier = calculateTransactionFee(balanceAfterGas); // Get fee % at this tier
+            maxUsd = balanceAfterGas / (1 + feeTier.percentage / 100);
+        }
+    } else {
+        // For other tokens, max is just the token balance. Fee is paid in ETH.
+        maxUsd = selectedAsset.balance * selectedAsset.priceUSD;
+    }
+
+    const maxAmountStr = maxUsd > 0 ? maxUsd.toFixed(2) : "0";
     setAmount(maxAmountStr);
+    setTransactionFee(calculateTransactionFee(maxUsd));
     validateAmount(maxAmountStr);
   };
   
@@ -301,7 +336,8 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
 
       setAllMessages(prev => [...prev, receiptMessage, linkMessage]);
 
-      onTransactionSuccess(selectedAsset.ticker, amountInEth, gasCost);
+      const feeInEth = transactionFee.fee / ethPrice;
+      onTransactionSuccess(selectedAsset.ticker, amountInEth + feeInEth, gasCost);
       
       toast({ title: "Transaction Sent", description: `You sent ${amountInEth.toFixed(4)} ${selectedAsset.ticker} to ${selectedChat.name}` });
 
@@ -318,6 +354,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
       setIsSending(false);
       setTxDialogOpen(false);
       setAmount('');
+      setTransactionFee({ fee: 0, percentage: 0 });
     }
   };
   
@@ -466,7 +503,7 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                               <div className="flex justify-between items-end h-6 mb-1">
                                   <Label htmlFor="amount">{t.amountLabel}</Label>
                                   <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || selectedAssetTicker !== 'ETH'}>
-                                    {t.maxAmountLabel}: ${((maxSendableAmount * ethPrice) || 0).toFixed(2)}
+                                    {t.maxAmountLabel}: ${((maxSendableAmount * selectedAsset!.priceUSD) || 0).toFixed(2)}
                                   </button>
                               </div>
                               <div className="relative">
@@ -480,11 +517,6 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                                       disabled={isSending || selectedAssetTicker !== 'ETH'}
                                       className="pl-6"
                                   />
-                                  {amount && selectedAssetTicker === 'ETH' && !amountError && (
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                          ({amountInEth.toFixed(5)} ETH)
-                                      </span>
-                                  )}
                               </div>
                           </div>
                           <div className="col-span-2 space-y-1">
@@ -542,6 +574,11 @@ export function ChatView({ wallet, assets, onTransactionSuccess }: ChatViewProps
                               </Popover>
                           </div>
                         </div>
+                        {transactionFee.fee > 0 && (
+                            <div className="text-xs text-muted-foreground text-right">
+                                (<span className="font-bold">Fee: ${transactionFee.fee.toFixed(2)} ({transactionFee.percentage}%)</span>)
+                            </div>
+                        )}
                         {amountError && <p className="text-sm font-medium text-destructive">{amountError}</p>}
                     </div>
                     <DialogFooter>

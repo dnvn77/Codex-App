@@ -9,7 +9,7 @@ import { ChatView } from '@/components/views/ChatView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ContactsView } from '@/components/views/ContactsView';
 import type { Wallet, StoredWallet, Asset } from '@/lib/types';
-import { getStoredWallet, unlockWallet, clearStoredWallet } from '@/lib/wallet';
+import { getStoredWallet, unlockWallet, clearStoredWallet, calculateTransactionFee } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
@@ -153,7 +153,7 @@ export default function Home() {
         if (!prevWallet) return null;
         return {
             ...prevWallet,
-            balance: Math.max(0, prevWallet.balance - gasCost)
+            balance: Math.max(0, prevWallet.balance - (gasCost + amount))
         };
     });
   };
