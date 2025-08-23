@@ -269,16 +269,11 @@ export const bip39Wordlist: string[] = [
 
 const WALLET_STORAGE_KEY = 'codex_wallet';
 const CONTACTS_STORAGE_KEY = 'codex_contacts';
+const MOCK_BALANCES_STORAGE_KEY = 'codex_mock_balances';
+
 
 function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
-    // Generate the master HD node from the mnemonic
     const account = ethers.HDNodeWallet.fromPhrase(seedPhrase);
-    
-    // For this app, we'll use the standard Ethereum derivation path (m/44'/60'/0'/0/0)
-    // This is the same path MetaMask and other wallets use for the first account.
-    // **Correction**: The line below was incorrect and has been removed. `fromPhrase` already returns the correct node.
-    // const account = hdNode.derivePath("m/44'/60'/0'/0/0");
-
     const masterKey = account.privateKey;
     const appKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_app_key"));
     const nullifierKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_nullifier_key"));
@@ -299,7 +294,7 @@ export function createWallet(): Wallet {
 
   return {
     seedPhrase,
-    balance: 0.50, // This remains a mock/simulated value
+    balance: 0.50,
     ...derivedKeys,
   };
 }
@@ -314,7 +309,6 @@ export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> 
     const joinedSeed = words.join(' ');
     const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
-    // The balance is still simulated, but the address is now real.
     let sum = 0;
     for (let i = 0; i < joinedSeed.length; i++) {
         sum += joinedSeed.charCodeAt(i);
@@ -498,6 +492,7 @@ export function clearStoredWallet(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(WALLET_STORAGE_KEY);
     localStorage.removeItem(CONTACTS_STORAGE_KEY);
+    localStorage.removeItem(MOCK_BALANCES_STORAGE_KEY);
 }
 
 export function validatePassword(password: string): {
@@ -535,7 +530,6 @@ export function saveContact(newContact: Omit<Contact, 'avatar'>): Contact[] {
     }
 
     if (existingIndex > -1) {
-        // Preserve avatar if it exists, otherwise assign new one
         contactToSave.avatar = contacts[existingIndex].avatar || `https://placehold.co/100x100.png`;
         contacts[existingIndex] = contactToSave;
     } else {
@@ -578,59 +572,31 @@ export interface MessagingKeys {
     privateKey: string;
 }
 
-/**
- * Derives a stable key pair for messaging from the master key.
- * In a real E2EE system, this would use a proper cryptographic derivation
- * function like HKDF and a standard like libsignal's X3DH.
- */
 export function getMessagingKeys(masterKey: string): MessagingKeys {
-    // The master key is now the private key from the HD wallet, which is secure.
     const privateKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_messaging_private"));
-    // Derive a public key from this new private key for messaging
     const publicKey = new ethers.SigningKey(privateKey).publicKey;
     return { privateKey, publicKey };
 }
 
-/**
- * Simulates encrypting a message.
- * A real implementation would use a hybrid encryption scheme (e.g., ECIES):
- * 1. Generate a temporary symmetric key (AES).
- * 2. Encrypt the message content with the AES key.
- * 3. Encrypt the AES key with the recipient's public key (using an asymmetric algorithm like RSA or ECDH).
- * 4. Package the encrypted content, the encrypted AES key, and a MAC together.
- * For this simulation, we just combine the message with the recipient's key and Base64 encode it.
- */
 export function encryptMessage(content: string, senderPrivateKey: string, recipientPublicKey: string): string {
-    // This is a placeholder for a real encryption algorithm.
     const payload = `${recipientPublicKey}::${content}`;
     return bufferToBase64(new TextEncoder().encode(payload));
 }
 
-/**
- * Simulates decrypting a message.
- * A real implementation would:
- * 1. Use the recipient's private key to decrypt the AES key.
- * 2. Use the decrypted AES key to decrypt the message content.
- * 3. Verify the MAC.
- * For this simulation, we just check if the "encrypted" blob was intended for us.
- */
 export function decryptMessage(encryptedContent: string, recipientPrivateKey: string): string | null {
     try {
         const decodedPayload = new TextDecoder().decode(base64ToUint8Array(encryptedContent));
         const [intendedPublicKey, content] = decodedPayload.split("::");
         
-        // Simulate checking if this message was meant for us by re-deriving our public key
         const ourPublicKey = new ethers.SigningKey(recipientPrivateKey).publicKey;
         
         if (intendedPublicKey === ourPublicKey) {
             return content;
         }
 
-        return null; // Not for us
+        return null;
     } catch (error) {
         console.error("Decryption simulation failed:", error);
-        return null; // Malformed content
+        return null;
     }
 }
-
-    

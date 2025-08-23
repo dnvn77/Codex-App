@@ -86,10 +86,10 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   return (
     <div className="text-xs text-muted-foreground text-right space-y-1">
       <p>
-        {t.estGasFee}: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} ETH</span>
+        {t.estGasFee}: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} MONAD</span>
       </p>
       <p>
-        {t.averageFee}: <span>{averageGas.toFixed(5)} ETH</span>
+        {t.averageFee}: <span>{averageGas.toFixed(5)} MONAD</span>
       </p>
     </div>
   );
@@ -103,7 +103,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [selectedAssetTicker, setSelectedAssetTicker] = useState('ETH');
+  const [selectedAssetTicker, setSelectedAssetTicker] = useState('MONAD');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
   
@@ -165,8 +165,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }
   }, [toast]);
   
-  const ethPrice = useMemo(() => {
-    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
+  const monadPrice = useMemo(() => {
+    return assets.find(a => a.ticker === 'MONAD')?.priceUSD || 0; // It should be 0 from the flow
   }, [assets]);
 
   const totalBalanceUSD = useMemo(() => {
@@ -183,26 +183,23 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset) return 0;
     
-    const feeInEth = (transactionFee.fee / ethPrice);
-    const totalCostInEth = gasCost + feeInEth;
-
-    if (selectedAsset.ticker === 'ETH') {
-        const max = selectedAsset.balance - totalCostInEth;
-        return max > 0 ? max : 0;
+    if (selectedAsset.ticker === 'MONAD') {
+      const max = selectedAsset.balance - gasCost;
+      return max > 0 ? max : 0;
     }
     
-    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-    if (ethBalance < totalCostInEth) return 0;
+    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
+    if (monadBalance < gasCost) return 0;
     
     return selectedAsset.balance;
-}, [selectedAsset, assets, gasCost, transactionFee.fee, ethPrice]);
+  }, [selectedAsset, assets, gasCost]);
 
 
   useEffect(() => {
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
       if (toAddress && parseFloat(amount) > 0) {
-        const baseGas = selectedAssetTicker === 'ETH' ? 0.00030 : 0.00050;
+        const baseGas = selectedAssetTicker === 'MONAD' ? 0.00030 : 0.00050;
         const newGas = baseGas + Math.random() * 0.00030;
         const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005;
         setGasCost(newGas);
@@ -267,21 +264,21 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
   
   const validateAmount = (value: string) => {
-    const numericAmountUSD = parseFloat(value);
+    const numericAmount = parseFloat(value);
     
-    if (isNaN(numericAmountUSD) || numericAmountUSD <= 0) {
+    if (isNaN(numericAmount) || numericAmount <= 0) {
         setAmountError(t.invalidNumberError);
     } else {
-        const amountInAsset = numericAmountUSD / (selectedAsset?.priceUSD || 1);
+        const amountInAsset = numericAmount / (selectedAsset?.priceUSD || 1);
         const balance = selectedAsset?.balance || 0;
         
-        const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+        const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
         
         if (amountInAsset > balance) {
             setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-        } else if (gasCost > ethBalance) {
+        } else if (gasCost > monadBalance) {
             setAmountError(t.insufficientGasError);
-        } else if (selectedAsset?.ticker === 'ETH' && (amountInAsset + gasCost) > ethBalance) {
+        } else if (selectedAsset?.ticker === 'MONAD' && (numericAmount + gasCost) > monadBalance) {
             setAmountError(t.insufficientGasError);
         } else {
             setAmountError('');
@@ -293,29 +290,22 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const handleSetMaxAmount = () => {
     if (!selectedAsset) return;
     
-    let maxUsd = 0;
-    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
+    let maxAmountInAsset = 0;
+    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
 
-    if (selectedAsset.ticker === 'ETH') {
-        const balanceAfterGas = (ethBalance - gasCost) * ethPrice;
-        if (balanceAfterGas <= 0) {
-            maxUsd = 0;
-        } else {
-            const feeTier = calculateTransactionFee(balanceAfterGas);
-            maxUsd = balanceAfterGas / (1 + feeTier.percentage / 100);
-        }
+    if (selectedAsset.ticker === 'MONAD') {
+        maxAmountInAsset = monadBalance - gasCost;
     } else {
-        // If ETH balance can't cover gas, max is 0 for any token
-        if (ethBalance < gasCost) {
-            maxUsd = 0;
+        if (monadBalance < gasCost) {
+            maxAmountInAsset = 0;
         } else {
-            maxUsd = selectedAsset.balance * selectedAsset.priceUSD;
+            maxAmountInAsset = selectedAsset.balance;
         }
     }
 
-    const maxAmountStr = maxUsd > 0 ? maxUsd.toFixed(2) : "0";
+    const maxAmountStr = maxAmountInAsset > 0 ? maxAmountInAsset.toFixed(6) : "0";
     setAmount(maxAmountStr);
-    setTransactionFee(calculateTransactionFee(maxUsd));
+    setTransactionFee(calculateTransactionFee(maxAmountInAsset * (selectedAsset.priceUSD || 1)));
     validateAmount(maxAmountStr);
   };
 
@@ -344,12 +334,13 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
         console.error("Network error persisting tx data:", error);
     }
   };
-
-  const amountInEth = useMemo(() => {
+  
+  const amountInAsset = useMemo(() => {
     const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || ethPrice === 0) return 0;
-    return numericAmount / ethPrice;
-  }, [amount, ethPrice]);
+    if (isNaN(numericAmount)) return 0;
+    return numericAmount;
+  }, [amount]);
+
 
   const executeSend = async () => {
     setAmountConfirmOpen(false);
@@ -363,7 +354,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
         return;
     }
 
-    if (!finalAddress || !amount || amountError || amountInEth <= 0) {
+    if (!finalAddress || !amount || amountError || amountInAsset <= 0) {
       toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
       return;
     }
@@ -377,21 +368,20 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
     logEvent('send_transaction_start', {
       asset: selectedAsset.ticker,
-      amount: amountInEth,
-      amount_usd: parseFloat(amount),
+      amount: amountInAsset,
+      amount_usd: amountInAsset * (selectedAsset.priceUSD || 1),
       gas_cost_eth: gasCost,
       is_ens: ensResolution.status === 'success',
     });
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
-      const tx = sendTransaction(wallet, finalAddress, amountInEth, selectedAsset.ticker, selectedAsset.icon);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const tx = sendTransaction(wallet, finalAddress, amountInAsset, selectedAsset.ticker, selectedAsset.icon);
       
       await persistTransaction(tx);
 
-      const feeInEth = transactionFee.fee / ethPrice;
-      onTransactionSuccess(selectedAsset.ticker, amountInEth + feeInEth, gasCost);
-      setSentTransaction({ ...tx, wallet }); // Show receipt view
+      onTransactionSuccess(selectedAsset.ticker, amountInAsset, gasCost);
+      setSentTransaction({ ...tx, wallet });
 
       if (txSentFirstTime) {
         localStorage.setItem('has_sent_tx', 'true');
@@ -412,7 +402,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
 
   const handleSendClick = () => {
-    const usdValue = parseFloat(amount) || 0;
+    const usdValue = amountInAsset * (selectedAsset?.priceUSD || 1);
     
     if (amountError) {
         toast({ title: t.error, description: amountError, variant: 'destructive' });
@@ -501,10 +491,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const handleSimulateReceive = () => {
     logEvent('simulate_receive_clicked');
     const receivedAmount = 0.1;
-    setMockBalances(prev => ({
-        ...prev,
-        'ETH': (prev['ETH'] || 0) + receivedAmount,
-    }));
+    const newBalances = { ...mockBalances, 'ETH': (mockBalances['ETH'] || 0) + receivedAmount };
+    setMockBalances(newBalances);
+    localStorage.setItem('codex_mock_balances', JSON.stringify(newBalances));
     toast({
       title: "Funds Received!",
       description: `You just received ${receivedAmount} ETH.`,
@@ -692,7 +681,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                         </DialogHeader>
                         <div className="py-4 text-center">
                             <p className="text-4xl font-bold">$14.99 USD</p>
-                            <p className="text-muted-foreground">por año (pagado en ETH)</p>
+                            <p className="text-muted-foreground">por año (pagado en MONAD)</p>
                         </div>
                         <DialogFooter className="sm:flex-col sm:space-y-2">
                              <p className="text-xs text-muted-foreground text-center">¿Ya tienes una suscripción activa?</p>
@@ -801,21 +790,19 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
              <div className="grid grid-cols-5 gap-2 items-end pt-2">
               <div className="col-span-3 space-y-1">
                   <div className="flex justify-between items-end h-6 mb-1">
-                      <Label htmlFor="amount">{t.amountLabel}</Label>
+                      <Label htmlFor="amount">{t.amountLabel} ({selectedAssetTicker})</Label>
                        <button onClick={handleSetMaxAmount} className="text-xs text-primary hover:underline" disabled={isCalculatingGas || !selectedAsset}>
-                        {t.maxAmountLabel}: ${((maxSendableAmount * (selectedAsset?.priceUSD || 0)) || 0).toFixed(2)}
+                        {t.maxAmountLabel}: {maxSendableAmount.toFixed(4)}
                       </button>
                   </div>
                   <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                       <Input
                           id="amount"
                           type="number"
-                          placeholder="10.00"
+                          placeholder="0.00"
                           value={amount}
                           onChange={handleAmountChange}
                           disabled={isSending}
-                          className="pl-6"
                       />
                   </div>
               </div>
@@ -881,11 +868,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               </div>
             </div>
             <div>
-              {transactionFee.fee > 0 && (
-                <div className="text-xs text-muted-foreground text-right mt-1">
-                    (<span className="font-bold">Fee: ${transactionFee.fee.toFixed(2)} ({transactionFee.percentage}%)</span>)
-                </div>
-              )}
               {amountError && <p className="text-sm font-medium text-destructive mt-1">{amountError}</p>}
             </div>
           </div>
@@ -909,9 +891,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               {t.highGasWarningDesc}
               <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
                   <span className="font-semibold">{t.averageFee}:</span>
-                  <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                  <span className="font-mono text-right">{averageGas.toFixed(5)} MONAD</span>
                   <span className="font-semibold text-destructive">{t.currentFee}:</span>
-                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} MONAD</span>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -934,8 +916,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
             <AlertDialogDescription>
               You are about to send a significant amount. Please confirm the details below.
               <div className="my-4 space-y-2 text-foreground break-all">
-                <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
-                <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p><b>Amount:</b> {amountInAsset.toLocaleString()} {selectedAsset?.ticker}</p>
+                <p><b>Value:</b> ~${(amountInAsset * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
               </div>
             </AlertDialogDescription>
@@ -957,7 +939,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                       Password Required for High-Value Transaction
                   </DialogTitle>
                   <DialogDescription>
-                      For your security, please enter your password to authorize this transaction of ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+                      For your security, please enter your password to authorize this transaction of ~${(amountInAsset * (selectedAsset?.priceUSD || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                   </DialogDescription>
               </DialogHeader>
               <div className="py-4">
@@ -1131,4 +1113,3 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     </div>
   );
 }
-

@@ -67,21 +67,20 @@ export default function Home() {
   // This useEffect combines price data with balances to create the final asset list.
   useEffect(() => {
     if (priceData.length > 0 && wallet) {
-        const initialMockBalances = {
+        const currentMockBalances = {
             'ETH': 0.7964,
             'USDC': 1520.75,
             'WBTC': 0.03,
             'CDX': 12500,
             'LINK': 150.2,
             'UNI': 300,
+            ...mockBalances
         };
-        setMockBalances(initialMockBalances);
+        setMockBalances(currentMockBalances);
 
         const combinedAssets = priceData.map(asset => ({
             ...asset,
-            // Use the real balance for MONAD directly from the wallet object.
-            // For all other tokens, use the mock balances.
-            balance: asset.ticker === 'MONAD' ? wallet.balance : (initialMockBalances[asset.ticker] || 0),
+            balance: asset.ticker === 'MONAD' ? wallet.balance : (currentMockBalances[asset.ticker] || 0),
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
             const valueB = b.balance * b.priceUSD;
@@ -90,18 +89,24 @@ export default function Home() {
         });
         setAssets(combinedAssets);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceData, wallet]);
 
   useEffect(() => {
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
+    if(stored) {
+        // Initialize mock balances from storage if available, to persist state across reloads
+        const initialBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
+        setMockBalances(initialBalances);
+    }
   }, []);
 
   const handleLoginComplete = (newWallet: Wallet, isNewUser: boolean) => {
     setWallet(newWallet);
-    const newStoredInfo = getStoredWallet(); // Refresh stored info after potential password reset
+    const newStoredInfo = getStoredWallet();
     setStoredWalletInfo(newStoredInfo);
-    updateAssetPrices(); // Fetch prices as soon as the wallet is set
+    updateAssetPrices(); 
 
     if (isNewUser) {
         logEvent('first_login_complete');
@@ -123,26 +128,26 @@ export default function Home() {
   }
 
   const handleTransactionSuccess = (ticker: string, amount: number, gasCost: number) => {
-    // Update the main wallet object if MONAD balance changed
     setWallet(prevWallet => {
       if (!prevWallet) return null;
-      let newBalance = prevWallet.balance;
-      // In our setup, gas is always paid in the native asset, which we call MONAD.
-      if (ticker === 'MONAD') {
-          newBalance -= (amount + gasCost);
-      } else {
-          newBalance -= gasCost; // Deduct gas from MONAD balance if another token was sent
-      }
-      return { ...prevWallet, balance: Math.max(0, newBalance) };
-    });
+      
+      let newMonadBalance = prevWallet.balance;
+      let newMockBalances = { ...mockBalances };
 
-    // Also update mock balances for other tokens
-    setMockBalances(prevBalances => {
-        const newBalances = { ...prevBalances };
-        if (newBalances[ticker] !== undefined && ticker !== 'MONAD') {
-            newBalances[ticker] = Math.max(0, newBalances[ticker] - amount);
-        }
-        return newBalances;
+      if (ticker === 'MONAD') {
+          newMonadBalance -= (amount + gasCost);
+      } else {
+          // Gas is always paid in the native asset (MONAD)
+          newMonadBalance -= gasCost;
+          if (newMockBalances[ticker] !== undefined) {
+              newMockBalances[ticker] = Math.max(0, newMockBalances[ticker] - amount);
+          }
+      }
+      
+      setMockBalances(newMockBalances);
+      localStorage.setItem('codex_mock_balances', JSON.stringify(newMockBalances));
+
+      return { ...prevWallet, balance: Math.max(0, newMonadBalance) };
     });
   };
 
