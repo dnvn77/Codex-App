@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -59,6 +60,7 @@ import { getSwapQuoteFlow } from '@/ai/flows/swapQuoteFlow';
 import * as htmlToImage from 'html-to-image';
 import { TOKEN_ADDRESSES } from '@/lib/constants';
 import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -83,10 +85,10 @@ const GasFeeDisplay = ({ gasCost, averageGas, isLoading, t }: { gasCost: number;
   return (
     <div className="text-xs text-muted-foreground text-right space-y-1">
       <p>
-        {t.estGasFee}: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} ETH</span>
+        {t.estGasFee}: <span className={cn("font-semibold", colorClass)}>{gasCost.toFixed(5)} MONAD</span>
       </p>
       <p>
-        {t.averageFee}: <span>{averageGas.toFixed(5)} ETH</span>
+        {t.averageFee}: <span>{averageGas.toFixed(5)} MONAD</span>
       </p>
     </div>
   );
@@ -100,7 +102,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [selectedAssetTicker, setSelectedAssetTicker] = useState('ETH');
+  const [selectedAssetTicker, setSelectedAssetTicker] = useState('MONAD');
   const [isSending, setIsSending] = useState(false);
   const [amountError, setAmountError] = useState('');
   
@@ -138,7 +140,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const [isWithdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalAmountError, setWithdrawalAmountError] = useState('');
-  const [withdrawalToken, setWithdrawalToken] = useState('MON');
+  const [withdrawalToken, setWithdrawalToken] = useState('MONAD');
   const [withdrawalReason, setWithdrawalReason] = useState('');
   const [withdrawalStep, setWithdrawalStep] = useState<'amount' | 'confirm' | 'receipt'>('amount');
   const [swapQuote, setSwapQuote] = useState<any>(null);
@@ -164,10 +166,10 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
         variant: "destructive",
       });
     }
-  }, []);
+  }, [toast]);
   
-  const ethPrice = useMemo(() => {
-    return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
+  const monadPrice = useMemo(() => {
+    return assets.find(a => a.ticker === 'MONAD')?.priceUSD || 0.05;
   }, [assets]);
 
   const totalBalanceUSD = useMemo(() => {
@@ -184,28 +186,26 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset) return 0;
     
-    // Calculate total cost in ETH: gas fee + transaction fee in ETH
-    const feeInEth = (transactionFee.fee / ethPrice);
-    const totalCostInEth = gasCost + feeInEth;
+    const feeInMonad = (transactionFee.fee / monadPrice);
+    const totalCostInMonad = gasCost + feeInMonad;
 
-    if (selectedAsset.ticker === 'ETH') {
-        const max = selectedAsset.balance - totalCostInEth;
+    if (selectedAsset.ticker === 'MONAD') {
+        const max = selectedAsset.balance - totalCostInMonad;
         return max > 0 ? max : 0;
     }
     
-    // For other tokens, we only check ETH balance for gas+tx fee
-    const ethBalance = assets.find(a => a.ticker === 'ETH')?.balance || 0;
-    if (ethBalance < totalCostInEth) return 0;
+    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
+    if (monadBalance < totalCostInMonad) return 0;
     
     return selectedAsset.balance;
-}, [selectedAsset, assets, gasCost, transactionFee.fee, ethPrice]);
+}, [selectedAsset, assets, gasCost, transactionFee.fee, monadPrice]);
 
 
   useEffect(() => {
     setIsCalculatingGas(true);
     const timer = setTimeout(() => {
       if (toAddress && parseFloat(amount) > 0) {
-        const baseGas = selectedAssetTicker === 'ETH' ? 0.00030 : 0.00050;
+        const baseGas = selectedAssetTicker === 'MONAD' ? 0.00030 : 0.00050;
         const newGas = baseGas + Math.random() * 0.00030;
         const newAvg = 0.00045 + (Math.random() - 0.5) * 0.00005;
         setGasCost(newGas);
@@ -270,8 +270,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
   
   const validateAmount = (value: string) => {
-    if (selectedAssetTicker !== 'ETH') {
-        setAmountError('Sending non-ETH assets is not yet supported.');
+    if (selectedAssetTicker !== 'MONAD') {
+        setAmountError('Sending non-MONAD assets is not yet supported.');
         return;
     }
     
@@ -280,12 +280,11 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     if (isNaN(numericAmountUSD) || numericAmountUSD <= 0) {
         setAmountError(t.invalidNumberError);
     } else {
-        const amountInEth = numericAmountUSD / ethPrice;
+        const amountInMonad = numericAmountUSD / monadPrice;
         const balance = selectedAsset?.balance || 0;
         
-        // Total cost includes amount to send, gas, and transaction fee
-        const feeInEth = transactionFee.fee / ethPrice;
-        const totalDeduction = amountInEth + gasCost + feeInEth;
+        const feeInMonad = transactionFee.fee / monadPrice;
+        const totalDeduction = amountInMonad + gasCost + feeInMonad;
 
         if (totalDeduction > balance) {
             setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
@@ -300,22 +299,16 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     if (!selectedAsset) return;
     
     let maxUsd = 0;
-    if (selectedAsset.ticker === 'ETH') {
-        const ethBalance = selectedAsset.balance;
-        // This is an approximation since fee depends on amount. We can iterate or just use a good estimate.
-        // Let's calculate max amount before fee, then adjust.
-        const balanceAfterGas = (ethBalance - gasCost) * ethPrice;
+    if (selectedAsset.ticker === 'MONAD') {
+        const monadBalance = selectedAsset.balance;
+        const balanceAfterGas = (monadBalance - gasCost) * monadPrice;
         if (balanceAfterGas <= 0) {
             maxUsd = 0;
         } else {
-            // Fee is a percentage of the amount. Amount_USD + Fee_USD = balanceAfterGas
-            // Amount_USD * (1 + fee_percentage/100) = balanceAfterGas
-            // Amount_USD = balanceAfterGas / (1 + fee_percentage/100)
-            const feeTier = calculateTransactionFee(balanceAfterGas); // Get fee % at this tier
+            const feeTier = calculateTransactionFee(balanceAfterGas);
             maxUsd = balanceAfterGas / (1 + feeTier.percentage / 100);
         }
     } else {
-        // For other tokens, max is just the token balance. Fee is paid in ETH.
         maxUsd = selectedAsset.balance * selectedAsset.priceUSD;
     }
 
@@ -351,11 +344,11 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }
   };
 
-  const amountInEth = useMemo(() => {
+  const amountInMonad = useMemo(() => {
     const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || ethPrice === 0) return 0;
-    return numericAmount / ethPrice;
-  }, [amount, ethPrice]);
+    if (isNaN(numericAmount) || monadPrice === 0) return 0;
+    return numericAmount / monadPrice;
+  }, [amount, monadPrice]);
 
   const executeSend = async () => {
     setAmountConfirmOpen(false);
@@ -364,12 +357,12 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
     const finalAddress = ensResolution.status === 'success' ? ensResolution.address : toAddress;
     
-    if (selectedAssetTicker !== 'ETH') {
-        toast({ title: "Unsupported Asset", description: "Currently, only sending ETH is supported.", variant: 'destructive' });
+    if (selectedAssetTicker !== 'MONAD') {
+        toast({ title: "Unsupported Asset", description: "Currently, only sending MONAD is supported.", variant: 'destructive' });
         return;
     }
 
-    if (!finalAddress || !amount || amountError || !selectedAsset || amountInEth <= 0) {
+    if (!finalAddress || !amount || amountError || !selectedAsset || amountInMonad <= 0) {
       toast({ title: t.invalidInfoTitle, description: t.invalidInfoDesc, variant: 'destructive' });
       return;
     }
@@ -383,20 +376,20 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
     logEvent('send_transaction_start', {
       asset: selectedAsset.ticker,
-      amount: amountInEth,
+      amount: amountInMonad,
       amount_usd: parseFloat(amount),
-      gas_cost_eth: gasCost,
+      gas_cost_monad: gasCost,
       is_ens: ensResolution.status === 'success',
     });
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
-      const tx = sendTransaction(wallet, finalAddress, amountInEth, selectedAsset.ticker, selectedAsset.icon);
+      const tx = sendTransaction(wallet, finalAddress, amountInMonad, selectedAsset.ticker, selectedAsset.icon);
       
       await persistTransaction(tx);
 
-      const feeInEth = transactionFee.fee / ethPrice;
-      onTransactionSuccess(selectedAsset.ticker, amountInEth + feeInEth, gasCost);
+      const feeInMonad = transactionFee.fee / monadPrice;
+      onTransactionSuccess(selectedAsset.ticker, amountInMonad + feeInMonad, gasCost);
       setSentTransaction({ ...tx, wallet }); // Show receipt view
 
       if (txSentFirstTime) {
@@ -418,8 +411,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   };
 
   const handleSendClick = () => {
-    if (selectedAssetTicker !== 'ETH') {
-        toast({ title: "Unsupported Asset", description: "Currently, only sending ETH is supported.", variant: 'destructive' });
+    if (selectedAssetTicker !== 'MONAD') {
+        toast({ title: "Unsupported Asset", description: "Currently, only sending MONAD is supported.", variant: 'destructive' });
         return;
     }
 
@@ -514,7 +507,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   
   const isSendDisabled = useMemo(() => {
     const addressInvalid = ensResolution.status === 'error' || (!toAddress.endsWith('.eth') && !/^0x[a-fA-F0-9]{40}$/.test(toAddress) && ensResolution.status !== 'success');
-    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid || selectedAssetTicker !== 'ETH';
+    return isSending || !toAddress || !amount || !!amountError || parseFloat(amount) <= 0 || isCalculatingGas || ensResolution.status === 'loading' || addressInvalid || selectedAssetTicker !== 'MONAD';
   }, [isSending, toAddress, amount, amountError, isCalculatingGas, ensResolution, selectedAssetTicker]);
   
   const handleContactSelect = (contact: Contact) => {
@@ -524,7 +517,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const handleProceedToWithdrawal = () => {
     setSubscriptionDialogOpen(false);
-    // Use a timeout to allow the first dialog to close before opening the second
     setTimeout(() => {
       setWithdrawalDialogOpen(true);
     }, 150);
@@ -571,19 +563,20 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const executeWithdrawal = async () => {
     setIsSending(true);
     try {
-        // 1. Simulate transaction execution
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // 2. Debit the user's wallet
         const sellAmount = parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18));
-        onTransactionSuccess(withdrawalToken, sellAmount, 0); // No direct gas cost shown to user for this flow
+        
+        // Include gas fee in the total amount to be debited
+        const gasCostInMonad = (BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas)) / BigInt(10**18);
+        const totalDebit = withdrawalToken === 'MONAD' ? sellAmount + parseFloat(gasCostInMonad.toString()) : sellAmount;
+        
+        onTransactionSuccess(withdrawalToken, totalDebit, 0);
 
-        // 3. Generate receipt codes
         const code = [1, 2, 3].map(() => Math.floor(1000 + Math.random() * 9000)).join(' - ');
         const pin = String(Math.floor(1000 + Math.random() * 9000));
         setWithdrawalReceipt({ code, pin });
 
-        // 4. Move to final receipt step
         setWithdrawalStep('receipt');
         toast({ title: "Withdrawal Created!", description: "Your cardless withdrawal code is ready."});
 
@@ -596,10 +589,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const closeWithdrawalDialog = () => {
     setWithdrawalDialogOpen(false);
-    // Reset state after a delay to allow for animations
     setTimeout(() => {
         setWithdrawalAmount('');
-        setWithdrawalToken('MON');
+        setWithdrawalToken('MONAD');
         setWithdrawalReason('');
         setWithdrawalStep('amount');
         setSwapQuote(null);
@@ -612,7 +604,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     return <ReceiptView transaction={sentTransaction} onBack={() => setSentTransaction(null)} />
   }
 
-  const withdrawalTokens = assets.filter(a => ['MON', 'ETH', 'USDC', 'USDT'].includes(a.ticker) && a.balance > 0);
+  const withdrawalTokens = assets.filter(a => ['MONAD', 'ETH', 'USDC', 'USDT'].includes(a.ticker) && a.balance > 0);
 
 
   return (
@@ -826,7 +818,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                           placeholder="10.00"
                           value={amount}
                           onChange={handleAmountChange}
-                          disabled={isSending || selectedAssetTicker !== 'ETH'}
+                          disabled={isSending || selectedAssetTicker !== 'MONAD'}
                           className="pl-6"
                       />
                   </div>
@@ -899,7 +891,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                 </div>
               )}
               {amountError && <p className="text-sm font-medium text-destructive mt-1">{amountError}</p>}
-              {selectedAssetTicker !== 'ETH' && (
+              {selectedAssetTicker !== 'MONAD' && (
                   <div className="mt-2 text-xs text-muted-foreground flex items-start gap-2 p-2 bg-muted rounded-md">
                       <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
                       <p>{t.tokenPortalInfo}</p>
@@ -927,9 +919,9 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               {t.highGasWarningDesc}
               <div className="grid grid-cols-2 gap-x-4 my-4 text-foreground">
                   <span className="font-semibold">{t.averageFee}:</span>
-                  <span className="font-mono text-right">{averageGas.toFixed(5)} ETH</span>
+                  <span className="font-mono text-right">{averageGas.toFixed(5)} MONAD</span>
                   <span className="font-semibold text-destructive">{t.currentFee}:</span>
-                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} ETH</span>
+                  <span className="font-mono text-right text-destructive">{gasCost.toFixed(5)} MONAD</span>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -952,7 +944,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
             <AlertDialogDescription>
               You are about to send a significant amount. Please confirm the details below.
               <div className="my-4 space-y-2 text-foreground break-all">
-                <p><b>Amount:</b> {amountInEth.toLocaleString()} {selectedAsset?.ticker}</p>
+                <p><b>Amount:</b> {amountInMonad.toLocaleString()} {selectedAsset?.ticker}</p>
                 <p><b>Value:</b> ~${(parseFloat(amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p><b>To:</b> {ensResolution.status === 'success' ? `${toAddress} (${ensResolution.address})` : toAddress}</p>
               </div>
@@ -1092,9 +1084,10 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                     </DialogHeader>
                     <div className="py-4 space-y-2 text-sm">
                          <div className="flex justify-between p-2 rounded-md bg-secondary"><span>Retirarás</span><span className="font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</span></div>
-                         <div className="flex justify-between p-2"><span>Pagarás</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
+                         <div className="flex justify-between p-2"><span>Pagarás (aprox.)</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Comisión 0x (gas)</span><span>${((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(monadPrice * 100))) / BigInt(10**20)).toString() + '.' + ((BigInt(swapQuote.gasPrice) * BigInt(swapQuote.estimatedGas) * BigInt(Math.floor(monadPrice * 100))) % BigInt(10**20)).toString().padStart(2, '0')} USD</span></div>
                          <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Tasa de cambio</span><span>1 {withdrawalAsset?.ticker} ≈ ${swapQuote.price} USD</span></div>
-                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Fuente de liquidez</span><span>{swapQuote.sources.find(s => s.proportion === '1')?.name || 'Multiple'}</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Fuente de liquidez</span><span>{swapQuote.sources.find((s: any) => s.proportion === '1')?.name || 'Multiple'}</span></div>
                     </div>
                      <DialogFooter>
                         <Button variant="outline" onClick={() => setWithdrawalStep('amount')}>Volver</Button>
@@ -1150,3 +1143,4 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     </div>
   );
 }
+
