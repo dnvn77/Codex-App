@@ -488,18 +488,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }
   };
 
-  const handleSimulateReceive = () => {
-    logEvent('simulate_receive_clicked');
-    const receivedAmount = 0.1;
-    const newBalances = { ...mockBalances, 'ETH': (mockBalances['ETH'] || 0) + receivedAmount };
-    setMockBalances(newBalances);
-    localStorage.setItem('codex_mock_balances', JSON.stringify(newBalances));
-    toast({
-      title: "Funds Received!",
-      description: `You just received ${receivedAmount} ETH.`,
-    });
-  };
-
   const truncatedAddress = `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
   
   const isSendDisabled = useMemo(() => {
@@ -647,7 +635,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                 </Button>
             </div>
           </div>
-           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
@@ -692,10 +680,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-                <Button variant="outline" onClick={handleSimulateReceive}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Simulate Receive (ETH)
-                </Button>
            </div>
           
           <Separator />
