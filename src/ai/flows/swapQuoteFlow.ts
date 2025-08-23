@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to fetch a swap quote from the 0x API.
@@ -39,7 +40,7 @@ export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutp
   const { sellToken, buyToken, sellAmount, takerAddress } = input;
   
   // The 0x API endpoint for the Monad network.
-  const API_ENDPOINT = 'https://testnet.api.0x.org/swap/v1/quote';
+  const API_ENDPOINT = 'https://monad.api.0x.org/swap/v1/quote';
   
   const params = new URLSearchParams({
     sellToken,
