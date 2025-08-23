@@ -4,6 +4,7 @@
 import type { Wallet, Transaction, StoredWallet, Contact } from './types';
 import { commonPasswords } from './commonPasswords';
 import { useTelegram } from '@/hooks/useTelegram';
+import { ethers } from 'ethers';
 
 // Official BIP39 English wordlist
 export const bip39Wordlist: string[] = [
@@ -269,40 +270,18 @@ export const bip39Wordlist: string[] = [
 const WALLET_STORAGE_KEY = 'codex_wallet';
 const CONTACTS_STORAGE_KEY = 'codex_contacts';
 
-// Mock hash function to simulate derivation. In reality, use Keccak-256 or similar.
-function mockHash(input: string): string {
-    let hash = 0;
-    if (input.length === 0) return '0'.repeat(64);
-    for (let i = 0; i < input.length; i++) {
-        const char = input.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    
-    let hex = (hash >>> 0).toString(16);
-    
-    while (hex.length < 8) {
-        hex = '0' + hex;
-    }
-    
-    let expandedHex = hex;
-    while (expandedHex.length < 64) {
-        let newPart = '';
-        for(let i = 0; i < expandedHex.length; i++) {
-            newPart += (expandedHex.charCodeAt(i) * (i + 1) % 16).toString(16);
-        }
-        expandedHex += newPart;
-    }
-
-    return expandedHex.substring(0, 64);
-}
-
-
 function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
-    const masterKey = '0x' + mockHash(seedPhrase);
-    const appKey = '0x' + mockHash(masterKey + "_app_key");
-    const nullifierKey = '0x' + mockHash(masterKey + "_nullifier_key");
-    const address = '0x' + mockHash(appKey).substring(0, 40);
+    // Generate the master HD node from the mnemonic
+    const hdNode = ethers.HDNodeWallet.fromPhrase(seedPhrase);
+    
+    // For this app, we'll use the standard Ethereum derivation path (m/44'/60'/0'/0/0)
+    // This is the same path MetaMask and other wallets use for the first account.
+    const account = hdNode.derivePath("m/44'/60'/0'/0/0");
+
+    const masterKey = account.privateKey;
+    const appKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_app_key"));
+    const nullifierKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_nullifier_key"));
+    const address = account.address;
 
     return {
         address,
@@ -314,12 +293,12 @@ function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'ba
 
 
 export function createWallet(): Wallet {
-  const seedPhrase = [...Array(12)].map(() => bip39Wordlist[Math.floor(Math.random() * bip39Wordlist.length)]).join(' ');
+  const seedPhrase = ethers.Wallet.createRandom().mnemonic!.phrase;
   const derivedKeys = deriveKeysFromSeed(seedPhrase);
 
   return {
     seedPhrase,
-    balance: 0.50,
+    balance: 0.50, // This remains a mock/simulated value
     ...derivedKeys,
   };
 }
@@ -327,16 +306,14 @@ export function createWallet(): Wallet {
 
 export async function importWalletFromSeed(seedPhrase: string): Promise<Wallet> {
     const words = seedPhrase.trim().toLowerCase().split(/\s+/);
-    if (![12, 15, 18, 24].includes(words.length)) {
-        throw new Error(`Invalid seed phrase length. Expected 12, 15, 18, or 24 words, but got ${words.length}.`);
-    }
-    if (words.some(word => !bip39Wordlist.includes(word))) {
-       throw new Error("Invalid seed phrase. One or more words are not part of the official wordlist.");
+    if (![12, 15, 18, 24].includes(words.length) || !ethers.Mnemonic.isValidMnemonic(words.join(' '))) {
+       throw new Error("Invalid seed phrase. Please check the words and length (12, 15, 18, or 24 words).");
     }
     
     const joinedSeed = words.join(' ');
     const derivedKeys = deriveKeysFromSeed(joinedSeed);
     
+    // The balance is still simulated, but the address is now real.
     let sum = 0;
     for (let i = 0; i < joinedSeed.length; i++) {
         sum += joinedSeed.charCodeAt(i);
@@ -503,11 +480,8 @@ export async function unlockWallet(password: string): Promise<Wallet | null> {
 export async function verifySeedPhrase(seedPhrase: string, storedAddress: string): Promise<boolean> {
     try {
         const words = seedPhrase.trim().toLowerCase().split(/\s+/);
-        if (![12, 15, 18, 24].includes(words.length)) {
-            throw new Error(`Invalid seed phrase length.`);
-        }
-        if (words.some(word => !bip39Wordlist.includes(word))) {
-           throw new Error("Invalid seed phrase. Contains non-standard words.");
+        if (![12, 15, 18, 24].includes(words.length) || !ethers.Mnemonic.isValidMnemonic(words.join(' '))) {
+           throw new Error("Invalid seed phrase.");
         }
         
         const derivedKeys = deriveKeysFromSeed(seedPhrase);
@@ -609,8 +583,10 @@ export interface MessagingKeys {
  * function like HKDF and a standard like libsignal's X3DH.
  */
 export function getMessagingKeys(masterKey: string): MessagingKeys {
-    const privateKey = mockHash(masterKey + "_messaging_private");
-    const publicKey = mockHash(privateKey + "_messaging_public");
+    // The master key is now the private key from the HD wallet, which is secure.
+    const privateKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_messaging_private"));
+    // Derive a public key from this new private key for messaging
+    const publicKey = new ethers.SigningKey(privateKey).publicKey;
     return { privateKey, publicKey };
 }
 
@@ -643,7 +619,7 @@ export function decryptMessage(encryptedContent: string, recipientPrivateKey: st
         const [intendedPublicKey, content] = decodedPayload.split("::");
         
         // Simulate checking if this message was meant for us by re-deriving our public key
-        const ourPublicKey = mockHash(recipientPrivateKey + "_messaging_public");
+        const ourPublicKey = new ethers.SigningKey(recipientPrivateKey).publicKey;
         
         if (intendedPublicKey === ourPublicKey) {
             return content;
