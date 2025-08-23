@@ -5,13 +5,14 @@
  */
 
 import { z } from 'zod';
-import { MONAD_ADDRESS, USDC_ADDRESS } from '@/lib/constants';
 
 const SwapQuoteInputSchema = z.object({
   sellToken: z.string().describe('The contract address of the token to sell.'),
   buyToken: z.string().describe('The contract address of the token to buy.'),
   sellAmount: z.string().describe('The amount of the token to sell, in its smallest unit (e.g., wei).'),
-  takerAddress: z.string().describe('The address of the user performing the swap.'),
+  // takerAddress is optional for quotes and can sometimes cause issues if the address is not recognized.
+  // We remove it to make the quote request more robust.
+  // takerAddress: z.string().describe('The address of the user performing the swap.'),
 });
 export type SwapQuoteInput = z.infer<typeof SwapQuoteInputSchema>;
 
@@ -37,7 +38,7 @@ const SwapQuoteOutputSchema = z.object({
 export type SwapQuoteOutput = z.infer<typeof SwapQuoteOutputSchema>;
 
 export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
-  const { sellToken, buyToken, sellAmount, takerAddress } = input;
+  const { sellToken, buyToken, sellAmount } = input;
   
   // The 0x API endpoint for the Sepolia testnet.
   const API_ENDPOINT = 'https://sepolia.api.0x.org/swap/v1/quote';
@@ -46,20 +47,21 @@ export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutp
     sellToken,
     buyToken,
     sellAmount,
-    takerAddress,
   });
 
   try {
     const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, {
       headers: {
-        '0x-api-key': 'ac0d042c-f81f-48f1-8d4e-2fe8707cf932', // Use the provided API key
+        '0x-api-key': 'ac0d042c-f81f-48f1-8d4e-2fe8707cf932',
       },
     });
 
     if (!response.ok) {
       const errorBody = await response.json();
       console.error('0x API Error:', errorBody);
-      throw new Error(`Failed to fetch swap quote from 0x API: ${errorBody.reason || response.statusText}`);
+      // Construct a more descriptive error message
+      const reason = errorBody.validationErrors?.[0]?.reason || errorBody.reason || response.statusText;
+      throw new Error(`0x API Error: ${reason}`);
     }
 
     const data: SwapQuoteOutput = await response.json();
@@ -67,6 +69,7 @@ export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutp
 
   } catch (error) {
     console.error('Error fetching swap quote:', error);
+    // Re-throw the error so it can be caught by the calling function
     throw error;
   }
 }

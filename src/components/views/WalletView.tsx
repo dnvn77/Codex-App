@@ -553,7 +553,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
             sellToken: TOKEN_ADDRESSES[withdrawalToken],
             buyToken: TOKEN_ADDRESSES['USDC'],
             sellAmount: sellAmountInBaseUnit,
-            takerAddress: wallet.address,
         });
         setSwapQuote(quote);
         setWithdrawalStep('confirm');
