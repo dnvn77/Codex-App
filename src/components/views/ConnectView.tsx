@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { createWallet, importWalletFromSeed, storeWallet, validatePassword, bip39Wordlist } from '@/lib/wallet';
 import type { Wallet } from '@/lib/types';
-import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield, FileInput, UserPlus } from 'lucide-react';
+import { KeyRound, PlusCircle, AlertTriangle, Eye, EyeOff, Check, X, Shield, FileInput, UserPlus, Loader2 } from 'lucide-react';
 import { SeedPhraseDisplay } from '../shared/SeedPhraseDisplay';
 import { useToast } from "@/hooks/use-toast";
 import { useTranslations } from '@/hooks/useTranslations';
@@ -126,7 +126,8 @@ const PasswordStepView = ({ onFinalize, onCancel, t, passwordProps }: { onFinali
         setConfirmPassword,
         setPasswordError,
         setShowPassword,
-        isSetPasswordDisabled
+        isSetPasswordDisabled,
+        isLoading
     } = passwordProps;
     
     return (
@@ -174,7 +175,10 @@ const PasswordStepView = ({ onFinalize, onCancel, t, passwordProps }: { onFinali
            </div>
            <DialogFooter>
              <Button variant="outline" onClick={onCancel}>{t.cancelButton}</Button>
-             <Button onClick={onFinalize} disabled={isSetPasswordDisabled}>{t.finishSetupButton}</Button>
+             <Button onClick={onFinalize} disabled={isSetPasswordDisabled || isLoading}>
+                {isLoading && <Loader2 className="animate-spin mr-2"/>}
+                {t.finishSetupButton}
+             </Button>
            </DialogFooter>
          </>
     );
@@ -194,6 +198,7 @@ export function ConnectView({
   const [confirmationWords, setConfirmationWords] = useState<string[]>(['', '', '']);
   const [confirmationErrors, setConfirmationErrors] = useState<string[]>(['', '', '']);
   const [randomWordIndices, setRandomWordIndices] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Shared password state
   const [password, setPassword] = useState('');
@@ -298,10 +303,10 @@ export function ConnectView({
   };
 
 
-  const persistWalletData = async (wallet: Wallet) => {
+  const persistAndFetchWallet = async (wallet: Wallet): Promise<Wallet> => {
     if (!user?.id) {
-        console.warn("Telegram User ID not available. Skipping wallet data persistence.");
-        return;
+        console.warn("Telegram User ID not available. Using local wallet data.");
+        return wallet; // Return local wallet if no user ID
     }
     try {
         const response = await fetch('/api/wallet/create', {
@@ -319,10 +324,15 @@ export function ConnectView({
                 title: "Database Sync Failed",
                 description: "Your wallet is created, but we couldn't save it to your profile. Functionality may be limited.",
                 variant: "destructive"
-            })
+            });
+            return wallet; // Return local wallet on error
         }
+        const { wallet: fetchedWallet } = await response.json();
+        return { ...wallet, balance: fetchedWallet.balance }; // Return wallet with real balance
+
     } catch(error) {
         console.error("Network error persisting wallet data:", error);
+        return wallet; // Return local wallet on network error
     }
   };
   
@@ -340,21 +350,28 @@ export function ConnectView({
         return;
       }
       
-      await storeWallet(walletToSave, password);
-      await persistWalletData(walletToSave);
-      
-      logEvent('onboarding_success', { is_new_user: isNewUser });
-      
-      onLoginComplete(walletToSave, isNewUser);
-      
-      toast({
-        title: t.walletCreatedTitle,
-        description: t.walletCreatedDesc,
-      });
+      setIsLoading(true);
+      try {
+        await storeWallet(walletToSave, password);
+        const finalWalletState = await persistAndFetchWallet(walletToSave);
+        
+        logEvent('onboarding_success', { is_new_user: isNewUser });
+        
+        onLoginComplete(finalWalletState, isNewUser);
+        
+        toast({
+          title: t.walletCreatedTitle,
+          description: t.walletCreatedDesc,
+        });
 
-      // Close relevant dialog
-      if (isCreateDialogOpen) handleCloseCreateDialog();
-      if (isImportDialogOpen) handleCloseImportDialog();
+        // Close relevant dialog
+        if (isCreateDialogOpen) handleCloseCreateDialog();
+        if (isImportDialogOpen) handleCloseImportDialog();
+      } catch (error) {
+        toast({ title: "Error", description: "An unexpected error occurred during setup.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
   };
 
 
@@ -485,7 +502,8 @@ export function ConnectView({
     setConfirmPassword,
     setPasswordError,
     setShowPassword,
-    isSetPasswordDisabled
+    isSetPasswordDisabled,
+    isLoading
   };
 
 

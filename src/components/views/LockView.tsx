@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from "@/hooks/use-toast";
 import { logEvent } from '@/lib/analytics';
 import Image from 'next/image';
+import { useTelegram } from '@/hooks/useTelegram';
 
 
 const PasswordRequirement = ({ label, met }: { label: string, met: boolean }) => (
@@ -196,6 +197,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
   
   const t = useTranslations();
   const { toast } = useToast();
+  const { user } = useTelegram();
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,6 +211,24 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
         await new Promise(resolve => setTimeout(resolve, 500));
         const unlockedWallet = await unlockWallet(password);
         if (unlockedWallet) {
+            // After unlocking, fetch the latest balance from the backend
+            if (user?.id) {
+                const response = await fetch('/api/wallet/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+                    },
+                    body: JSON.stringify({ userId: String(user.id), walletAddress: unlockedWallet.address })
+                });
+
+                if (response.ok) {
+                    const { wallet: fetchedWallet } = await response.json();
+                    unlockedWallet.balance = fetchedWallet.balance;
+                } else {
+                    console.error("Could not refresh balance on unlock.");
+                }
+            }
             onWalletUnlocked(unlockedWallet);
             logEvent('unlock_success');
         } else {
