@@ -272,11 +272,12 @@ const CONTACTS_STORAGE_KEY = 'codex_contacts';
 
 function deriveKeysFromSeed(seedPhrase: string): Omit<Wallet, 'seedPhrase' | 'balance'> {
     // Generate the master HD node from the mnemonic
-    const hdNode = ethers.HDNodeWallet.fromPhrase(seedPhrase);
+    const account = ethers.HDNodeWallet.fromPhrase(seedPhrase);
     
     // For this app, we'll use the standard Ethereum derivation path (m/44'/60'/0'/0/0)
     // This is the same path MetaMask and other wallets use for the first account.
-    const account = hdNode.derivePath("m/44'/60'/0'/0/0");
+    // **Correction**: The line below was incorrect and has been removed. `fromPhrase` already returns the correct node.
+    // const account = hdNode.derivePath("m/44'/60'/0'/0/0");
 
     const masterKey = account.privateKey;
     const appKey = ethers.keccak256(ethers.toUtf8Bytes(masterKey + "_app_key"));
@@ -631,3 +632,5 @@ export function decryptMessage(encryptedContent: string, recipientPrivateKey: st
         return null; // Malformed content
     }
 }
+
+    
