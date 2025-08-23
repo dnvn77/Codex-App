@@ -4,7 +4,7 @@
  */
 
 import { ethers } from 'ethers';
-import { config } from '../config';
+import { config, monadTestnet } from '../config';
 
 // URL del RPC para Monad Testnet, obtenida desde la configuración.
 const RPC_URL = config.MONAD_RPC_URL;
@@ -50,5 +50,6 @@ export async function getBalance(address: string): Promise<string> {
  * @returns {string} La URL completa para ver la transacción en el explorador.
  */
 export function getExplorerUrl(txHash: string): string {
-  return `https://testnet.monadexplorer.com/tx/${txHash}`;
+    const explorer = monadTestnet.blockExplorers.default.url;
+    return `${explorer}/tx/${txHash}`;
 }

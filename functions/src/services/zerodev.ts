@@ -7,7 +7,7 @@
 
 import { Gateway } from '@portal-hq/gateway';
 import { ethers } from 'ethers';
-import { config } from '../config';
+import { config, monadTestnet } from '../config';
 import { getProvider } from './chain';
 
 // Inicializa el Gateway de Portal con la configuración del backend.
@@ -42,7 +42,7 @@ export async function getWalletAddress(userId: string): Promise<string> {
     if (wallets.results.length === 0) {
         const newWallet = await gateway.wallets.create({
             clientId: client.id,
-            chains: ['eip155:18000'], // Chain ID para Monad Testnet
+            chains: [`eip155:${monadTestnet.id}`], // Chain ID para Monad Testnet
         });
         return newWallet.address;
     }
@@ -65,7 +65,7 @@ export async function getPortalSigner(userId: string): Promise<ethers.JsonRpcSig
     // Este provider especial se encarga de comunicarse con Portal para firmar transacciones.
     const portalProvider = await gateway.getEip1193Provider({
         clientId: client.id,
-        chains: ['eip155:18000'], // Monad Testnet Chain ID
+        chains: [`eip155:${monadTestnet.id}`], // Monad Testnet Chain ID
     });
 
     // Envolvemos el provider de Portal con el provider de Ethers.

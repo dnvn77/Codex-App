@@ -10,6 +10,25 @@ import { z } from 'zod';
 // Carga las variables de entorno desde el archivo .env
 dotenv.config();
 
+// Definición de la red Monad Testnet
+export const monadTestnet = {
+  id: 10143,
+  name: 'Monad Testnet',
+  nativeCurrency: {
+    name: 'Monad',
+    symbol: 'MONAD',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: [process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' },
+  },
+  testnet: true,
+};
+
+
 // Define un esquema para validar las variables de entorno requeridas
 const envSchema = z.object({
   API_KEY_BACKEND: z.string().min(1, 'API_KEY_BACKEND es requerida.'),

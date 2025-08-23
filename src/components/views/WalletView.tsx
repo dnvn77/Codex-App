@@ -536,6 +536,10 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                   <p className="text-3xl font-bold">
                      {showBalances ? `$${totalBalanceUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••'}
                   </p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background/70 rounded-full px-2 py-0.5">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                    Monad Testnet
+                  </div>
                 </div>
               </div>
                 <Button variant="ghost" size="icon" onClick={() => { logEvent('balance_visibility_toggled', { visible: !showBalances }); setShowBalances(!showBalances); }} className="h-8 w-8 self-end">
