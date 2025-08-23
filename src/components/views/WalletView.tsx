@@ -537,7 +537,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     const amountInToken = amountNum / token.priceUSD;
 
     if (amountInToken > token.balance) {
-        setWithdrawalAmountError(`Insufficient ${token.ticker} balance.`);
+        setWithdrawalAmountError(`Saldo insuficiente de ${token.ticker}.`);
         return;
     }
 
@@ -1024,7 +1024,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                      <div>
                         <Label>Pagar con</Label>
                          <RadioGroup onValueChange={setWithdrawalTokenTicker} value={withdrawalTokenTicker || ""} className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {['ETH', 'USDC', 'USDT'].map(ticker => {
+                            {['MONAD', 'ETH', 'USDC', 'USDT'].map(ticker => {
                                 const asset = assets.find(a => a.ticker === ticker);
                                 if (!asset) return null;
                                 return (
