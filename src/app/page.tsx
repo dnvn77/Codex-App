@@ -70,7 +70,7 @@ export default function Home() {
       updateAssetPrices();
       // Set initial mock balances for non-native assets.
       const initialMockBalances = {
-        'ETH': 1.5,
+        'ETH': 0.7964, // Mock ETH for gas
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,

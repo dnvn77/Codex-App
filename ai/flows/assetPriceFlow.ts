@@ -66,7 +66,7 @@ export async function fetchAssetPrices(input: AssetPriceInput): Promise<AssetPri
                 name: mockData.name,
                 ticker: symbol,
                 id: mockData.id,
-                balance: 0,
+                balance: 0, // This flow is only for prices. Balance is handled in the frontend.
                 priceUSD: mockData.price,
                 change24h: mockData.change,
                 icon: getIconPath(mockData.id),
