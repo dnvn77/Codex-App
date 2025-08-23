@@ -174,7 +174,7 @@ const WordInput = ({
 
 interface LockViewProps {
   storedWallet: StoredWallet;
-  onWalletUnlocked: (wallet: Wallet) => void;
+  onWalletUnlocked: (wallet: Wallet, isNewUser: boolean) => void;
   onDisconnect: () => void;
 }
 
@@ -224,12 +224,14 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
 
                 if (response.ok) {
                     const { wallet: fetchedWallet } = await response.json();
-                    unlockedWallet.balance = fetchedWallet.balance;
+                    onWalletUnlocked({ ...unlockedWallet, balance: fetchedWallet.balance }, false);
                 } else {
                     console.error("Could not refresh balance on unlock.");
+                    onWalletUnlocked(unlockedWallet, false);
                 }
+            } else {
+                 onWalletUnlocked(unlockedWallet, false);
             }
-            onWalletUnlocked(unlockedWallet);
             logEvent('unlock_success');
         } else {
             throw new Error("Unlock failed");
@@ -465,7 +467,7 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
                     seedPhrase={fullSeedForReset}
                     onPasswordReset={(wallet) => {
                         handleCloseRecovery();
-                        onWalletUnlocked(wallet);
+                        onWalletUnlocked(wallet, false);
                     }}
                     t={t}
                 />

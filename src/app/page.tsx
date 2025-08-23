@@ -44,9 +44,7 @@ export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [priceData, setPriceData] = useState<AssetPriceOutput>([]);
   const [assetStatus, setAssetStatus] = useState<'loading' | 'success' | 'error'>('loading');
-
   const [mockBalances, setMockBalances] = useState<Record<string, number>>({});
-
   const { toast } = useToast();
 
   const updateAssetPrices = useCallback(async () => {
@@ -65,32 +63,32 @@ export default function Home() {
         setAssetStatus('error');
     }
   }, [toast]);
-
+  
+  // This useEffect fetches prices and initializes mock balances when the wallet is first set.
   useEffect(() => {
     if (wallet) {
       updateAssetPrices();
       // Set initial mock balances for non-native assets.
       const initialMockBalances = {
-        'ETH': 1.5, // Keep a simulated balance for ETH for gas
+        'ETH': 1.5,
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
         'LINK': 150.2,
         'UNI': 300,
       };
-      // The real MONAD balance comes from the wallet object and overrides any mock.
-      initialMockBalances['MONAD'] = wallet.balance;
       setMockBalances(initialMockBalances);
     }
   }, [wallet, updateAssetPrices]);
 
+  // This useEffect combines price data with balances to create the final asset list.
   useEffect(() => {
     if (priceData.length > 0 && wallet) {
         const combinedAssets = priceData.map(asset => ({
             ...asset,
             // Use real balance for MONAD from wallet object, otherwise use mock balances
             balance: asset.ticker === 'MONAD' ? wallet.balance : (mockBalances[asset.ticker] || 0),
-            isFavorite: false,
+            isFavorite: false, // Favorite state can be managed elsewhere
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
             const valueB = b.balance * b.priceUSD;
@@ -117,18 +115,6 @@ export default function Home() {
         setActiveView('profile');
     }
   };
-  
-  const handleWalletUnlocked = (unlockedWallet: Wallet) => {
-    if(unlockedWallet) {
-        setWallet(unlockedWallet);
-    } else {
-        toast({
-            title: "Unlock Failed",
-            description: "Could not unlock wallet.",
-            variant: "destructive"
-        });
-    }
-  }
 
   const handleDisconnect = () => {
     logEvent('wallet_disconnected');

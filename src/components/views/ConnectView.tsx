@@ -302,7 +302,6 @@ export function ConnectView({
     }
   };
 
-
   const persistAndFetchWallet = async (wallet: Wallet): Promise<Wallet> => {
     if (!user?.id) {
         console.warn("Telegram User ID not available. Using local wallet data.");
@@ -325,14 +324,14 @@ export function ConnectView({
                 description: "Your wallet is created, but we couldn't save it to your profile. Functionality may be limited.",
                 variant: "destructive"
             });
-            return wallet; // Return local wallet on error
+            return wallet;
         }
         const { wallet: fetchedWallet } = await response.json();
-        return { ...wallet, balance: fetchedWallet.balance }; // Return wallet with real balance
+        return { ...wallet, balance: fetchedWallet.balance };
 
     } catch(error) {
         console.error("Network error persisting wallet data:", error);
-        return wallet; // Return local wallet on network error
+        return wallet;
     }
   };
   
@@ -364,7 +363,6 @@ export function ConnectView({
           description: t.walletCreatedDesc,
         });
 
-        // Close relevant dialog
         if (isCreateDialogOpen) handleCloseCreateDialog();
         if (isImportDialogOpen) handleCloseImportDialog();
       } catch (error) {
@@ -446,8 +444,8 @@ export function ConnectView({
     const importSeedPhrase = seedWords.join(' ');
     try {
         const wallet = await importWalletFromSeed(importSeedPhrase);
-        setNewWallet(wallet); // Store the imported wallet details
-        setImportStep('setPassword'); // Move to password step
+        setNewWallet(wallet);
+        setImportStep('setPassword');
     } catch (error) {
         toast({
             title: t.importErrorTitle,
