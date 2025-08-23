@@ -1081,7 +1081,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                                     <p className="text-sm text-muted-foreground">Cantidad a Retirar</p>
                                     <p className="text-3xl font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</p>
                                 </div>
-                                <Image src="/bbva-logo.svg" alt="BBVA Logo" width={80} height={24} data-ai-hint="bank logo"/>
                             </div>
                             <div className="space-y-2 text-center">
                                 <Label>Código de Retiro (12 dígitos)</Label>
