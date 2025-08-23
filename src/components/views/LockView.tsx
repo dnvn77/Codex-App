@@ -63,6 +63,7 @@ const ResetPasswordView = ({ onPasswordReset, seedPhrase, t }: { onPasswordReset
             await storeWallet(walletToSave, password);
             logEvent('password_reset_success');
             toast({ title: t.passwordResetSuccessTitle, description: t.passwordResetSuccessDesc });
+            // The onPasswordReset will trigger the refresh logic in the main component
             onPasswordReset(walletToSave);
         } catch (error) {
             toast({ title: t.error, description: (error as Error).message, variant: "destructive" });
@@ -209,34 +210,42 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
 
     try {
         await new Promise(resolve => setTimeout(resolve, 500));
-        const unlockedWallet = await unlockWallet(password);
-        if (unlockedWallet) {
-            // After unlocking, fetch the latest balance from the backend
-            if (user?.id) {
-                const response = await fetch('/api/wallet/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
-                    },
-                    body: JSON.stringify({ userId: String(user.id), walletAddress: unlockedWallet.address })
-                });
-
-                if (response.ok) {
-                    const { wallet: fetchedWallet } = await response.json();
-                    onWalletUnlocked({ ...unlockedWallet, balance: fetchedWallet.balance }, false);
-                } else {
-                    console.error("Could not refresh balance on unlock.");
-                    onWalletUnlocked(unlockedWallet, false);
-                }
-            } else {
-                 onWalletUnlocked(unlockedWallet, false);
-            }
-            logEvent('unlock_success');
-        } else {
-            throw new Error("Unlock failed");
+        // First, unlock the wallet locally to get the seed phrase
+        const localWallet = await unlockWallet(password);
+        if (!localWallet) {
+           throw new Error("Wrong password.");
         }
-    } catch {
+
+        // IMPORTANT: Now that we have the wallet, we fetch its LATEST state from the backend.
+        // This ensures we get the REAL, UP-TO-DATE balance from the network.
+        if (user?.id) {
+            const response = await fetch('/api/wallet/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': process.env.NEXT_PUBLIC_API_KEY_BACKEND!
+                },
+                body: JSON.stringify({ userId: String(user.id), walletAddress: localWallet.address })
+            });
+
+            if (response.ok) {
+                const { wallet: fetchedWalletWithBalance } = await response.json();
+                const finalWalletState = { ...localWallet, balance: fetchedWalletWithBalance.balance };
+                
+                // Store the updated wallet info locally before proceeding
+                await storeWallet(finalWalletState, password);
+                onWalletUnlocked(finalWalletState, false);
+            } else {
+                console.error("Could not refresh balance on unlock. Using locally stored balance.");
+                onWalletUnlocked(localWallet, false);
+            }
+        } else {
+             // Fallback for non-telegram environment
+             onWalletUnlocked(localWallet, false);
+        }
+        logEvent('unlock_success');
+
+    } catch(err) {
       setError(t.wrongPasswordError);
       logEvent('unlock_fail');
     } finally {
@@ -465,9 +474,10 @@ export function LockView({ storedWallet, onWalletUnlocked, onDisconnect }: LockV
             {recoveryStep === 'resetPassword' && fullSeedForReset && (
                 <ResetPasswordView 
                     seedPhrase={fullSeedForReset}
-                    onPasswordReset={(wallet) => {
+                    onPasswordReset={(refreshedWallet) => {
                         handleCloseRecovery();
-                        onWalletUnlocked(wallet, false);
+                        // Pass the wallet with the fresh balance to the main app state
+                        onWalletUnlocked(refreshedWallet, false);
                     }}
                     t={t}
                 />

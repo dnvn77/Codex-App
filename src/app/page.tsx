@@ -9,7 +9,7 @@ import { ChatView } from '@/components/views/ChatView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ContactsView } from '@/components/views/ContactsView';
 import type { Wallet, StoredWallet, Asset } from '@/lib/types';
-import { getStoredWallet, unlockWallet, clearStoredWallet } from '@/lib/wallet';
+import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
@@ -64,31 +64,24 @@ export default function Home() {
     }
   }, [toast]);
   
-  // This useEffect fetches prices and initializes mock balances when the wallet is first set.
-  useEffect(() => {
-    if (wallet) {
-      updateAssetPrices();
-      // Set initial mock balances for non-native assets.
-      const initialMockBalances = {
-        'ETH': 0.7964, // Mock ETH for gas
-        'USDC': 1520.75,
-        'WBTC': 0.03,
-        'CDX': 12500,
-        'LINK': 150.2,
-        'UNI': 300,
-      };
-      setMockBalances(initialMockBalances);
-    }
-  }, [wallet, updateAssetPrices]);
-
   // This useEffect combines price data with balances to create the final asset list.
   useEffect(() => {
     if (priceData.length > 0 && wallet) {
+        const initialMockBalances = {
+            'ETH': 0.7964,
+            'USDC': 1520.75,
+            'WBTC': 0.03,
+            'CDX': 12500,
+            'LINK': 150.2,
+            'UNI': 300,
+        };
+        setMockBalances(initialMockBalances);
+
         const combinedAssets = priceData.map(asset => ({
             ...asset,
-            // Use real balance for MONAD from wallet object, otherwise use mock balances
-            balance: asset.ticker === 'MONAD' ? wallet.balance : (mockBalances[asset.ticker] || 0),
-            isFavorite: false, // Favorite state can be managed elsewhere
+            // Use the real balance for MONAD directly from the wallet object.
+            // For all other tokens, use the mock balances.
+            balance: asset.ticker === 'MONAD' ? wallet.balance : (initialMockBalances[asset.ticker] || 0),
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
             const valueB = b.balance * b.priceUSD;
@@ -97,7 +90,7 @@ export default function Home() {
         });
         setAssets(combinedAssets);
     }
-  }, [priceData, mockBalances, wallet]);
+  }, [priceData, wallet]);
 
   useEffect(() => {
     const stored = getStoredWallet();
@@ -106,9 +99,10 @@ export default function Home() {
 
   const handleLoginComplete = (newWallet: Wallet, isNewUser: boolean) => {
     setWallet(newWallet);
-    const newStoredInfo = getStoredWallet();
+    const newStoredInfo = getStoredWallet(); // Refresh stored info after potential password reset
     setStoredWalletInfo(newStoredInfo);
-    
+    updateAssetPrices(); // Fetch prices as soon as the wallet is set
+
     if (isNewUser) {
         logEvent('first_login_complete');
         setIsFirstLogin(true);
@@ -133,12 +127,12 @@ export default function Home() {
     setWallet(prevWallet => {
       if (!prevWallet) return null;
       let newBalance = prevWallet.balance;
+      // In our setup, gas is always paid in the native asset, which we call MONAD.
       if (ticker === 'MONAD') {
           newBalance -= (amount + gasCost);
       } else {
-          newBalance -= gasCost; // Only deduct gas if another token was sent
+          newBalance -= gasCost; // Deduct gas from MONAD balance if another token was sent
       }
-
       return { ...prevWallet, balance: Math.max(0, newBalance) };
     });
 

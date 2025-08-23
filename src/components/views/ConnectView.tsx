@@ -305,7 +305,8 @@ export function ConnectView({
   const persistAndFetchWallet = async (wallet: Wallet): Promise<Wallet> => {
     if (!user?.id) {
         console.warn("Telegram User ID not available. Using local wallet data.");
-        return wallet; // Return local wallet if no user ID
+        // If no user, we can't fetch a real balance, so we return the local simulated one.
+        return wallet;
     }
     try {
         const response = await fetch('/api/wallet/create', {
@@ -324,14 +325,14 @@ export function ConnectView({
                 description: "Your wallet is created, but we couldn't save it to your profile. Functionality may be limited.",
                 variant: "destructive"
             });
-            return wallet;
+            return wallet; // Return local wallet on error
         }
-        const { wallet: fetchedWallet } = await response.json();
-        return { ...wallet, balance: fetchedWallet.balance };
+        const { wallet: fetchedWalletWithBalance } = await response.json();
+        return { ...wallet, balance: fetchedWalletWithBalance.balance };
 
     } catch(error) {
         console.error("Network error persisting wallet data:", error);
-        return wallet;
+        return wallet; // Return local wallet on error
     }
   };
   
@@ -351,8 +352,11 @@ export function ConnectView({
       
       setIsLoading(true);
       try {
-        await storeWallet(walletToSave, password);
+        // Persist the wallet to the backend AND fetch the real balance
         const finalWalletState = await persistAndFetchWallet(walletToSave);
+
+        // Encrypt and store the wallet locally with the user's password
+        await storeWallet(finalWalletState, password);
         
         logEvent('onboarding_success', { is_new_user: isNewUser });
         
