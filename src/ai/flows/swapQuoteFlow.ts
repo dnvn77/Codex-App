@@ -5,37 +5,16 @@
  */
 
 import { z } from 'zod';
+import type { SwapQuoteOutput } from '@/lib/types';
+
 
 const SwapQuoteInputSchema = z.object({
   sellToken: z.string().describe('The contract address of the token to sell.'),
   buyToken: z.string().describe('The contract address of the token to buy.'),
   sellAmount: z.string().describe('The amount of the token to sell, in its smallest unit (e.g., wei).'),
-  // takerAddress is optional for quotes and can sometimes cause issues if the address is not recognized.
-  // We remove it to make the quote request more robust.
-  // takerAddress: z.string().describe('The address of the user performing the swap.'),
 });
 export type SwapQuoteInput = z.infer<typeof SwapQuoteInputSchema>;
 
-// Define a schema that matches the 0x API response structure we care about.
-const SwapQuoteOutputSchema = z.object({
-    price: z.string(),
-    guaranteedPrice: z.string(),
-    to: z.string(),
-    data: z.string(),
-    value: z.string(),
-    gas: z.string(),
-    estimatedGas: z.string(),
-    gasPrice: z.string(),
-    protocolFee: z.string(),
-    minimumProtocolFee: z.string(),
-    buyAmount: z.string(),
-    sellAmount: z.string(),
-    sources: z.array(z.object({ name: z.string(), proportion: z.string() })),
-    buyTokenAddress: z.string(),
-    sellTokenAddress: z.string(),
-    allowanceTarget: z.string().optional(),
-});
-export type SwapQuoteOutput = z.infer<typeof SwapQuoteOutputSchema>;
 
 export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutput> {
   const { sellToken, buyToken, sellAmount } = input;
@@ -50,7 +29,7 @@ export async function getSwapQuote(input: SwapQuoteInput): Promise<SwapQuoteOutp
   });
 
   try {
-    const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, {
+    const response = await fetch(`${API_ENDPOINT}?${params}`, {
       headers: {
         '0x-api-key': 'ac0d042c-f81f-48f1-8d4e-2fe8707cf932',
       },
