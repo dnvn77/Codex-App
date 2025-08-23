@@ -34,7 +34,7 @@ router.post('/create', validateRequest({body: CreateWalletRequestSchema}), async
       user,
       wallet: {
         ...wallet,
-        balance: parseFloat(balance) // Include the real balance
+        balance: Number(balance) // Include the real balance, using Number to preserve decimals
       },
       message: `✅ Smart account creada/obtenida para ${user.telegram_user_id}:\n\`${wallet.address}\``,
     });
