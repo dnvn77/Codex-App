@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { sendTransaction, resolveEnsName, unlockWallet, calculateTransactionFee } from '@/lib/wallet';
 import type { Wallet, Transaction, Asset, Contact } from '@/lib/types';
-import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User } from 'lucide-react';
+import { Send, Copy, Loader2, AlertTriangle, BellRing, CheckCircle, XCircle, QrCode, Eye, EyeOff, Info, Search, ShieldCheck, ShieldAlert, History, User, Banknote, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -55,6 +55,10 @@ import { ContactsList } from '@/components/views/ContactsList';
 import { logEvent } from '@/lib/analytics';
 import { useFeedback } from '@/hooks/useFeedback';
 import { ReceiptView } from './ReceiptView';
+import { getSwapQuoteFlow } from '@/ai/flows/swapQuoteFlow';
+import * as htmlToImage from 'html-to-image';
+import { TOKEN_ADDRESSES } from '@/lib/constants';
+import { Textarea } from '../ui/textarea';
 
 interface WalletViewProps {
   wallet: Wallet;
@@ -92,6 +96,7 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const { toast } = useToast();
   const t = useTranslations();
   const { triggerFeedbackEvent } = useFeedback();
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -127,6 +132,39 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
   const [transactionFee, setTransactionFee] = useState({ fee: 0, percentage: 0 });
+
+  // Cardless withdrawal State
+  const [isSubscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const [isWithdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [withdrawalAmountError, setWithdrawalAmountError] = useState('');
+  const [withdrawalToken, setWithdrawalToken] = useState('MON');
+  const [withdrawalReason, setWithdrawalReason] = useState('');
+  const [withdrawalStep, setWithdrawalStep] = useState<'amount' | 'confirm' | 'receipt'>('amount');
+  const [swapQuote, setSwapQuote] = useState<any>(null);
+  const [isQuoting, setIsQuoting] = useState(false);
+  const [withdrawalReceipt, setWithdrawalReceipt] = useState<{ code: string; pin: string } | null>(null);
+
+  const withdrawalAsset = useMemo(() => assets.find(a => a.ticker === withdrawalToken) || null, [assets, withdrawalToken]);
+
+  const handleDownloadReceipt = useCallback(async () => {
+    if (!receiptRef.current) return;
+
+    try {
+      const dataUrl = await htmlToImage.toPng(receiptRef.current);
+      const link = document.createElement('a');
+      link.download = 'codex-receipt-bbva.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Oops, something went wrong!', error);
+      toast({
+        title: "Error",
+        description: "Could not download receipt image.",
+        variant: "destructive",
+      });
+    }
+  }, []);
   
   const ethPrice = useMemo(() => {
     return assets.find(a => a.ticker === 'ETH')?.priceUSD || 3500;
@@ -483,10 +521,99 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
       setToAddress(contact.address);
       setContactsOpen(false);
   }
+
+  const handleProceedToWithdrawal = () => {
+    setSubscriptionDialogOpen(false);
+    // Use a timeout to allow the first dialog to close before opening the second
+    setTimeout(() => {
+      setWithdrawalDialogOpen(true);
+    }, 150);
+  };
+
+  const handleGetSwapQuote = async () => {
+    if (!withdrawalAmount || !withdrawalAsset) {
+        setWithdrawalAmountError('Please enter a valid amount.');
+        return;
+    }
+    const amountNum = parseFloat(withdrawalAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+        setWithdrawalAmountError('Amount must be a positive number.');
+        return;
+    }
+     if (amountNum > (withdrawalAsset.balance * withdrawalAsset.priceUSD)) {
+        setWithdrawalAmountError(`Insufficient balance. You have ~$${(withdrawalAsset.balance * withdrawalAsset.priceUSD).toFixed(2)}.`);
+        return;
+    }
+
+    setIsQuoting(true);
+    setWithdrawalAmountError('');
+
+    try {
+        const sellAmount = (amountNum / withdrawalAsset.priceUSD).toFixed(withdrawalAsset.decimals || 18);
+        const sellAmountInBaseUnit = (BigInt(Math.floor(parseFloat(sellAmount) * (10**(withdrawalAsset.decimals || 18))))).toString();
+        
+        const quote = await getSwapQuoteFlow({
+            sellToken: TOKEN_ADDRESSES[withdrawalToken],
+            buyToken: TOKEN_ADDRESSES['USDC'],
+            sellAmount: sellAmountInBaseUnit,
+            takerAddress: wallet.address,
+        });
+        setSwapQuote(quote);
+        setWithdrawalStep('confirm');
+    } catch (error) {
+        console.error("Failed to get swap quote:", error);
+        toast({ title: "Quote Error", description: (error as Error).message, variant: 'destructive' });
+    } finally {
+        setIsQuoting(false);
+    }
+  };
+
+  const executeWithdrawal = async () => {
+    setIsSending(true);
+    try {
+        // 1. Simulate transaction execution
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // 2. Debit the user's wallet
+        const sellAmount = parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18));
+        onTransactionSuccess(withdrawalToken, sellAmount, 0); // No direct gas cost shown to user for this flow
+
+        // 3. Generate receipt codes
+        const code = [1, 2, 3].map(() => Math.floor(1000 + Math.random() * 9000)).join(' - ');
+        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        setWithdrawalReceipt({ code, pin });
+
+        // 4. Move to final receipt step
+        setWithdrawalStep('receipt');
+        toast({ title: "Withdrawal Created!", description: "Your cardless withdrawal code is ready."});
+
+    } catch (error) {
+        toast({ title: "Withdrawal Failed", description: (error as Error).message, variant: "destructive" });
+    } finally {
+        setIsSending(false);
+    }
+  };
+
+  const closeWithdrawalDialog = () => {
+    setWithdrawalDialogOpen(false);
+    // Reset state after a delay to allow for animations
+    setTimeout(() => {
+        setWithdrawalAmount('');
+        setWithdrawalToken('MON');
+        setWithdrawalReason('');
+        setWithdrawalStep('amount');
+        setSwapQuote(null);
+        setWithdrawalReceipt(null);
+        setWithdrawalAmountError('');
+    }, 300);
+  };
   
   if(sentTransaction) {
     return <ReceiptView transaction={sentTransaction} onBack={() => setSentTransaction(null)} />
   }
+
+  const withdrawalTokens = assets.filter(a => ['MON', 'ETH', 'USDC', 'USDT'].includes(a.ticker) && a.balance > 0);
+
 
   return (
     <div className='space-y-4'>
@@ -547,23 +674,52 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
                 </Button>
             </div>
           </div>
-           <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-              <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
-                      <History className="mr-2 h-4 w-4" />
-                      Transaction History
-                  </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md h-[80vh] flex flex-col">
-                  <DialogHeader>
-                      <DialogTitle>Transaction History</DialogTitle>
-                      <DialogDescription>
-                          Your recent transaction activity from the network.
-                      </DialogDescription>
-                  </DialogHeader>
-                  <TransactionHistory walletAddress={wallet.address} />
-              </DialogContent>
-          </Dialog>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full" onClick={() => logEvent('transaction_history_opened')}>
+                            <History className="mr-2 h-4 w-4" />
+                            Transaction History
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md h-[80vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>Transaction History</DialogTitle>
+                            <DialogDescription>
+                                Your recent transaction activity from the network.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <TransactionHistory walletAddress={wallet.address} />
+                    </DialogContent>
+                </Dialog>
+                 <Dialog open={isSubscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
+                    <DialogTrigger asChild>
+                         <Button variant="outline" className="w-full">
+                            <Banknote className="mr-2 h-4 w-4" />
+                            Retiro sin Tarjeta
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Retiros sin Tarjeta con BBVA</DialogTitle>
+                            <DialogDescription>
+                                Disfruta de retiros ilimitados en cajeros BBVA. Se requiere una suscripción anual.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 text-center">
+                            <p className="text-4xl font-bold">$14.99 USD</p>
+                            <p className="text-muted-foreground">por año (pagado en MONAD)</p>
+                        </div>
+                        <DialogFooter className="sm:flex-col sm:space-y-2">
+                             <p className="text-xs text-muted-foreground text-center">¿Ya tienes una suscripción activa?</p>
+                             <div className="grid grid-cols-2 gap-2">
+                                <Button variant="secondary" onClick={() => setSubscriptionDialogOpen(false)}>No, ahora no</Button>
+                                <Button onClick={handleProceedToWithdrawal}>Sí, continuar</Button>
+                             </div>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+           </div>
           
           <Separator />
           
@@ -876,6 +1032,120 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
               {detailedChartAsset && <DetailedAssetChart asset={detailedChartAsset} />}
           </div>
       </DialogContent>
+    </Dialog>
+    
+    <Dialog open={isWithdrawalDialogOpen} onOpenChange={closeWithdrawalDialog}>
+        <DialogContent>
+           {withdrawalStep === 'amount' && (
+              <>
+                 <DialogHeader>
+                    <DialogTitle>Retiro sin Tarjeta</DialogTitle>
+                    <DialogDescription>Ingresa la cantidad a retirar y selecciona con qué activo pagar.</DialogDescription>
+                 </DialogHeader>
+                 <div className="py-4 space-y-4">
+                    <div>
+                        <Label htmlFor="withdrawal-amount">Cantidad a retirar (USD)</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                            <Input id="withdrawal-amount" type="number" placeholder="100.00" value={withdrawalAmount} onChange={(e) => {setWithdrawalAmount(e.target.value); setWithdrawalAmountError('')}} className="pl-6"/>
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="withdrawal-token">Pagar con</Label>
+                        <Select onValueChange={setWithdrawalToken} defaultValue={withdrawalToken}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a token" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {withdrawalTokens.map(asset => (
+                                    <SelectItem key={asset.ticker} value={asset.ticker}>
+                                        <div className="flex items-center gap-2">
+                                            <Image src={asset.icon} alt={asset.name} width={20} height={20} />
+                                            <span>{asset.ticker}</span>
+                                            <span className="ml-auto text-muted-foreground text-xs">~${(asset.balance * asset.priceUSD).toFixed(2)}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div>
+                        <Label htmlFor="withdrawal-reason">Motivo del retiro (opcional)</Label>
+                        <Textarea id="withdrawal-reason" placeholder="Ej: Pago de servicios" value={withdrawalReason} onChange={(e) => setWithdrawalReason(e.target.value)}/>
+                    </div>
+                    {withdrawalAmountError && <p className="text-sm text-destructive">{withdrawalAmountError}</p>}
+                 </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={closeWithdrawalDialog}>Cancelar</Button>
+                    <Button onClick={handleGetSwapQuote} disabled={isQuoting || !withdrawalAmount}>
+                        {isQuoting ? <Loader2 className="animate-spin mr-2"/> : null}
+                        Obtener Cotización
+                    </Button>
+                 </DialogFooter>
+              </>
+           )}
+           {withdrawalStep === 'confirm' && swapQuote && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Retiro</DialogTitle>
+                        <DialogDescription>Revisa los detalles de la transacción. Esto es lo que se descontará de tu billetera.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-2 text-sm">
+                         <div className="flex justify-between p-2 rounded-md bg-secondary"><span>Retirarás</span><span className="font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</span></div>
+                         <div className="flex justify-between p-2"><span>Pagarás</span><span className="font-bold">{(parseFloat(swapQuote.sellAmount) / (10 ** (withdrawalAsset?.decimals || 18))).toFixed(6)} {withdrawalAsset?.ticker}</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Tasa de cambio</span><span>1 {withdrawalAsset?.ticker} ≈ ${swapQuote.price} USD</span></div>
+                         <div className="flex justify-between p-2 text-muted-foreground text-xs"><span>Fuente de liquidez</span><span>{swapQuote.sources.find(s => s.proportion === '1')?.name || 'Multiple'}</span></div>
+                    </div>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setWithdrawalStep('amount')}>Volver</Button>
+                        <Button onClick={executeWithdrawal} disabled={isSending}>
+                            {isSending ? <Loader2 className="animate-spin mr-2"/> : null}
+                            Confirmar y Retirar
+                        </Button>
+                    </DialogFooter>
+                </>
+           )}
+            {withdrawalStep === 'receipt' && withdrawalReceipt && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>¡Retiro Creado Exitosamente!</DialogTitle>
+                        <DialogDescription>Usa estos códigos en cualquier cajero BBVA. Este recibo es válido por 24 horas.</DialogDescription>
+                    </DialogHeader>
+                    <div ref={receiptRef} className="p-4 bg-background">
+                        <div className="border rounded-lg p-6 space-y-6 bg-card text-card-foreground">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Cantidad a Retirar</p>
+                                    <p className="text-3xl font-bold">${parseFloat(withdrawalAmount).toFixed(2)} USD</p>
+                                </div>
+                                <Image src="/bbva-logo.svg" alt="BBVA Logo" width={80} height={24} data-ai-hint="bank logo"/>
+                            </div>
+                            <div className="space-y-2 text-center">
+                                <Label>Código de Retiro (12 dígitos)</Label>
+                                <p className="text-4xl font-mono tracking-widest text-primary">{withdrawalReceipt.code}</p>
+                            </div>
+                            <div className="space-y-2 text-center">
+                                <Label>Clave de Seguridad (NIP de 4 dígitos)</Label>
+                                <p className="text-4xl font-mono tracking-widest text-primary">{withdrawalReceipt.pin}</p>
+                            </div>
+                            {withdrawalReason && (
+                                 <div className="text-center text-sm">
+                                    <p className="text-muted-foreground">Motivo:</p>
+                                    <p>{withdrawalReason}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                     <DialogFooter className="gap-2">
+                        <Button variant="secondary" onClick={handleDownloadReceipt} className="w-full">
+                            <Download className="mr-2 h-4 w-4"/>
+                            Descargar Recibo
+                        </Button>
+                        <Button onClick={closeWithdrawalDialog} className="w-full">Finalizar</Button>
+                    </DialogFooter>
+                </>
+            )}
+        </DialogContent>
     </Dialog>
     </div>
   );
