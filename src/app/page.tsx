@@ -70,16 +70,17 @@ export default function Home() {
     if (wallet) {
       updateAssetPrices();
       // Set initial mock balances for non-native assets.
-      // The native MONAD balance comes directly from the wallet object after login.
-      setMockBalances(prev => ({
-        ...prev,
+      const initialMockBalances = {
         'ETH': 1.5, // Keep a simulated balance for ETH for gas
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
         'LINK': 150.2,
         'UNI': 300,
-      }));
+      };
+      // The real MONAD balance comes from the wallet object and overrides any mock.
+      initialMockBalances['MONAD'] = wallet.balance;
+      setMockBalances(initialMockBalances);
     }
   }, [wallet, updateAssetPrices]);
 
