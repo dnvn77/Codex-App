@@ -10,7 +10,7 @@ import { ChatView } from '@/components/views/ChatView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ContactsView } from '@/components/views/ContactsView';
 import type { Wallet, StoredWallet, Asset } from '@/lib/types';
-import { getStoredWallet, unlockWallet, clearStoredWallet, calculateTransactionFee } from '@/lib/wallet';
+import { getStoredWallet, unlockWallet, clearStoredWallet } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { logEvent } from '@/lib/analytics';
 import { fetchAssetPrices, type AssetPriceOutput } from '@/ai/flows/assetPriceFlow';
 
 const ALL_EVM_ASSETS = [
+    { name: 'Monad', ticker: 'MONAD', id: 9999 },
     { name: 'Ethereum', ticker: 'ETH', id: 1027 },
     { name: 'USD Coin', ticker: 'USDC', id: 3408 },
     { name: 'Tether', ticker: 'USDT', id: 825 },
@@ -72,7 +73,7 @@ export default function Home() {
       // Set initial mock balances for non-native assets, native MONAD balance comes from wallet object
       setMockBalances(prev => ({
         ...prev,
-        'ETH': wallet.balance,
+        'MONAD': wallet.balance,
         'USDC': 1520.75,
         'WBTC': 0.03,
         'CDX': 12500,
@@ -90,7 +91,7 @@ export default function Home() {
             isFavorite: false,
         })).sort((a, b) => {
             const valueA = a.balance * a.priceUSD;
-            const valueB = b.balance * b.priceUSD;
+            const valueB = b.balance * a.priceUSD;
             if (valueB !== valueA) return valueB - valueA;
             return a.ticker.localeCompare(b.ticker);
         });
@@ -113,14 +114,16 @@ export default function Home() {
         setIsFirstLogin(true);
         setActiveView('profile');
     } else {
-       // On subsequent logins, ensure the wallet state has the real balance
-        setMockBalances(prev => ({ ...prev, 'ETH': newWallet.balance }));
+       // On subsequent logins, ensure the wallet state has the real balance for MONAD
+        setMockBalances(prev => ({ ...prev, 'MONAD': newWallet.balance }));
     }
   };
   
   const handleWalletUnlocked = (unlockedWallet: Wallet) => {
     if(unlockedWallet) {
         setWallet(unlockedWallet);
+        // Also update balances on unlock
+        setMockBalances(prev => ({ ...prev, 'MONAD': unlockedWallet.balance }));
     } else {
         toast({
             title: "Unlock Failed",
@@ -148,25 +151,18 @@ export default function Home() {
         if (newBalances[ticker] !== undefined) {
             newBalances[ticker] = Math.max(0, newBalances[ticker] - amount);
         }
-        if (newBalances['ETH'] !== undefined) {
-            newBalances['ETH'] = Math.max(0, newBalances['ETH'] - gasCost);
+        if (newBalances['MONAD'] !== undefined) {
+            newBalances['MONAD'] = Math.max(0, newBalances['MONAD'] - gasCost);
         }
         return newBalances;
     });
 
-    // Also update the main wallet object if ETH balance changed
+    // Also update the main wallet object if MONAD balance changed
     setWallet(prevWallet => {
         if (!prevWallet) return null;
-        const newBalance = (prevBalances) => {
-            if (prevBalances['ETH'] !== undefined) {
-                return Math.max(0, prevBalances['ETH'] - gasCost);
-            }
-            return prevWallet.balance;
-        }
-
         return {
             ...prevWallet,
-            balance: mockBalances['ETH'] ? mockBalances['ETH'] - gasCost : prevWallet.balance - gasCost
+            balance: mockBalances['MONAD'] ? mockBalances['MONAD'] - gasCost : prevWallet.balance - gasCost
         };
     });
   };
