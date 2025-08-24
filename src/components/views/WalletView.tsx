@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
@@ -165,10 +164,6 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     }
   }, [toast]);
   
-  const monadPrice = useMemo(() => {
-    return assets.find(a => a.ticker === 'MONAD')?.priceUSD || 0; // It should be 0 from the flow
-  }, [assets]);
-
   const totalBalanceUSD = useMemo(() => {
     return assets.reduce((total, asset) => {
         const valueInUSD = asset.balance * asset.priceUSD;
@@ -183,14 +178,17 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
   const maxSendableAmount = useMemo(() => {
     if (!selectedAsset) return 0;
     
+    // For MONAD, max is balance minus gas fee
     if (selectedAsset.ticker === 'MONAD') {
       const max = selectedAsset.balance - gasCost;
       return max > 0 ? max : 0;
     }
     
+    // For other tokens, we first need to ensure there's enough MONAD for gas
     const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
-    if (monadBalance < gasCost) return 0;
+    if (monadBalance < gasCost) return 0; // Not enough gas, can't send anything
     
+    // If there is enough gas, the max is the full balance of the selected token
     return selectedAsset.balance;
   }, [selectedAsset, assets, gasCost]);
 
@@ -257,28 +255,38 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
-    const numericAmount = parseFloat(newAmount) || 0;
     setAmount(newAmount);
-    setTransactionFee(calculateTransactionFee(numericAmount));
     validateAmount(newAmount);
   };
   
   const validateAmount = (value: string) => {
     const numericAmount = parseFloat(value);
     
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    if (isNaN(numericAmount) || numericAmount < 0) {
         setAmountError(t.invalidNumberError);
-    } else {
-        const amountInAsset = numericAmount / (selectedAsset?.priceUSD || 1);
-        const balance = selectedAsset?.balance || 0;
-        
-        const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
-        
-        if (amountInAsset > balance) {
-            setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
-        } else if (gasCost > monadBalance) {
+        return;
+    }
+    
+    if (numericAmount === 0) {
+        setAmountError('');
+        return;
+    }
+
+    const balance = selectedAsset?.balance || 0;
+    if (numericAmount > balance) {
+        setAmountError(t.insufficientTokenBalanceError(selectedAsset?.ticker || 'tokens'));
+        return;
+    }
+    
+    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
+    if (selectedAsset?.ticker === 'MONAD') {
+        if (numericAmount + gasCost > monadBalance) {
             setAmountError(t.insufficientGasError);
-        } else if (selectedAsset?.ticker === 'MONAD' && (numericAmount + gasCost) > monadBalance) {
+        } else {
+            setAmountError('');
+        }
+    } else {
+        if (gasCost > monadBalance) {
             setAmountError(t.insufficientGasError);
         } else {
             setAmountError('');
@@ -289,23 +297,8 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
 
   const handleSetMaxAmount = () => {
     if (!selectedAsset) return;
-    
-    let maxAmountInAsset = 0;
-    const monadBalance = assets.find(a => a.ticker === 'MONAD')?.balance || 0;
-
-    if (selectedAsset.ticker === 'MONAD') {
-        maxAmountInAsset = monadBalance - gasCost;
-    } else {
-        if (monadBalance < gasCost) {
-            maxAmountInAsset = 0;
-        } else {
-            maxAmountInAsset = selectedAsset.balance;
-        }
-    }
-
-    const maxAmountStr = maxAmountInAsset > 0 ? maxAmountInAsset.toFixed(6) : "0";
+    const maxAmountStr = maxSendableAmount > 0 ? maxSendableAmount.toFixed(6) : "0";
     setAmount(maxAmountStr);
-    setTransactionFee(calculateTransactionFee(maxAmountInAsset * (selectedAsset.priceUSD || 1)));
     validateAmount(maxAmountStr);
   };
 
@@ -1097,3 +1090,5 @@ export function WalletView({ wallet, assets, onTransactionSuccess, assetStatus, 
     </div>
   );
 }
+
+    
