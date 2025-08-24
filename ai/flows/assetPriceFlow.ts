@@ -39,7 +39,7 @@ const getIconPath = (assetId: number): string => {
 
 const mockPrices: Record<string, { name: string, id: number, price: number, change: number }> = {
     MONAD: { name: 'Monad', id: 9999, price: 2.50, change: 0.5 },
-    ETH: { name: 'Ethereum', id: 1027, price: 3450.12, change: -1.25 },
+    ETH: { name: 'Ethereum', id: 1027, price: 5000, change: -1.25 },
     USDC: { name: 'USD Coin', id: 3408, price: 1.00, change: 0.01 },
     USDT: { name: 'Tether', id: 825, price: 0.99, change: -0.02 },
     WBTC: { name: 'Wrapped BTC', id: 3717, price: 65005.30, change: -2.45 },

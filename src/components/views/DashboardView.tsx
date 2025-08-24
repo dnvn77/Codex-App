@@ -161,7 +161,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
   });
   
   const ethPrice = useMemo(() => {
-    return priceData.find(a => a.ticker === 'ETH')?.priceUSD || 3500; // Fallback price
+    return priceData.find(a => a.ticker === 'ETH')?.priceUSD || 5000; // Fallback price
   }, [priceData]);
 
   const updateAssetPrices = useCallback(async () => {
@@ -192,7 +192,7 @@ export function DashboardView({ wallet, onTransactionSent, onDisconnect, onShowC
               balance: mockBalances[asset.ticker] || 0,
           })).sort((a, b) => {
               const valueA = a.balance * a.priceUSD;
-              const valueB = b.balance * b.priceUSD;
+              const valueB = b.balance * a.priceUSD;
               if (valueB !== valueA) return valueB - valueA;
               return a.ticker.localeCompare(b.ticker);
           });
