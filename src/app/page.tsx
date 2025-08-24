@@ -9,7 +9,7 @@ import { ChatView } from '@/components/views/ChatView';
 import { ProfileView } from '@/components/views/ProfileView';
 import { ContactsView } from '@/components/views/ContactsView';
 import type { Wallet, StoredWallet, Asset } from '@/lib/types';
-import { getStoredWallet, clearStoredWallet } from '@/lib/wallet';
+import { getStoredWallet, clearStoredWallet, clearMockBalances } from '@/lib/wallet';
 import { ConnectView } from '@/components/views/ConnectView';
 import { LockView } from '@/components/views/LockView';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +34,6 @@ const ALL_EVM_ASSETS = [
     { name: 'Decentraland', ticker: 'MANA', id: 1966 },
     { name: 'Codex Token', ticker: 'CDX', id: 0 }
 ];
-
 
 export default function Home() {
   const [activeView, setActiveView] = useState<'profile' | 'chats' | 'wallet' | 'settings' | 'contacts'>('wallet');
@@ -63,49 +62,58 @@ export default function Home() {
         setAssetStatus('error');
     }
   }, [toast]);
-  
-  // This useEffect combines price data with balances to create the final asset list.
-  useEffect(() => {
-    if (priceData.length > 0 && wallet) {
-        const currentMockBalances = {
-            'ETH': 0.7964,
-            'USDC': 1520.75,
-            'WBTC': 0.03,
-            'CDX': 12500,
-            'LINK': 150.2,
-            'UNI': 300,
-            ...mockBalances
-        };
-        setMockBalances(currentMockBalances);
 
-        const combinedAssets = priceData.map(asset => ({
-            ...asset,
-            balance: asset.ticker === 'MONAD' ? wallet.balance : (currentMockBalances[asset.ticker] || 0),
-        })).sort((a, b) => {
-            const valueA = a.balance * a.priceUSD;
-            const valueB = b.balance * b.priceUSD;
-            if (valueB !== valueA) return valueB - valueA;
-            return a.ticker.localeCompare(b.ticker);
-        });
-        setAssets(combinedAssets);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [priceData, wallet]);
-
+  // Effect to load initial state from localStorage
   useEffect(() => {
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
-    if(stored) {
-        // Initialize mock balances from storage if available, to persist state across reloads
+    
+    if (stored) {
         const initialBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
         setMockBalances(initialBalances);
     }
   }, []);
 
+  // Effect to combine price data with balances to create the final asset list.
+  useEffect(() => {
+    if (priceData.length > 0 && wallet) {
+      const combinedAssets = priceData.map(asset => {
+        let balance = 0;
+        if (asset.ticker === 'MONAD') {
+          // MONAD balance is always the real balance from the wallet object.
+          balance = wallet.balance;
+        } else {
+          // Other tokens use mock balances.
+          balance = mockBalances[asset.ticker] || 0;
+        }
+        return { ...asset, balance };
+      }).sort((a, b) => {
+        const valueA = a.balance * a.priceUSD;
+        const valueB = b.balance * b.priceUSD;
+        if (valueB !== valueA) return valueB - valueA;
+        return a.ticker.localeCompare(b.ticker);
+      });
+      setAssets(combinedAssets);
+    }
+  }, [priceData, wallet, mockBalances]);
+
   const handleLoginComplete = (newWallet: Wallet, isNewUser: boolean) => {
     setWallet(newWallet);
     const newStoredInfo = getStoredWallet();
     setStoredWalletInfo(newStoredInfo);
+    
+    // Initialize mock balances, but do not overwrite the real MONAD balance.
+    const initialMockBalances = {
+      'ETH': 0.7964,
+      'USDC': 1520.75,
+      'WBTC': 0.03,
+      'CDX': 12500,
+      'LINK': 150.2,
+      'UNI': 300,
+      ...JSON.parse(localStorage.getItem('codex_mock_balances') || '{}')
+    };
+    setMockBalances(initialMockBalances);
+
     updateAssetPrices(); 
 
     if (isNewUser) {
@@ -118,6 +126,7 @@ export default function Home() {
   const handleDisconnect = () => {
     logEvent('wallet_disconnected');
     clearStoredWallet();
+    clearMockBalances();
     setWallet(null);
     setStoredWalletInfo(null);
     setIsFirstLogin(false);
@@ -137,7 +146,6 @@ export default function Home() {
       if (ticker === 'MONAD') {
           newMonadBalance -= (amount + gasCost);
       } else {
-          // Gas is always paid in the native asset (MONAD)
           newMonadBalance -= gasCost;
           if (newMockBalances[ticker] !== undefined) {
               newMockBalances[ticker] = Math.max(0, newMockBalances[ticker] - amount);

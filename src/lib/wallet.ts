@@ -492,6 +492,10 @@ export function clearStoredWallet(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(WALLET_STORAGE_KEY);
     localStorage.removeItem(CONTACTS_STORAGE_KEY);
+}
+
+export function clearMockBalances(): void {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem(MOCK_BALANCES_STORAGE_KEY);
 }
 
