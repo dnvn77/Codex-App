@@ -68,9 +68,9 @@ export default function Home() {
     const stored = getStoredWallet();
     setStoredWalletInfo(stored);
     
-    if (stored) {
-        const initialBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
-        setMockBalances(initialBalances);
+    const initialBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
+    if (stored && initialBalances) {
+      setMockBalances(initialBalances);
     }
   }, []);
 
@@ -102,18 +102,22 @@ export default function Home() {
     const newStoredInfo = getStoredWallet();
     setStoredWalletInfo(newStoredInfo);
     
-    // Initialize mock balances, but do not overwrite the real MONAD balance.
-    const initialMockBalances = {
-      'ETH': 0.7964,
-      'USDC': 1520.75,
-      'WBTC': 0.03,
-      'CDX': 12500,
-      'LINK': 150.2,
-      'UNI': 300,
-      ...JSON.parse(localStorage.getItem('codex_mock_balances') || '{}')
-    };
-    setMockBalances(initialMockBalances);
-
+    if (isNewUser) {
+        // Initialize mock balances for new users, but do not overwrite the real MONAD balance.
+        const initialMockBalances = {
+          'ETH': 0.7964,
+          'USDC': 1520.75,
+          'WBTC': 0.03,
+          'CDX': 12500,
+          'LINK': 150.2,
+          'UNI': 300,
+        };
+        const currentBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
+        const finalBalances = {...initialMockBalances, ...currentBalances};
+        setMockBalances(finalBalances);
+        localStorage.setItem('codex_mock_balances', JSON.stringify(finalBalances));
+    }
+    
     updateAssetPrices(); 
 
     if (isNewUser) {
@@ -141,7 +145,7 @@ export default function Home() {
       if (!prevWallet) return null;
       
       let newMonadBalance = prevWallet.balance;
-      let newMockBalances = { ...mockBalances };
+      const newMockBalances = { ...mockBalances };
 
       if (ticker === 'MONAD') {
           newMonadBalance -= (amount + gasCost);
@@ -181,7 +185,7 @@ export default function Home() {
   
   return (
     <div className="flex flex-col h-screen">
-      <main className="flex-1 p-2 md:p-4 overflow-y-auto mb-16">
+      <main className="flex-1 px-4 py-6 md:p-4 overflow-y-auto mb-16">
         {activeView === 'profile' && <ProfileView wallet={wallet} showEditOnLoad={isFirstLogin} onProfileSaved={handleProfileSaved} />}
         {activeView === 'chats' && <ChatView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} />}
         {activeView === 'wallet' && <WalletView wallet={wallet} assets={assets} onTransactionSuccess={handleTransactionSuccess} assetStatus={assetStatus} onRefreshPrices={updateAssetPrices} setMockBalances={setMockBalances} mockBalances={mockBalances} />}
