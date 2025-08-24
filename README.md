@@ -76,6 +76,8 @@ Menú inferior con **5 secciones principales**:
 4. Configuración  
 5. Contactos  
 
+Link a [drive con fotos](https://drive.google.com/drive/folders/1uOGeMKzbfdrcHLzAUXn3Od9D6BZqPG3O?usp=drive_link).
+
 ---
 
 ## 🔑 Funcionalidades Principales  
