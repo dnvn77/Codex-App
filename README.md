@@ -3,6 +3,48 @@
 Codex App integra en un solo flujo **funciones de wallet no custodial, mensajería cifrada y pagos**.  
 Está diseñada con una **UI minimalista**, fuerte **seguridad** y funciona en un entorno **descentralizado**.  
 
+
+📑 Resumen Ejecutivo — Codex
+📌 Visión
+Codex es una plataforma de pagos Web3 con mensajería contextual integrada, diseñada para resolver uno de los principales problemas en las transacciones digitales: la falta de confianza y comunicación en el mismo flujo de pago.
+💡 Problema
+Hoy, el flujo de pagos en Web3 y fuera de él enfrenta barreras importantes:
+Mensajería común no diseñada para pagos
+WhatsApp, Telegram o Discord se usan para coordinar pagos, pero no son seguras ni descentralizadas.
+No hay verificación de wallets ni de montos. Esto facilita errores de dirección, estafas y duplicación de mensajes falsos.
+Sistemas de pago sobre mensajería centralizada
+Algunas apps de mensajería han integrado pagos, pero son servicios cerrados y centralizados, sujetos a censura, restricciones geográficas y riesgos regulatorios.
+Además, la información del usuario y sus datos de transacción se almacenan en servidores corporativos.
+Comisiones elevadas en sistemas cripto y no cripto
+Muchas soluciones Web3 tienen fees altos (ej. gas en Ethereum en horas pico).
+En Web2, pasarelas como PayPal o Stripe cargan comisiones de hasta 4–6% por transacción internacional.
+Esto hace inviables micropagos, cobros de freelancers y transacciones P2P de bajo valor.
+Resultado: los usuarios enfrentan un proceso fragmentado, costoso y poco confiable para enviar o recibir pagos.
+🚀 Solución: Codex
+Pagos rápidos y claros en blockchain (tokens, stablecoins, NFTs).
+Mensajería integrada y cifrada, activada solo en contexto de pago.
+Ideal para compraventas y freelancing.
+UX enfocada en confianza: el monto, token y hash de la transacción en un comprobante
+
+📌 Por qué unir pagos y mensajería es necesario
+Contexto inmediato: toda transacción viene acompañada de comunicación.
+Seguridad: al estar vinculada a wallets verificadas, se reducen errores y fraudes.
+Confianza P2P: resolución de dudas en el mismo flujo, sin apps externas.
+Costos reducidos: aprovechamos la eficiencia de redes blockchain escalables, evitando las comisiones excesivas de pasarelas tradicionales.
+Descentralización real: a diferencia de sistemas de mensajería centralizada con pagos integrados, Codex no depende de servidores corporativos.
+
+🎯 Mercado objetivo
+Freelancers y microservicios Web3 (cobros en stablecoins USDC, USDT y ETH).
+Comercios y nuevos usuarios (comprador–vendedor en comunicación directa).
+Usuarios P2P que buscan enviar dinero o intercambiar bienes con seguridad.
+
+💰 Modelo de ingresos
+Fee por transacción: 1–3%.
+Servicios premium: retiro con tarjeta, alarma de gas fee bajo.
+🌟 Conclusión
+Codex ofrece pagos Web3 con el ingrediente que les falta: la conversación. La mensajería contextual no es un adorno, es lo que convierte la transacción en una experiencia confiable y transparente. Frente a la mensajería común, los sistemas centralizados y las comisiones abusivas, Codex representa una alternativa descentralizada, eficiente y diseñada para la próxima generación de usuarios Web3.
+
+
 ---
 
 ## ⚙️ Stack Tecnológico  
