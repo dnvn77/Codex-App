@@ -128,11 +128,11 @@ export default function Home() {
     if (priceData.length > 0 && wallet) {
       const combinedAssets = priceData.map(asset => {
         let balance = 0;
+        // For MONAD, the source of truth is always the wallet object from the backend.
         if (asset.ticker === 'MONAD') {
-          // MONAD balance is always the real balance from the wallet object.
           balance = wallet.balance;
         } else {
-          // Other tokens use mock balances.
+          // Other tokens use mock balances from localStorage.
           balance = mockBalances[asset.ticker] || 0;
         }
         return { ...asset, balance };
@@ -151,22 +151,32 @@ export default function Home() {
     const newStoredInfo = getStoredWallet();
     setStoredWalletInfo(newStoredInfo);
     
-    if (isNewUser) {
-        // Initialize mock balances for new users, but do not overwrite the real MONAD balance.
-        const initialMockBalances = {
-          'ETH': 0.7964,
-          'USDC': 1520.75,
-          'WBTC': 0.03,
-          'CDX': 12500,
-          'LINK': 150.2,
-          'UNI': 300,
-        };
-        const currentBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
-        const finalBalances = {...initialMockBalances, ...currentBalances};
-        setMockBalances(finalBalances);
-        localStorage.setItem('codex_mock_balances', JSON.stringify(finalBalances));
+    // --- THIS IS THE FIX ---
+    // Ensure mock balances are initialized for new users,
+    // and correctly set the REAL MONAD balance for everyone.
+    const currentMockBalances = JSON.parse(localStorage.getItem('codex_mock_balances') || '{}');
+    
+    let finalBalances = { ...currentMockBalances };
+
+    if (isNewUser || Object.keys(currentMockBalances).length === 0) {
+      const initialMockBalances = {
+        'ETH': 0.7964,
+        'USDC': 1520.75,
+        'WBTC': 0.03,
+        'CDX': 12500,
+        'LINK': 150.2,
+        'UNI': 300,
+      };
+      finalBalances = { ...initialMockBalances, ...currentMockBalances };
     }
     
+    // The most important part: ALWAYS use the real MONAD balance from the wallet object.
+    finalBalances['MONAD'] = newWallet.balance;
+    
+    setMockBalances(finalBalances);
+    localStorage.setItem('codex_mock_balances', JSON.stringify(finalBalances));
+    // --- END FIX ---
+
     updateAssetPrices(); 
 
     // Check for first login to show fee schedule
